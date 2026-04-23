@@ -1,0 +1,37 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next"
+  },
+  "nav": {
+    "overview": "Overview",
+    "bookings": "Bookings",
+    "drivers": "Drivers",
+    "fleet": "Fleet",
+    "pricing": "Pricing",
+    "payments": "Payments",
+    "reports": "Reports"
+  },
+  "landing": {
+    "hero": {
+      "title": "From airport to Reykjavík",
+      "subtitle": "Book your ride in seconds"
+    },
+    "presets": {
+      "airportToReykjavik": "Airport → Reykjavík",
+      "reykjavikToAirport": "Reykjavík → Airport",
+      "airportToBlueLagoon": "Airport → Blue Lagoon"
+    }
+  },
+  "currency": {
+    "toggle": "Select currency",
+    "isk": "Icelandic Króna",
+    "eur": "Euro",
+    "usd": "US Dollar"
+  }
+}

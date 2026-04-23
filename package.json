@@ -1,0 +1,36 @@
+{
+  "name": "hitch",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Ride-booking platform for KEF ↔ Reykjavík airport transfers",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "engines": {
+    "node": ">=20.0.0",
+    "npm": ">=10.0.0"
+  },
+  "packageManager": "npm@11.6.2",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "db:generate": "npm run generate -w @hitch/db",
+    "db:migrate:dev": "npm run migrate:dev -w @hitch/db",
+    "db:migrate:deploy": "npm run migrate:deploy -w @hitch/db",
+    "db:studio": "npm run studio -w @hitch/db",
+    "db:seed": "npm run seed -w @hitch/db",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md,css}\""
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "eslint": "^9.17.0",
+    "prettier": "^3.4.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2"
+  }
+}

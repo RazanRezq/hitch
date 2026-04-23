@@ -1,0 +1,37 @@
+{
+  "common": {
+    "loading": "Hleður...",
+    "error": "Villa kom upp",
+    "retry": "Reyna aftur",
+    "cancel": "Hætta við",
+    "confirm": "Staðfesta",
+    "back": "Til baka",
+    "next": "Áfram"
+  },
+  "nav": {
+    "overview": "Yfirlit",
+    "bookings": "Pantanir",
+    "drivers": "Ökumenn",
+    "fleet": "Bílafloti",
+    "pricing": "Verðlagning",
+    "payments": "Greiðslur",
+    "reports": "Skýrslur"
+  },
+  "landing": {
+    "hero": {
+      "title": "Frá flugvelli til Reykjavíkur",
+      "subtitle": "Pantaðu bíl á nokkrum sekúndum"
+    },
+    "presets": {
+      "airportToReykjavik": "Flugvöllur → Reykjavík",
+      "reykjavikToAirport": "Reykjavík → Flugvöllur",
+      "airportToBlueLagoon": "Flugvöllur → Bláa Lónið"
+    }
+  },
+  "currency": {
+    "toggle": "Velja gjaldmiðil",
+    "isk": "Íslensk króna",
+    "eur": "Evra",
+    "usd": "Bandaríkjadalur"
+  }
+}
