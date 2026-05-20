@@ -42,8 +42,8 @@ coverage/
 *.lcov
 
 # Prisma — keep migrations and lock
-packages/db/prisma/*.db
-packages/db/prisma/*.db-journal
+prisma/*.db
+prisma/*.db-journal
 
 # TypeScript
 *.tsbuildinfo

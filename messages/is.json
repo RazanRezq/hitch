@@ -1,0 +1,187 @@
+{
+  "common": {
+    "loading": "Hleður...",
+    "error": "Villa kom upp",
+    "retry": "Reyna aftur",
+    "cancel": "Hætta við",
+    "confirm": "Staðfesta",
+    "back": "Til baka",
+    "next": "Áfram"
+  },
+  "nav": {
+    "overview": "Yfirlit",
+    "bookings": "Pantanir",
+    "drivers": "Ökumenn",
+    "fleet": "Bílafloti",
+    "pricing": "Verðlagning",
+    "payments": "Greiðslur",
+    "reports": "Skýrslur"
+  },
+  "currency": {
+    "toggle": "Velja gjaldmiðil",
+    "isk": "Íslensk króna",
+    "eur": "Evra",
+    "usd": "Bandaríkjadalur"
+  },
+  "book": {
+    "title": "Bókunarflæði kemur fljótlega",
+    "body": "Þú valdir ferð. Sjálft bókunarflæðið — verð, bílaval og greiðsla — er í smíðum.",
+    "backHome": "Aftur á forsíðu"
+  },
+  "landing": {
+    "presets": {
+      "airportToReykjavik": "Flugvöllur → Reykjavík",
+      "reykjavikToAirport": "Reykjavík → Flugvöllur",
+      "airportToBlueLagoon": "Flugvöllur → Bláa Lónið"
+    },
+    "header": {
+      "logoHome": "Hitch — aftur á forsíðu",
+      "coords": "REYKJAVÍK · 64.13°N 21.94°W",
+      "local": "STAÐARTÍMI",
+      "cars": "37 BÍLAR Á VAKT",
+      "channel": "RÁS 02 · KOMUR",
+      "phone": "+354 519 1010",
+      "fly": "Fljúga",
+      "fleet": "Floti",
+      "coverage": "Þekja",
+      "stories": "Sögur",
+      "signin": "Skrá inn",
+      "book": "Bóka núna",
+      "language": "Tungumál",
+      "currencyLabel": "Gjaldmiðill"
+    },
+    "hero": {
+      "verbA": "Lentu.",
+      "verbB": "Hitt’ann.",
+      "verbC": "Komin heim.",
+      "sub": "Síðasti leggur ferðar þinnar — fullkomnaður. Læst verð, persónulegur bílstjóri, nákvæmlega við hliðið.",
+      "searchLabel": "Sjá verð",
+      "tabToAirport": "Á flugvöll",
+      "tabFromAirport": "Frá flugvelli",
+      "tabBlueLagoon": "Bláa Lónið",
+      "pickup": "Sækja",
+      "pickupPlaceholderFrom": "Hótel, heimilisfang eða kennileiti",
+      "pickupPlaceholderTo": "Sækjustaður",
+      "dropoff": "Skila",
+      "dropAirport": "Keflavíkurflugvöllur (KEF)",
+      "dropCity": "Reykjavík 101",
+      "dropLagoon": "Bláa Lónið",
+      "swap": "Skipta um sækju- og skilastað",
+      "date": "Dagsetning",
+      "today": "Í dag",
+      "time": "Tími",
+      "pax": "Farþegar",
+      "decrement": "Fækka farþegum",
+      "increment": "Fjölga farþegum",
+      "search": "Leita",
+      "addFlight": "Bæta við flugnúmeri",
+      "childSeat": "Barnasæti",
+      "meetGreet": "Móttaka með skilti",
+      "footCarsStrong": "8 bílar",
+      "footCarsRest": "við KEF núna",
+      "footCancelStrong": "Frí afpöntun",
+      "footCancelRest": "allt að 1 klst. fyrir",
+      "footPay": "Greitt við komu eða fyrirfram"
+    },
+    "wordmark": "HITCH",
+    "live": {
+      "tag": "BEINT FRÁ REYKJAVÍK",
+      "time": "14:32:08",
+      "items": [
+        { "k": "VEÐUR", "v": "−2°C · Snjókoma" },
+        { "k": "UMFERÐ", "v": "Hreint · Leið 41" },
+        { "k": "NÆSTA FLUG", "v": "FI 614 · 14:55" },
+        { "k": "BIÐTÍMI", "v": "4 mín" }
+      ]
+    },
+    "trips": {
+      "no": "№ 01",
+      "eyebrow": "VINSÆLAR LEIÐIR",
+      "titleA": "Þrjár leiðir,",
+      "titleB": "eitt verð.",
+      "cta": "Velja",
+      "from": "FRÁ",
+      "badge": "MEST BÓKAÐ",
+      "cards": [
+        { "code": "HTCH-01 · KEF↦RVK", "kmTime": "49.2 km · 45 mín" },
+        { "code": "HTCH-02 · RVK↦KEF", "kmTime": "49.2 km · 50 mín" },
+        { "code": "HTCH-03 · KEF↦BLU", "kmTime": "24.6 km · 20 mín" }
+      ]
+    },
+    "manifesto": {
+      "no": "№ 02",
+      "eyebrow": "STEFNUYFIRLÝSING",
+      "titleA": "Fjórar reglur.",
+      "titleB": "Engar undantekningar.",
+      "items": [
+        { "n": "01", "k": "VERÐ", "t": "Læst, alltaf.", "body": "Verðið sem þú sérð er verðið sem þú borgar. Engin álagsverð, ekki á jólum, ekki klukkan þrjú að nóttu." },
+        { "n": "02", "k": "BÍLSTJÓRI", "t": "Eitt nafn.", "body": "Sami bílstjóri allan ferðatímann. Þú færð nafn, mynd og bíl áður en þú lendir." },
+        { "n": "03", "k": "TÍMI", "t": "Engin bið.", "body": "Bílstjóri lætur þig vita 12 mín fyrir lendingu. Bíllinn er við hliðið um leið og þú gengur út." },
+        { "n": "04", "k": "TUNGUMÁL", "t": "Þitt mál.", "body": "IS, EN, AR — bókun, kvittun og spjall á því tungumáli sem þér líður best með." }
+      ]
+    },
+    "fleet": {
+      "no": "№ 03",
+      "eyebrow": "FLOTI",
+      "titleA": "Réttur bíll.",
+      "titleB": "Réttur hópur.",
+      "classLabel": "FLOKKUR",
+      "from": "FRÁ",
+      "items": [
+        { "name": "Fólksbíll", "cap": "1–4", "bag": "3" },
+        { "name": "SUV", "cap": "1–6", "bag": "5" },
+        { "name": "Van", "cap": "1–8", "bag": "8" },
+        { "name": "Lúxus", "cap": "1–3", "bag": "3" }
+      ]
+    },
+    "quote": {
+      "body": "Lenti á miðnætti með tvö börn og fjórar töskur. Stefán beið með skilti. Borgin svaf. Við sváfum innan við klukkutíma síðar.",
+      "who": "ANNA HÄRTEL",
+      "role": "BERLÍN · MAÍ 2026",
+      "initial": "A",
+      "rating": "4.96 · 12,400 ferðir/mán"
+    },
+    "coverage": {
+      "no": "№ 04",
+      "eyebrow": "ÞJÓNUSTUSVÆÐI",
+      "titleA": "Suðvestur Ísland.",
+      "titleB": "Allan sólarhringinn.",
+      "coords": "64.13°N · 21.94°W",
+      "stops": [
+        { "code": "KEF", "label": "Keflavíkur flugvöllur", "meta": "24/7" },
+        { "code": "RVK", "label": "Reykjavík 101–113", "meta": "24/7" },
+        { "code": "BLU", "label": "Bláa Lónið", "meta": "06:00 → 23:00" },
+        { "code": "SEL", "label": "Selfoss & Hveragerði", "meta": "07:00 → 22:00" }
+      ]
+    },
+    "faq": {
+      "no": "№ 05",
+      "eyebrow": "SPURNINGAR",
+      "titleA": "Áður en þú",
+      "titleB": "tekur á loft.",
+      "items": [
+        { "q": "Hvað gerist ef flugið mitt seinkar?", "a": "Við fylgjumst með flugnúmerinu þínu. Bílstjórinn endurraðar tíma og þú borgar ekki fyrir biðina." },
+        { "q": "Get ég afpantað?", "a": "Já — frítt fram að klukkustund fyrir sækju. Eftir það 50% gjald." },
+        { "q": "Hvaða greiðslumáta tekið þið?", "a": "Visa, Mastercard, Amex, Apple Pay og Google Pay. Færslur teknar í ISK." },
+        { "q": "Eru barnasæti í boði?", "a": "Já — bætið við í bókuninni. 0 kr. fyrir farþega." },
+        { "q": "Talar bílstjórinn ensku?", "a": "Allir bílstjórar tala íslensku og ensku. Margir tala líka pólsku, þýsku eða arabísku." }
+      ]
+    },
+    "finale": {
+      "titleA": "Bíllinn bíður.",
+      "titleB": "Bókaðu hann.",
+      "cta": "Sjá verð núna",
+      "trustRating": "4.96 ★",
+      "trustTrips": "12,400 FERÐIR/MÁN",
+      "trustFees": "0 KR. FALIN GJÖLD",
+      "tag": "Síðasti leggur ferðar þinnar — fullkomnaður.",
+      "columns": [
+        { "title": "FERÐIR", "items": ["KEF → Reykjavík", "Reykjavík → KEF", "KEF → Bláa Lónið", "Á tímann"] },
+        { "title": "FYRIRTÆKI", "items": ["Um okkur", "Bílstjórar", "Fyrirtækjareikningar", "Hafa samband"] },
+        { "title": "AÐSTOÐ", "items": ["Algengar spurningar", "Afpöntun", "Týnt og fundið", "+354 555 0100"] }
+      ],
+      "barLeft": "© 2026 HITCH EHF · REYKJAVÍK · ÍSLAND",
+      "barRight": "v1.0.0 · BUILT IN 64.13°N"
+    }
+  }
+}
