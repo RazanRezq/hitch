@@ -55,8 +55,12 @@ export default async function LocaleLayout({
       lang={locale}
       dir={dir}
       className={`${dmSans.variable} ${cairo.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
     >
-      <body className="min-h-screen bg-background text-foreground antialiased">
+      <body
+        className="min-h-screen bg-background text-foreground antialiased"
+        suppressHydrationWarning
+      >
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Providers dir={dir}>{children}</Providers>
         </NextIntlClientProvider>
