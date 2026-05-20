@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
-    "start": "node dist/index.js",
+    "build": "tsc --noEmit",
+    "start": "tsx src/index.ts",
     "typecheck": "tsc --noEmit",
     "lint": "echo 'no lint configured'",
     "clean": "rm -rf dist .turbo"
@@ -13,6 +13,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.709.0",
     "@aws-sdk/s3-request-presigner": "^3.709.0",
+    "tsx": "^4.19.2",
     "@hitch/auth": "*",
     "@hitch/db": "*",
     "@hitch/types": "*",
@@ -29,7 +30,6 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
-    "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
 }
