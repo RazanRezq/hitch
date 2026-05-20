@@ -12,7 +12,7 @@ Hitch is a streamlined ride-booking platform built for **Iceland** — specifica
 - One-tap booking as the primary UX goal
 - Clean, minimalist "Soft Pop" design aesthetic
 - Icelandic-first, trilingual (is/en/ar) from Phase 1
-- Unified backend serving all four surfaces
+- Single Next.js app serving both web surfaces (passenger + admin) with Hono mounted inside it
 - Vendor-independent, production-grade stack
 - TypeScript end-to-end
 
@@ -74,8 +74,8 @@ Exchange rates fetched daily from a rate API (e.g. exchangerate.host). Always qu
 
 | Surface | Platform | Audience | Priority |
 |---|---|---|---|
-| Passenger Web | Next.js (Browser) | Passengers | ✅ Phase 1 |
-| Management Dashboard | Next.js (Browser) | Admins / Dispatchers | ✅ Phase 1 |
+| Passenger Web | Next.js (`/[locale]/*`) | Passengers | ✅ Phase 1 |
+| Management Dashboard | Next.js (`/[locale]/admin/*`, same app) | Admins / Dispatchers | ✅ Phase 1 |
 | Passenger App | React Native + Expo | Passengers | 🔜 Phase 2 |
 | Driver App | React Native + Expo | Drivers | 🔜 Phase 2 |
 
@@ -133,7 +133,7 @@ Three one-tap cards on the landing page:
 ### Frontend (Phase 1)
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 15 (App Router) |
+| Framework | Next.js 16 (App Router) |
 | Language | TypeScript (strict) |
 | Styling | Tailwind CSS v4 |
 | Components | Shadcn UI + Acernity UI |
@@ -144,31 +144,31 @@ Three one-tap cards on the landing page:
 | i18n | `next-intl` (Next.js-native i18n) |
 | WebSocket Client | `partysocket` |
 
-### Backend (Hono Standalone)
+### Backend (Hono — mounted inside Next.js)
 | Layer | Technology |
 |---|---|
 | Runtime | Node.js 20+ |
-| Framework | Hono (TypeScript-first, standalone) |
+| Framework | Hono (mounted inside Next.js via `src/app/api/[[...route]]/route.ts` with `hono/vercel` `handle()`; bare app at `src/server/app.ts`) |
 | Validation | Zod + `@hono/zod-validator` |
 | ORM | Prisma |
 | Database | PostgreSQL (Railway managed) |
 | Auth | Better Auth |
-| Realtime | Native WebSockets via `hono/ws` + Redis pub/sub |
-| Jobs/Queue | BullMQ + Redis (Railway managed) |
+| Realtime | Native WebSockets via `@hono/node-ws` + `@hono/node-server` + Redis pub/sub. Runs as a **separate process** (`npm run ws`, entry `src/server/index.ts`) because Next.js route handlers can't host long-lived WS connections. Same Hono `app`, different transport. |
+| Jobs/Queue | BullMQ + Redis (Railway managed). Runs as a **separate process** (`npm run workers`). |
 | Payments | Stripe (manual capture, multi-currency) |
 | Storage SDK | `@aws-sdk/client-s3` (for DO Spaces) |
 
 ### Infrastructure
 | Component | Provider |
 |---|---|
-| Next.js Passenger Web | Railway |
-| Next.js Dashboard | Railway |
-| Hono API | Railway |
+| Next.js app (passenger + admin + mounted API) | Railway — `web` service (`npm run start`) |
+| WebSocket server | Railway — `ws` service (`npm run ws`) |
+| BullMQ workers | Railway — `workers` service (`npm run workers`) |
 | PostgreSQL | Railway Managed |
 | Redis | Railway Managed |
 | File Storage | DigitalOcean Spaces (S3-compatible) |
 | CDN for Files | DigitalOcean Spaces CDN |
-| Monorepo Tool | Turborepo + pnpm |
+| Repo layout | Single Next.js app, plain npm (no monorepo / Turborepo / workspaces) |
 
 ### Mobile (Phase 2)
 | Layer | Technology |
@@ -412,33 +412,77 @@ Each zone has:
 
 ---
 
-## 11. Project Structure (Monorepo)
+## 11. Project Structure (Single Next.js App)
+
+This is a **single Next.js app** at the repo root. No monorepo, no Turborepo, no workspaces. One `package.json`.
 
 ```
 hitch/
-├── apps/
-│   ├── passenger/              # Next.js — Public booking web (trilingual)
-│   ├── dashboard/              # Next.js — Admin panel (trilingual)
-│   └── api/                    # Hono — Backend API + WebSocket server
-│
-├── packages/
-│   ├── ui/                     # Shared Shadcn components (RTL-aware)
-│   ├── types/                  # Shared TypeScript types
-│   ├── api-client/             # Shared TanStack Query hooks + WS client
-│   ├── db/                     # Prisma schema + client
-│   ├── auth/                   # Better Auth config
-│   ├── i18n/                   # Shared translation keys (is/en/ar)
-│   └── utils/                  # Shared helpers (geo, format, dates, currency)
-│
-├── package.json                # pnpm workspaces root
-├── turbo.json                  # Turborepo config
-└── .env.example
+├── package.json                # plain npm, no workspaces
+├── tsconfig.json  next.config.ts  postcss.config.mjs  eslint.config.mjs
+├── prisma/                     # schema.prisma, seed.ts, migrations
+├── messages/                   # is.json, en.json, ar.json (next-intl)
+├── public/
+├── .env.example
+└── src/
+    ├── app/
+    │   ├── [locale]/                  # passenger surface (root layout owns <html>/<body>)
+    │   │   ├── layout.tsx
+    │   │   ├── page.tsx               # Landing
+    │   │   ├── book/page.tsx
+    │   │   └── admin/                 # dispatcher/admin nested here
+    │   │       ├── layout.tsx         # nested-only, NO <html>/<body>
+    │   │       ├── page.tsx           # redirects to /[locale]/admin/overview
+    │   │       └── overview/...
+    │   ├── api/[[...route]]/route.ts  # Hono mounted via hono/vercel handle()
+    │   ├── globals.css  editorial.css
+    ├── components/                    # passenger + admin/Sidebar + landing/* + brand/*
+    ├── i18n/                          # next-intl routing + request
+    ├── lib/                           # was packages/* — local sources
+    │   ├── ui/         # Shared Shadcn (RTL-aware)
+    │   ├── types/      # TS types + Zod schemas
+    │   ├── db/         # Prisma client wrapper
+    │   ├── auth/       # Better Auth config
+    │   ├── utils/      # Geo, format, dates, currency
+    │   ├── i18n-shared/# Locale + currency constants
+    │   ├── api-client/ # TanStack Query hooks + WS client
+    │   └── use-change-locale.ts
+    ├── server/                        # backend (was apps/api/src)
+    │   ├── app.ts                     # bare Hono app (wired into Next.js route)
+    │   ├── index.ts                   # standalone WS runner (npm run ws)
+    │   ├── routes/  services/  middleware/  realtime/  workers/  lib/
+    ├── stores/  providers.tsx  proxy.ts
 ```
 
-### `apps/api/` Structure (Hono)
+### Three runtime processes from one codebase
+
+| Process | Command | Entry |
+|---|---|---|
+| Web + mounted Hono API | `npm run dev` / `npm run start` | `src/app/api/[[...route]]/route.ts` wraps `src/server/app.ts` |
+| WebSocket server | `npm run ws` | `src/server/index.ts` (`@hono/node-ws` + `@hono/node-server`) |
+| BullMQ workers | `npm run workers` | dispatch / webhooks / payouts / exchange rates |
+
+### Import aliases
+
+The `src/lib/*` directories are imported via `@/lib/*` aliases (NOT `@hitch/*`):
+
+| Old (monorepo) | New (single app) |
+|---|---|
+| `@hitch/ui` | `@/lib/ui` |
+| `@hitch/types` | `@/lib/types` |
+| `@hitch/db` | `@/lib/db` |
+| `@hitch/auth` | `@/lib/auth` |
+| `@hitch/utils` | `@/lib/utils` |
+| `@hitch/i18n` | `@/lib/i18n-shared` |
+| `@hitch/api-client` | `@/lib/api-client` |
+
+> CSS `@import` does NOT respect TS path aliases — use **relative paths** in `.css` files (e.g. `src/app/globals.css` does `@import '../lib/ui/styles/globals.css';`).
+
+### `src/server/` Structure (Hono)
 ```
-src/
-├── index.ts                    # Hono bootstrap + server start
+src/server/
+├── app.ts                      # bare Hono app — mounted by both /api route AND WS runner
+├── index.ts                    # standalone server bootstrap for WS (npm run ws)
 ├── routes/
 │   ├── auth.ts                 # Better Auth handler
 │   ├── bookings.ts
@@ -475,76 +519,76 @@ src/
     └── stripe.ts
 ```
 
-### `apps/passenger/` Structure
+### Passenger surface structure
 ```
-src/
-├── app/
-│   ├── [locale]/               # next-intl locale segment (is|en|ar)
-│   │   ├── page.tsx            # Landing page
-│   │   ├── search/page.tsx
-│   │   ├── booking/
-│   │   │   ├── confirm/page.tsx
-│   │   │   └── [id]/page.tsx
-│   │   └── account/
-│   │       ├── trips/page.tsx
-│   │       └── settings/page.tsx
-│   └── layout.tsx              # Root layout with DirectionProvider
-├── components/
-│   ├── search/
-│   │   ├── SearchWidget.tsx
-│   │   ├── PresetCard.tsx      # KEF ↔ Reykjavík cards
-│   │   └── DateTimePicker.tsx
-│   ├── booking/
-│   │   ├── CarTypeCard.tsx
-│   │   ├── PriceSummary.tsx    # Handles ISK/EUR/USD display
-│   │   ├── CurrencyToggle.tsx
-│   │   └── PaymentForm.tsx
-│   └── trip/
-│       ├── LiveMap.tsx
-│       └── TripStatusBar.tsx
-├── i18n/
-│   ├── request.ts              # next-intl config
-│   └── routing.ts              # Locale routing config
-└── messages/
-    ├── is.json                 # Icelandic translations
-    ├── en.json                 # English translations
-    └── ar.json                 # Arabic translations
+src/app/[locale]/
+├── layout.tsx                  # Root layout (html/body/fonts/DirectionProvider)
+├── page.tsx                    # Landing page
+├── book/page.tsx               # Search + quote flow
+├── booking/
+│   ├── confirm/page.tsx
+│   └── [id]/page.tsx           # Live trip tracking
+├── account/
+│   ├── trips/page.tsx
+│   └── settings/page.tsx
+└── admin/                      # see below
+
+src/components/
+├── search/
+│   ├── SearchWidget.tsx
+│   ├── PresetCard.tsx          # KEF ↔ Reykjavík cards
+│   └── DateTimePicker.tsx
+├── booking/
+│   ├── CarTypeCard.tsx
+│   ├── PriceSummary.tsx        # Handles ISK/EUR/USD display
+│   ├── CurrencyToggle.tsx
+│   └── PaymentForm.tsx
+├── trip/
+│   ├── LiveMap.tsx
+│   └── TripStatusBar.tsx
+├── admin/Sidebar.tsx
+├── landing/*  brand/*
 ```
 
-### `apps/dashboard/` Structure
+### Admin / dispatcher structure (nested under passenger app)
 ```
-src/app/
-├── [locale]/
-│   ├── overview/page.tsx       # Live dispatch map
-│   ├── bookings/
-│   ├── drivers/
-│   ├── fleet/page.tsx
-│   ├── pricing/page.tsx
-│   ├── payments/page.tsx
-│   └── reports/page.tsx
+src/app/[locale]/admin/
+├── layout.tsx                  # nested-only; does NOT render <html>/<body>
+├── page.tsx                    # redirects to ./overview
+├── overview/page.tsx           # Live dispatch map
+├── bookings/
+├── drivers/
+├── fleet/page.tsx
+├── pricing/page.tsx
+├── payments/page.tsx
+└── reports/page.tsx
 ```
 
 ---
 
 ## 12. Route Map
 
-| Route (with locale prefix) | App | Description |
+| Route (with locale prefix) | Surface | Description |
 |---|---|---|
-| `/is` or `/en` or `/ar` | passenger | Landing page |
-| `/{locale}/search` | passenger | Quote results |
+| `/{locale}` | passenger | Landing page |
+| `/{locale}/book` | passenger | Search + quote |
 | `/{locale}/booking/confirm` | passenger | Payment + confirmation |
 | `/{locale}/booking/[id]` | passenger | Live trip tracking |
 | `/{locale}/account/trips` | passenger | Booking history |
-| `/{locale}/overview` | dashboard | Live dispatch map |
-| `/{locale}/bookings` | dashboard | All bookings |
-| `/{locale}/bookings/[id]` | dashboard | Booking detail |
-| `/{locale}/drivers` | dashboard | Driver management |
-| `/{locale}/fleet` | dashboard | Vehicle records |
-| `/{locale}/pricing` | dashboard | Fare configuration |
-| `/{locale}/payments` | dashboard | Transactions |
-| `/{locale}/reports` | dashboard | Analytics |
+| `/{locale}/admin` | admin | Redirects to `./overview` |
+| `/{locale}/admin/overview` | admin | Live dispatch map |
+| `/{locale}/admin/bookings` | admin | All bookings |
+| `/{locale}/admin/bookings/[id]` | admin | Booking detail |
+| `/{locale}/admin/drivers` | admin | Driver management |
+| `/{locale}/admin/fleet` | admin | Vehicle records |
+| `/{locale}/admin/pricing` | admin | Fare configuration |
+| `/{locale}/admin/payments` | admin | Transactions |
+| `/{locale}/admin/reports` | admin | Analytics |
 
-### API Routes (Hono)
+### API Routes (Hono — mounted at `/api/*` inside Next.js)
+
+All Hono routes are exposed under `/api/...` via the catch-all `src/app/api/[[...route]]/route.ts`. The WebSocket endpoint lives on a separate process (`npm run ws`) and is NOT served by Next.js.
+
 ```
 POST   /api/auth/*              # Better Auth
 GET    /api/bookings
@@ -559,7 +603,7 @@ POST   /api/uploads/presigned
 POST   /api/payments/intent
 POST   /api/webhooks/stripe
 GET    /api/exchange-rates      # Current ISK → EUR/USD
-WS     /ws                      # WebSocket endpoint
+WS     /ws                      # WebSocket endpoint (separate process: npm run ws)
 ```
 
 ---
@@ -637,12 +681,12 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 ## 15. Build Order (Phase 1)
 
 ### Sprint 1: Foundation (Week 1–2)
-1. Monorepo scaffold (Turborepo + pnpm)
+1. Next.js app scaffold (single app, plain npm)
 2. Prisma schema + migrations (Iceland-localized)
 3. Better Auth setup (email/password + phone OTP)
-4. Hono API skeleton + middleware
+4. Hono mounted at `src/app/api/[[...route]]/route.ts` + middleware
 5. next-intl setup + initial translations (is/en/ar)
-6. Railway deployment pipeline
+6. Railway deployment pipeline (three services: `web`, `ws`, `workers`)
 
 ### Sprint 2: Passenger Web Core (Week 3–4)
 1. Landing page + SearchWidget + 3 preset cards (KEF ↔ Reykjavík ↔ Blue Lagoon)
@@ -658,7 +702,7 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 5. Pricing zones (Iceland-specific) configuration
 
 ### Sprint 4: Real-time + Dispatch (Week 7–8)
-1. WebSocket server (hono/ws) + Redis pub/sub
+1. WebSocket server (separate process — `@hono/node-ws` + `@hono/node-server`) + Redis pub/sub
 2. BullMQ dispatch worker
 3. Live dispatch map (Reykjavík/KEF corridor)
 4. Booking status flow end-to-end
@@ -688,13 +732,13 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 | Backend framework | Hono | Modern, TS-first, runtime-agnostic |
 | Realtime | Native WebSockets | Simpler, lighter than Socket.io |
 | Realtime scaling | Redis pub/sub | Horizontal scaling |
-| i18n | next-intl | Next.js 15 native, RTL-aware |
+| i18n | next-intl | Next.js-native, RTL-aware |
 | File storage | DigitalOcean Spaces | S3-compatible, Frankfurt region (close to Iceland) |
 | App hosting | Railway | Best DX, integrated Postgres/Redis |
 | Payments | Stripe (manual capture) | Multi-currency, atomic safety |
 | Queue | BullMQ + Redis | Persistent jobs for dispatch |
 | Driver surface | React Native (Phase 2) | Background GPS + push notifications |
-| Monorepo tool | Turborepo + pnpm | Shared types/components across apps |
+| Repo layout | Single Next.js app, plain npm | Two web surfaces share one app; Hono mounted inside; WS + workers run as separate processes |
 
 ---
 
@@ -704,7 +748,7 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 2. **ISK is the source of truth** — all internal pricing, storage, analytics in ISK
 3. **Exchange rate locked at booking time** — customer sees the same price throughout
 4. **All mutations idempotent** — `Idempotency-Key` header required
-5. **Dispatch via BullMQ** — never inline, never in Next.js routes
+5. **Dispatch via BullMQ in a separate process** (`npm run workers`) — never inline, never in Next.js route handlers
 6. **Webhook outbox** — Stripe webhooks write to DB first, process async
 7. **State machine enforced** — reject illegal booking transitions
 8. **BookingEvent audit** — every status change logged

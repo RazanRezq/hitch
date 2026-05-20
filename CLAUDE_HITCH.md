@@ -58,8 +58,8 @@ When AI reads rules like "use tokens only" or "200ms transitions," it interprets
 
 | Surface | Platform | Priority |
 |---|---|---|
-| Passenger Web | Next.js 15 | ✅ Phase 1 |
-| Management Dashboard | Next.js 15 | ✅ Phase 1 |
+| Passenger Web | Next.js 16 (single app, `/[locale]/*`) | ✅ Phase 1 |
+| Management Dashboard | Next.js 16 (same app, `/[locale]/admin/*`) | ✅ Phase 1 |
 | Passenger App | React Native + Expo | 🔜 Phase 2 |
 | Driver App | React Native + Expo | 🔜 Phase 2 |
 
@@ -100,7 +100,7 @@ Three one-tap cards:
 ### Frontend
 | Layer | Technology | Notes |
 |---|---|---|
-| Framework | Next.js 15 (App Router) | TypeScript strict |
+| Framework | Next.js 16 (App Router) | TypeScript strict |
 | Styling | Tailwind CSS v4 | CSS-only config, no `tailwind.config.ts` |
 | Components | Shadcn UI + Acernity UI | Radix primitives (RTL-aware via DirectionProvider) |
 | State (client) | Zustand | UI state, preferences |
@@ -115,24 +115,24 @@ Three one-tap cards:
 | Layer | Technology | Notes |
 |---|---|---|
 | Runtime | Node.js 20+ | |
-| Framework | **Hono** | Standalone, NOT inside Next.js API routes |
+| Framework | **Hono** | Mounted INSIDE Next.js via `src/app/api/[[...route]]/route.ts` (`hono/vercel` `handle()`). Bare app at `src/server/app.ts`. |
 | Validation | Zod + `@hono/zod-validator` | |
 | ORM | Prisma | PostgreSQL |
 | Auth | Better Auth | Works with Hono + Prisma |
-| Realtime | Native WebSockets (`hono/ws`) + Redis pub/sub | NOT Socket.io |
-| Jobs/Queue | BullMQ + Redis | Dispatch, webhooks, payouts, exchange rates |
+| Realtime | Native WebSockets (`@hono/node-ws` + `@hono/node-server`) + Redis pub/sub | NOT Socket.io. Runs as a **separate process** (`npm run ws`, entry `src/server/index.ts`) — Next.js route handlers cannot host long-lived WS connections. |
+| Jobs/Queue | BullMQ + Redis | Dispatch, webhooks, payouts, exchange rates. Runs as a **separate process** (`npm run workers`). |
 | Payments | Stripe (manual capture, multi-currency) | |
 | Storage SDK | `@aws-sdk/client-s3` | For DigitalOcean Spaces |
 
 ### Infrastructure
 | Component | Provider |
 |---|---|
-| All apps + API | Railway |
+| Web + API + WS + workers | Railway (three processes from one repo: `web`, `ws`, `workers`) |
 | PostgreSQL | Railway Managed |
 | Redis | Railway Managed |
 | File Storage | DigitalOcean Spaces (Frankfurt — `fra1`) |
 | CDN | DigitalOcean Spaces CDN |
-| Monorepo Tool | Turborepo + pnpm |
+| Repo layout | Single Next.js app, plain npm (no monorepo, no Turborepo, no workspaces) |
 
 ### ❌ NEVER install
 
@@ -150,37 +150,71 @@ Three one-tap cards:
 
 ---
 
-## 🗂️ MONOREPO STRUCTURE
+## 🗂️ REPO STRUCTURE — Single Next.js App
+
+This is a **single Next.js app** at the repo root. No monorepo. No Turborepo. No workspaces. One `package.json`.
 
 ```
 hitch/
-├── apps/
-│   ├── passenger/              # Next.js — Public booking web (trilingual)
-│   ├── dashboard/              # Next.js — Admin panel (trilingual)
-│   └── api/                    # Hono — Backend API + WebSocket server
-│
-├── packages/
-│   ├── ui/                     # Shared Shadcn components (RTL-aware)
-│   ├── types/                  # Shared TypeScript types
-│   ├── api-client/             # Shared TanStack Query hooks + WS client
-│   ├── db/                     # Prisma schema + client
-│   ├── auth/                   # Better Auth config
-│   ├── i18n/                   # Shared translation keys & formatters
-│   └── utils/                  # Geo, format, dates, currency helpers
-│
-├── package.json
-├── turbo.json
-├── pnpm-workspace.yaml
-└── .env.example
+├── package.json                # plain npm, no workspaces
+├── tsconfig.json  next.config.ts  postcss.config.mjs  eslint.config.mjs
+├── prisma/                     # schema.prisma, seed.ts, migrations
+├── messages/                   # is.json, en.json, ar.json
+├── public/
+└── src/
+    ├── app/
+    │   ├── [locale]/                  # passenger surface
+    │   │   ├── layout.tsx             # ROOT html/body/fonts
+    │   │   ├── page.tsx  book/page.tsx
+    │   │   └── admin/                 # dispatcher/admin nested here
+    │   │       ├── layout.tsx         # nested-only, NO <html>/<body>
+    │   │       ├── page.tsx           # redirects to /[locale]/admin/overview
+    │   │       └── overview/...
+    │   ├── api/[[...route]]/route.ts  # Hono mounted via hono/vercel handle()
+    │   ├── globals.css  editorial.css
+    ├── components/                    # passenger + admin/Sidebar + landing/* + brand/*
+    ├── i18n/                          # next-intl routing + request
+    ├── lib/                           # was packages/* — local sources
+    │   ├── ui/  types/  db/  auth/  utils/  i18n-shared/  api-client/
+    │   └── use-change-locale.ts
+    ├── server/                        # backend (was apps/api/src)
+    │   ├── app.ts                     # bare Hono app
+    │   ├── index.ts                   # standalone WS runner (npm run ws)
+    │   ├── routes/  services/  middleware/  realtime/  workers/  lib/
+    ├── stores/  providers.tsx  proxy.ts
 ```
 
-### Package Manager: pnpm (NOT npm or yarn)
+### Three runtime processes from one codebase
+
+| Process | Command | Entry |
+|---|---|---|
+| Web + mounted Hono API | `npm run dev` / `npm run start` | `src/app/api/[[...route]]/route.ts` wraps `src/server/app.ts` |
+| WebSocket server | `npm run ws` | `src/server/index.ts` (uses `@hono/node-ws` + `@hono/node-server`) |
+| BullMQ workers | `npm run workers` | dispatch / webhooks / payouts / exchange rates |
+
+### Internal import aliases
+
+The `src/lib/*` directories are referenced via `@/lib/*` aliases (NOT `@hitch/*`):
+
+| Old (monorepo) | New (single app) |
+|---|---|
+| `@hitch/ui` | `@/lib/ui` |
+| `@hitch/types` | `@/lib/types` |
+| `@hitch/db` | `@/lib/db` |
+| `@hitch/auth` | `@/lib/auth` |
+| `@hitch/utils` | `@/lib/utils` |
+| `@hitch/i18n` | `@/lib/i18n-shared` |
+| `@hitch/api-client` | `@/lib/api-client` |
+
+> CSS `@import` does NOT respect TS path aliases — use **relative paths** in `.css` files (e.g. `src/app/globals.css` does `@import '../lib/ui/styles/globals.css';`).
+
+### Package Manager: npm (plain — no pnpm, no yarn)
 
 ```bash
-pnpm install
-pnpm dev                          # All apps via Turborepo
-pnpm --filter passenger dev
-pnpm --filter api dev
+npm install
+npm run dev                       # Next.js (web + mounted Hono API)
+npm run ws                        # WebSocket process
+npm run workers                   # BullMQ workers
 ```
 
 ---
@@ -192,7 +226,7 @@ pnpm --filter api dev
 ### Setup — `next-intl`
 
 ```ts
-// apps/passenger/src/i18n/routing.ts
+// src/i18n/routing.ts
 import { defineRouting } from 'next-intl/routing';
 
 export const routing = defineRouting({
@@ -253,7 +287,7 @@ Arabic is **not an afterthought**. It's a first-class locale tested on every com
 **Root layout** wraps the app in Radix `DirectionProvider`:
 
 ```tsx
-// apps/passenger/src/app/[locale]/layout.tsx
+// src/app/[locale]/layout.tsx
 import { DirectionProvider } from '@radix-ui/react-direction';
 
 export default function LocaleLayout({ children, params: { locale } }) {
@@ -324,7 +358,7 @@ Use a utility class:
 ### Number & Currency Formatting
 
 ```ts
-// packages/utils/src/format.ts
+// src/lib/utils/format.ts
 
 export function formatCurrency(
   amountInCurrency: number,
@@ -474,7 +508,7 @@ DM Sans supports all Icelandic glyphs: ð, þ, æ, ö, á, í, ó, ú, ý. Verif
 **Setup:**
 
 ```tsx
-// apps/passenger/src/app/layout.tsx
+// src/app/[locale]/layout.tsx — the root layout for the whole app
 import { DM_Sans, Cairo, Space_Mono } from 'next/font/google';
 
 const dmSans = DM_Sans({ subsets: ['latin', 'latin-ext'], variable: '--font-sans' });
@@ -793,7 +827,7 @@ hitch-production/
 
 ### Input Validation
 - Every Hono route uses `zValidator`
-- Schemas in `packages/types/schemas/` — shared FE/BE
+- Schemas in `src/lib/types/schemas/` — shared FE/BE
 - NEVER trust client data
 
 ---
@@ -805,7 +839,7 @@ hitch-production/
 ```tsx
 import { useTranslations } from 'next-intl';
 import { Button } from '@/components/ui/button';
-import type { SearchParams } from '@hitch/types';
+import type { SearchParams } from '@/lib/types';
 
 interface Props {
   onSubmit: (params: SearchParams) => void;
@@ -863,9 +897,9 @@ if (isLoading) return <Spinner />;
 ## 🗄️ DATABASE RULES
 
 ### Prisma
-- Schema in `packages/db/prisma/schema.prisma`
-- Generate: `pnpm --filter db generate`
-- Migrations: `pnpm --filter db migrate:dev` (dev) / `migrate:deploy` (prod)
+- Schema in `prisma/schema.prisma`
+- Generate: `npm run db:generate`
+- Migrations: `npm run db:migrate:dev` (dev) / `npm run db:migrate:deploy` (prod)
 - NEVER `prisma db push` against production
 
 ### Critical indexes
@@ -979,8 +1013,8 @@ Booking CONFIRMED
 - Prisma types auto-generated — use them, don't duplicate
 
 ```ts
-import type { Booking, BookingStatus } from '@hitch/types';
-import { bookingSchema } from '@hitch/types/schemas';
+import type { Booking, BookingStatus } from '@/lib/types';
+import { bookingSchema } from '@/lib/types/schemas';
 ```
 
 ---
@@ -990,11 +1024,11 @@ import { bookingSchema } from '@hitch/types/schemas';
 Any value in MORE THAN ONE FILE must be centralized.
 
 ### Must centralize
-- **API paths** → `packages/api-client/routes.ts`
-- **Role strings** → `packages/types/constants.ts`
+- **API paths** → `src/lib/api-client/routes.ts`
+- **Role strings** → `src/lib/types/constants.ts`
 - **Booking statuses** → same constants file
-- **Locale codes** → `packages/i18n/locales.ts` (`is`, `en`, `ar`)
-- **Currency codes** → `packages/i18n/currencies.ts`
+- **Locale codes** → `src/lib/i18n-shared/locales.ts` (`is`, `en`, `ar`)
+- **Currency codes** → `src/lib/i18n-shared/currencies.ts`
 - **Layout dimensions** → CSS variables
 - **Z-index values** → CSS variables
 - **Breakpoints** → Tailwind responsive prefixes
@@ -1035,9 +1069,9 @@ Any value in MORE THAN ONE FILE must be centralized.
 
 ## 📤 PRE-COMMIT CHECKLIST
 
-- [ ] `pnpm build` — zero errors
-- [ ] `pnpm lint` — zero warnings
-- [ ] `pnpm test` — all passing
+- [ ] `npm run build` — zero errors
+- [ ] `npm run lint` — zero warnings
+- [ ] `npm test` — all passing
 - [ ] No `console.log`, no `any`, no hardcoded secrets
 - [ ] New strings added to all 3 locales (is/en/ar)
 - [ ] Environment variables in `.env.example`
@@ -1055,26 +1089,23 @@ Any value in MORE THAN ONE FILE must be centralized.
 ## 🖥️ COMMANDS
 
 ```bash
-# Monorepo
-pnpm install
-pnpm dev
-pnpm build
-pnpm lint
-pnpm test
-
-# Individual apps
-pnpm --filter passenger dev
-pnpm --filter dashboard dev
-pnpm --filter api dev
+# Top-level
+npm install
+npm run dev                # Next.js (web + mounted Hono API)
+npm run ws                 # WebSocket process (separate)
+npm run workers            # BullMQ workers (separate)
+npm run build
+npm run lint
+npm test
 
 # Database
-pnpm --filter db generate
-pnpm --filter db migrate:dev
-pnpm --filter db migrate:deploy
-pnpm --filter db studio
+npm run db:generate
+npm run db:migrate:dev
+npm run db:migrate:deploy
+npm run db:studio
 
-# Shadcn (per app)
-cd apps/passenger && pnpm dlx shadcn@latest add button
+# Shadcn (from repo root)
+npx shadcn@latest add button
 ```
 
 ---
