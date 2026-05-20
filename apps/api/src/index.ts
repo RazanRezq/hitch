@@ -46,7 +46,7 @@ app.route('/api/webhooks/stripe', stripeWebhookRoute);
 const { upgradeWebSocket, injectWebSocket } = createNodeWebSocket({ app });
 app.get('/ws', upgradeWebSocket(createWsHandler()));
 
-const port = Number(process.env.PORT ?? 3001);
+const port = Number(process.env.API_PORT ?? process.env.PORT ?? 3001);
 const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`[hitch-api] listening on http://localhost:${info.port}`);
 });
