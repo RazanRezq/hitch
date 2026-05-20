@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { routing, type AppLocale } from '@/i18n/routing';
 import { Providers } from '@/providers';
 import '../globals.css';
+import '../editorial.css';
 
 const dmSans = DM_Sans({
   subsets: ['latin', 'latin-ext'],
