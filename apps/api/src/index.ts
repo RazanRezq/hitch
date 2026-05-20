@@ -27,6 +27,8 @@ app.use(
   }),
 );
 
+app.get('/', (c) => c.json({ name: 'hitch-api', status: 'ok' }));
+
 app.get('/api/health', (c) =>
   c.json({ status: 'ok', version: process.env.npm_package_version ?? '0.0.0' }),
 );
