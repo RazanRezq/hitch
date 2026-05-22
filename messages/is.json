@@ -1,4 +1,12 @@
 {
+  "meta": {
+    "title": "Hitch — Föst fargjöld á flugvallarakstri á Íslandi",
+    "titleTemplate": "%s · Hitch",
+    "description": "Bókaðu ferðina þína KEF ↔ Reykjavík á örfáum sekúndum. Læst verð, persónulegur bílstjóri, nákvæmlega við hliðið. Á íslensku, ensku og arabísku.",
+    "ogTitle": "Hitch — Lentu. Hitt’ann. Komin heim.",
+    "ogDescription": "Föst fargjöld í flugvallarakstri um allt Ísland. KEF, Reykjavík, Bláa Lónið — bókað á innan við mínútu.",
+    "tagline": "Lentu. Hitt’ann. Komin heim."
+  },
   "common": {
     "loading": "Hleður...",
     "error": "Villa kom upp",
@@ -24,9 +32,78 @@
     "usd": "Bandaríkjadalur"
   },
   "book": {
-    "title": "Bókunarflæði kemur fljótlega",
-    "body": "Þú valdir ferð. Sjálft bókunarflæðið — verð, bílaval og greiðsla — er í smíðum.",
-    "backHome": "Aftur á forsíðu"
+    "backHome": "Aftur á forsíðu",
+    "steps": {
+      "quote": "Verð",
+      "details": "Upplýsingar",
+      "payment": "Greiðsla"
+    },
+    "quote": {
+      "title": "Ferðin þín",
+      "pickup": "Sækja",
+      "dropoff": "Skila",
+      "when": "Hvenær",
+      "pax": "Farþegar",
+      "vehicleLabel": "Tegund bíls",
+      "vehicleSedan": "Fólksbíll",
+      "vehicleSuv": "Jepplingur",
+      "vehicleVan": "Sendiferðabíll",
+      "distance": "{km} km",
+      "currencyLabel": "Gjaldmiðill",
+      "airportSurcharge": "Flugvallargjald innifalið",
+      "estimatedFare": "Áætlað verð",
+      "loading": "Reikna verð…",
+      "error": "Gat ekki sótt verð. Reyndu aftur.",
+      "continueCta": "Áfram"
+    },
+    "details": {
+      "title": "Upplýsingar farþega",
+      "nameLabel": "Fullt nafn",
+      "namePlaceholder": "Nafnið þitt",
+      "emailLabel": "Netfang",
+      "emailPlaceholder": "tu@netfang.is",
+      "phoneLabel": "Sími",
+      "phonePlaceholder": "+354 555 1234",
+      "flightLabel": "Flugnúmer (valfrjálst)",
+      "flightPlaceholder": "FI 315",
+      "flightHint": "Svo bílstjórinn viti hvenær þú lendir.",
+      "continueCta": "Áfram í greiðslu",
+      "errors": {
+        "name": "Vinsamlegast sláðu inn nafn.",
+        "email": "Skráðu gilt netfang.",
+        "phone": "Sláðu inn gilt símanúmer."
+      }
+    },
+    "payment": {
+      "title": "Greiðsla",
+      "summary": "Þú ert að bóka:",
+      "totalLabel": "Heildarverð",
+      "authorizeOnly": "Við aðeins heimilum greiðslu núna — kortið er ekki gjaldfært fyrr en bílstjóri staðfestir.",
+      "payCta": "Heimila {amount}",
+      "preparing": "Undirbý bókun…",
+      "secured": "Greiðslur tryggðar af Stripe",
+      "error": "Eitthvað fór úrskeiðis við greiðslu. Reyndu aftur.",
+      "back": "Til baka"
+    },
+    "confirmation": {
+      "title": "Bókun staðfest",
+      "pending": "Staðfesti bókun…",
+      "bookingIdLabel": "Bókunarnúmer",
+      "summary": "Smáatriði ferðar",
+      "pickup": "Sækja",
+      "dropoff": "Skila",
+      "scheduledFor": "Áætluð brottför",
+      "total": "Heildarverð",
+      "saveAccountTitle": "Vistaðu bókanir þínar",
+      "saveAccountBody": "Stofnaðu reikning til að fylgjast með ferðinni og bóka aftur með einum smelli.",
+      "saveAccountCta": "Stofna reikning",
+      "notFound": "Bókun fannst ekki."
+    },
+    "errors": {
+      "quoteFailed": "Gat ekki sótt verð.",
+      "bookingFailed": "Gat ekki búið til bókun.",
+      "paymentFailed": "Greiðsla mistókst. Reyndu aftur."
+    }
   },
   "landing": {
     "presets": {

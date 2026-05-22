@@ -1,4 +1,12 @@
 {
+  "meta": {
+    "title": "Hitch — Fixed-fare airport transfers in Iceland",
+    "titleTemplate": "%s · Hitch",
+    "description": "Book your KEF ↔ Reykjavík ride in seconds. Locked price, personal driver, exactly at the gate. Available in Icelandic, English and Arabic.",
+    "ogTitle": "Hitch — Land. Hitch. Home.",
+    "ogDescription": "Fixed-fare airport transfers across Iceland. KEF, Reykjavík, Blue Lagoon — booked in under a minute.",
+    "tagline": "Land. Hitch. Home."
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",
@@ -24,9 +32,78 @@
     "usd": "US dollar"
   },
   "book": {
-    "title": "Booking flow coming soon",
-    "body": "You picked a trip. The booking flow itself — quote, vehicle, and payment — is on the way.",
-    "backHome": "Back to home"
+    "backHome": "Back to home",
+    "steps": {
+      "quote": "Quote",
+      "details": "Details",
+      "payment": "Payment"
+    },
+    "quote": {
+      "title": "Your trip",
+      "pickup": "Pickup",
+      "dropoff": "Drop-off",
+      "when": "When",
+      "pax": "Passengers",
+      "vehicleLabel": "Vehicle type",
+      "vehicleSedan": "Sedan",
+      "vehicleSuv": "SUV",
+      "vehicleVan": "Van",
+      "distance": "{km} km",
+      "currencyLabel": "Currency",
+      "airportSurcharge": "Airport surcharge included",
+      "estimatedFare": "Estimated fare",
+      "loading": "Calculating fare…",
+      "error": "Couldn't fetch a price. Try again.",
+      "continueCta": "Continue"
+    },
+    "details": {
+      "title": "Your details",
+      "nameLabel": "Full name",
+      "namePlaceholder": "Your name",
+      "emailLabel": "Email",
+      "emailPlaceholder": "you@example.com",
+      "phoneLabel": "Phone",
+      "phonePlaceholder": "+354 555 1234",
+      "flightLabel": "Flight number (optional)",
+      "flightPlaceholder": "FI 315",
+      "flightHint": "So your driver knows when you land.",
+      "continueCta": "Continue to payment",
+      "errors": {
+        "name": "Please enter your name.",
+        "email": "Enter a valid email.",
+        "phone": "Enter a valid phone number."
+      }
+    },
+    "payment": {
+      "title": "Payment",
+      "summary": "You're booking:",
+      "totalLabel": "Total to authorize",
+      "authorizeOnly": "We only authorize your card now — you're not charged until a driver accepts.",
+      "payCta": "Authorize {amount}",
+      "preparing": "Preparing your booking…",
+      "secured": "Payments secured by Stripe",
+      "error": "Something went wrong with payment. Try again.",
+      "back": "Back"
+    },
+    "confirmation": {
+      "title": "Booking confirmed",
+      "pending": "Confirming your booking…",
+      "bookingIdLabel": "Booking ID",
+      "summary": "Trip details",
+      "pickup": "Pickup",
+      "dropoff": "Drop-off",
+      "scheduledFor": "Scheduled for",
+      "total": "Total",
+      "saveAccountTitle": "Save your bookings",
+      "saveAccountBody": "Create an account to track this trip and re-book in one tap.",
+      "saveAccountCta": "Create account",
+      "notFound": "Booking not found."
+    },
+    "errors": {
+      "quoteFailed": "Couldn't fetch a price.",
+      "bookingFailed": "Couldn't create your booking.",
+      "paymentFailed": "Payment failed. Please try again."
+    }
   },
   "landing": {
     "presets": {
