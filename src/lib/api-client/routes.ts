@@ -7,6 +7,7 @@ export const API_ROUTES = {
     list: '/api/bookings',
     create: '/api/bookings',
     byId: (id: string) => `/api/bookings/${id}`,
+    cancel: (id: string) => `/api/bookings/${id}/cancel`,
     assign: (id: string) => `/api/bookings/${id}/assign`,
   },
   drivers: {
@@ -17,6 +18,9 @@ export const API_ROUTES = {
   },
   payments: {
     intent: '/api/payments/intent',
+  },
+  quotes: {
+    create: '/api/quotes',
   },
   uploads: {
     presigned: '/api/uploads/presigned',

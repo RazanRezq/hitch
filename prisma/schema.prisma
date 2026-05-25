@@ -117,6 +117,7 @@ model User {
   emailVerifiedAt         DateTime?
   preferredLocale         Locale    @default(is)
   preferredCurrency       Currency  @default(ISK)
+  isGuest                 Boolean   @default(false)
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 

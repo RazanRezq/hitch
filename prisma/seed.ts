@@ -94,14 +94,22 @@ async function main() {
     }
   }
 
-  // Exchange rates (illustrative; real values replaced by exchange-rate worker)
-  await prisma.exchangeRate.createMany({
-    data: [
-      { fromCurrency: 'ISK', toCurrency: 'EUR', rate: 0.0067 },
-      { fromCurrency: 'ISK', toCurrency: 'USD', rate: 0.0072 },
-      { fromCurrency: 'ISK', toCurrency: 'ISK', rate: 1.0 },
-    ],
-  });
+  // Exchange rates (illustrative; real values replaced by exchange-rate worker).
+  // ExchangeRate is an append-only history table — only insert if no row exists
+  // for the pair, so re-running the seed is idempotent.
+  const rateSeeds = [
+    { fromCurrency: 'ISK' as const, toCurrency: 'EUR' as const, rate: 0.0067 },
+    { fromCurrency: 'ISK' as const, toCurrency: 'USD' as const, rate: 0.0072 },
+    { fromCurrency: 'ISK' as const, toCurrency: 'ISK' as const, rate: 1.0 },
+  ];
+  for (const r of rateSeeds) {
+    const existing = await prisma.exchangeRate.findFirst({
+      where: { fromCurrency: r.fromCurrency, toCurrency: r.toCurrency },
+    });
+    if (!existing) {
+      await prisma.exchangeRate.create({ data: r });
+    }
+  }
 
   console.log(`Seeded admin user ${admin.email}, ${zones.length} pricing zones, exchange rates.`);
 }

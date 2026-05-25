@@ -64,6 +64,7 @@
       "emailPlaceholder": "tu@netfang.is",
       "phoneLabel": "Sími",
       "phonePlaceholder": "+354 555 1234",
+      "phoneHint": "Hafðu landsnúmerið með svo bílstjórinn nái í þig.",
       "flightLabel": "Flugnúmer (valfrjálst)",
       "flightPlaceholder": "FI 315",
       "flightHint": "Svo bílstjórinn viti hvenær þú lendir.",

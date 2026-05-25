@@ -9,6 +9,13 @@ export type GeoPointInput = z.infer<typeof geoPointSchema>;
 
 export const vehicleTypeSchema = z.enum(['SEDAN', 'SUV', 'VAN']);
 
+export const guestDetailsSchema = z.object({
+  email: z.string().email().max(254),
+  phone: z.string().min(5).max(30),
+  name: z.string().min(1).max(120),
+});
+export type GuestDetailsInput = z.infer<typeof guestDetailsSchema>;
+
 export const createBookingSchema = z.object({
   pickup: geoPointSchema,
   dropoff: geoPointSchema,
@@ -22,6 +29,7 @@ export const createBookingSchema = z.object({
   passengerCount: z.number().int().min(1).max(8),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
   promoCode: z.string().max(40).optional(),
+  guest: guestDetailsSchema.optional(),
 });
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 

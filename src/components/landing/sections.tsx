@@ -175,7 +175,8 @@ export function EditorialTrips() {
   ];
   const isk = [12500, 12500, 8900];
   const terrains: TerrainVariant[] = ['reykjavik', 'kef', 'lagoon'];
-  const href = `/${locale}/book`;
+  const presetIds = ['kef-to-rvk', 'rvk-to-kef', 'kef-to-blue-lagoon'] as const;
+  const hrefFor = (i: number) => `/${locale}/book?preset=${presetIds[i]}`;
 
   return (
     <section ref={ref} className="ed-trips h-reveal">
@@ -199,7 +200,7 @@ export function EditorialTrips() {
           badge={t('trips.badge')}
           terrain={terrains[0]}
           cta={t('trips.cta')}
-          href={href}
+          href={hrefFor(0)}
         />
         <div className="ed-trips-stack">
           <TripCard
@@ -210,7 +211,7 @@ export function EditorialTrips() {
             price={price(isk[1])}
             terrain={terrains[1]}
             cta={t('trips.cta')}
-            href={href}
+            href={hrefFor(1)}
           />
           <TripCard
             size="sm"
@@ -220,7 +221,7 @@ export function EditorialTrips() {
             price={price(isk[2])}
             terrain={terrains[2]}
             cta={t('trips.cta')}
-            href={href}
+            href={hrefFor(2)}
           />
         </div>
       </div>

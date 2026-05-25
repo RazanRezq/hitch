@@ -18,4 +18,5 @@ export type {
 } from '@/lib/db';
 
 export * from './constants';
+export * from './preset-trips';
 export * from './schemas';

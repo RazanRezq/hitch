@@ -1,4 +1,4 @@
-import { stripe } from '../../lib/stripe.js';
+import { stripe } from '../../lib/stripe';
 
 /** Manual capture PaymentIntent. See CLAUDE.md "Manual Capture Flow". */
 export async function createPaymentIntent(params: {

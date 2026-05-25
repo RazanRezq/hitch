@@ -36,3 +36,9 @@ export function isWithinIceland({ lat, lng }: GeoCoord): boolean {
     lng <= ICELAND_BOUNDS.east
   );
 }
+
+export const KEF_COORDS: GeoCoord = { lat: 63.985, lng: -22.605 };
+
+export function isNearKEF(point: GeoCoord, radiusKm = 5): boolean {
+  return calculateDistance(point, KEF_COORDS) <= radiusKm;
+}

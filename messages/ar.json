@@ -64,6 +64,7 @@
       "emailPlaceholder": "you@example.com",
       "phoneLabel": "الهاتف",
       "phonePlaceholder": "+354 555 1234",
+      "phoneHint": "ضمّن رمز الدولة لكي يتواصل معك السائق.",
       "flightLabel": "رقم الرحلة (اختياري)",
       "flightPlaceholder": "FI 315",
       "flightHint": "ليعرف السائق موعد وصولك.",

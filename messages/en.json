@@ -64,6 +64,7 @@
       "emailPlaceholder": "you@example.com",
       "phoneLabel": "Phone",
       "phonePlaceholder": "+354 555 1234",
+      "phoneHint": "Include your country code so your driver can reach you.",
       "flightLabel": "Flight number (optional)",
       "flightPlaceholder": "FI 315",
       "flightHint": "So your driver knows when you land.",

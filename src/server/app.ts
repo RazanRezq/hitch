@@ -5,6 +5,7 @@ import { auth } from '@/lib/auth';
 import { bookingsRoute } from './routes/bookings';
 import { driversRoute } from './routes/drivers';
 import { paymentsRoute } from './routes/payments';
+import { quotesRoute } from './routes/quotes';
 import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
 import { stripeWebhookRoute } from './routes/webhooks/stripe';
@@ -21,6 +22,12 @@ export const app = new Hono();
 
 app.use('*', logger());
 
+app.onError((err, c) => {
+  console.error('[hono.onError]', err);
+  const message = err instanceof Error ? err.message : 'Internal error';
+  return c.json({ error: message, name: err instanceof Error ? err.name : 'Error' }, 500);
+});
+
 app.get('/api/health', (c) =>
   c.json({ status: 'ok', version: process.env.npm_package_version ?? '0.0.0' }),
 );
@@ -32,6 +39,7 @@ app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw));
 app.route('/api/bookings', bookingsRoute);
 app.route('/api/drivers', driversRoute);
 app.route('/api/payments', paymentsRoute);
+app.route('/api/quotes', quotesRoute);
 app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);

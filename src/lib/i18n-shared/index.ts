@@ -35,6 +35,21 @@ export function formatCurrency(amount: number, currency: Currency, locale: Local
   }).format(amount);
 }
 
+/**
+ * Format an integer in the currency's smallest unit (kr for ISK, cents for
+ * EUR/USD). Mirrors the contract used by Booking.displayPrice and the quote
+ * endpoint. See CLAUDE.md "Currency & Number Formatting".
+ */
+export function formatCurrencyMinor(
+  amountMinor: number,
+  currency: Currency,
+  locale: Locale,
+): string {
+  const decimals = currency === 'ISK' ? 0 : 2;
+  const major = amountMinor / 10 ** decimals;
+  return formatCurrency(major, currency, locale);
+}
+
 export function formatNumber(value: number, locale: Locale): string {
   return new Intl.NumberFormat(LOCALE_TAG[locale], {
     numberingSystem: 'latn',
