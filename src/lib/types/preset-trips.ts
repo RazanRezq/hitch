@@ -11,13 +11,18 @@
 export const PRESET_TRIP_IDS = ['kef-to-rvk', 'rvk-to-kef', 'kef-to-blue-lagoon'] as const;
 export type PresetTripId = (typeof PRESET_TRIP_IDS)[number];
 
-interface GeoLandmark {
+export interface GeoLandmark {
   lat: number;
   lng: number;
   address: string;
 }
 
-const LANDMARKS = {
+/**
+ * Fixed-coordinate landmarks used by the hero search widget (locked-side
+ * displays) and the preset trip routes below. Exported so the hero can drive
+ * tab-specific URL building without re-typing coords.
+ */
+export const LANDMARKS = {
   kef: { lat: 63.985, lng: -22.605, address: 'Keflavík International Airport (KEF)' },
   reykjavik: { lat: 64.146, lng: -21.942, address: 'Reykjavík 101' },
   blueLagoon: { lat: 63.881, lng: -22.449, address: 'Blue Lagoon (Bláa Lónið)' },

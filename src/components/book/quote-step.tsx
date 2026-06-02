@@ -7,7 +7,7 @@ import { formatCurrencyMinor, formatDateTime, type Locale } from '@/lib/i18n-sha
 import { CURRENCIES, type Currency, type VehicleType } from '@/lib/types';
 import { useQuote } from '@/lib/api-client/hooks/useQuote';
 import { useBookingDraft } from '@/stores/booking-draft';
-import { cn } from '@/lib/ui';
+import { cn, toLocalInput } from '@/lib/utils';
 
 const VEHICLES: VehicleType[] = ['SEDAN', 'SUV', 'VAN'];
 
@@ -240,12 +240,6 @@ function PriceCard({
       </div>
     </div>
   );
-}
-
-function toLocalInput(iso: string): string {
-  const d = new Date(iso);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 function capitalize(s: string): string {

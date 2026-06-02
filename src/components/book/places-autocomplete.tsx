@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { useTranslations } from 'next-intl';
 import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 
-interface PlacePick {
+export interface PlacePick {
   lat: number;
   lng: number;
   address: string;
@@ -40,15 +41,22 @@ export function PlacesAutocomplete({
   defaultValue,
   onPick,
   className,
+  inputClassName,
+  hideStatus = false,
 }: {
   placeholder?: string;
   defaultValue?: string;
   onPick: (pick: PlacePick) => void;
   className?: string;
+  /** Override the input's class so the host can match its own design (hero search row). */
+  inputClassName?: string;
+  /** When true, suppresses the loading / error span. Use inside dense layouts. */
+  hideStatus?: boolean;
 }) {
+  const t = useTranslations('places');
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [ready, setReady] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [hasError, setHasError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -73,7 +81,10 @@ export function PlacesAutocomplete({
         setReady(true);
       })
       .catch((err: Error) => {
-        if (!cancelled) setError(err.message);
+        // Keep the underlying reason in the dev console; user sees the
+        // localized "Map unavailable" label.
+        console.error('[places]', err);
+        if (!cancelled) setHasError(true);
       });
     return () => {
       cancelled = true;
@@ -88,15 +99,15 @@ export function PlacesAutocomplete({
         type="text"
         defaultValue={defaultValue}
         placeholder={placeholder}
-        disabled={!!error}
-        className="w-full rounded-lg border bg-card px-3 py-2.5 text-sm"
+        disabled={hasError}
+        className={inputClassName ?? 'w-full rounded-lg border bg-card px-3 py-2.5 text-sm'}
       />
-      {!ready && !error && (
-        <span className="text-muted-foreground mt-1 block text-xs">Loading map…</span>
+      {!hideStatus && !ready && !hasError && (
+        <span className="text-muted-foreground mt-1 block text-xs">{t('loading')}</span>
       )}
-      {error && (
+      {!hideStatus && hasError && (
         <span className="text-destructive mt-1 block text-xs" role="alert">
-          {error}
+          {t('error')}
         </span>
       )}
     </div>

@@ -1,17 +1,16 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, type ComponentType, type SVGProps } from 'react';
+import { useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import {
-  ArrowDownUp,
   ArrowRight,
   Baby,
   Calendar,
-  Clock,
   CreditCard,
   Hand,
   Lock,
+  Map as MapIcon,
   MapPin,
   Navigation,
   Plane,
@@ -21,13 +20,18 @@ import {
   Users,
   Waves,
 } from 'lucide-react';
+import { LANDMARKS } from '@/lib/types';
+import { toLocalInput } from '@/lib/utils';
+import { PlacesAutocomplete, type PlacePick } from '@/components/book/places-autocomplete';
 import { AuroraSky } from './aurora-sky';
 
-type TabId = 'toAirport' | 'fromAirport' | 'blueLagoon';
+type TabId = 'toAirport' | 'fromAirport' | 'blueLagoon' | 'custom';
+type IconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string }>;
 
 export function Hero() {
   const t = useTranslations('landing.hero');
   const locale = useLocale();
+  const router = useRouter();
 
   const verbs = [
     { text: t('verbA'), italic: false },
@@ -35,25 +39,70 @@ export function Hero() {
     { text: t('verbC'), italic: false },
   ];
 
-  const tabs: { id: TabId; label: string; icon: typeof PlaneTakeoff }[] = [
+  const tabs: { id: TabId; label: string; icon: IconComponent }[] = [
     { id: 'toAirport', label: t('tabToAirport'), icon: PlaneTakeoff },
     { id: 'fromAirport', label: t('tabFromAirport'), icon: PlaneLanding },
     { id: 'blueLagoon', label: t('tabBlueLagoon'), icon: Waves },
+    { id: 'custom', label: t('tabCustom'), icon: MapIcon },
   ];
 
   const [tab, setTab] = useState<TabId>('toAirport');
   const [pax, setPax] = useState(2);
+  const [pickup, setPickup] = useState<PlacePick | null>(null);
+  const [dropoff, setDropoff] = useState<PlacePick | null>(null);
+  const [scheduledTime, setScheduledTime] = useState<string>(() =>
+    toLocalInput(new Date(Date.now() + 60 * 60 * 1000).toISOString()),
+  );
+  const [error, setError] = useState<string | null>(null);
 
-  const isFromAirport = tab === 'fromAirport';
-  const isBlueLagoon = tab === 'blueLagoon';
+  function changeTab(next: TabId) {
+    if (next === tab) return;
+    setTab(next);
+    setPickup(null);
+    setDropoff(null);
+    setError(null);
+  }
 
-  const dropLabel = isBlueLagoon
-    ? t('dropLagoon')
-    : isFromAirport
-      ? t('dropCity')
-      : t('dropAirport');
-  const dropBadge = isBlueLagoon ? 'BLU' : isFromAirport ? 'RVK' : 'KEF';
-  const pickupPlaceholder = isFromAirport ? t('pickupPlaceholderFrom') : t('pickupPlaceholderTo');
+  // Per-tab locked-end resolution.
+  const lockedPickup = tab === 'fromAirport' ? LANDMARKS.kef : null;
+  const lockedDropoff =
+    tab === 'toAirport' ? LANDMARKS.kef : tab === 'blueLagoon' ? LANDMARKS.blueLagoon : null;
+
+  const pickupPlaceholder =
+    tab === 'custom' ? t('pickupPlaceholderCustom') : t('pickupPlaceholderFrom');
+  const dropoffPlaceholder = t('dropoffPlaceholderCustom');
+
+  function handleSubmit() {
+    setError(null);
+
+    // Blue Lagoon special-case: blank custom pickup → fall back to preset URL
+    if (tab === 'blueLagoon' && !pickup) {
+      const params = new URLSearchParams({ preset: 'kef-to-blue-lagoon' });
+      if (pax !== 1) params.set('pax', String(pax));
+      params.set('scheduledTime', new Date(scheduledTime).toISOString());
+      router.push(`/${locale}/book?${params.toString()}`);
+      return;
+    }
+
+    const finalPickup = lockedPickup ?? pickup;
+    const finalDropoff = lockedDropoff ?? dropoff;
+    if (!finalPickup || !finalDropoff) {
+      setError(t('searchErrorMissing'));
+      return;
+    }
+
+    const params = new URLSearchParams({
+      pickupLat: String(finalPickup.lat),
+      pickupLng: String(finalPickup.lng),
+      pickupAddress: finalPickup.address,
+      dropoffLat: String(finalDropoff.lat),
+      dropoffLng: String(finalDropoff.lng),
+      dropoffAddress: finalDropoff.address,
+    });
+    if (pax !== 1) params.set('pax', String(pax));
+    params.set('scheduledTime', new Date(scheduledTime).toISOString());
+    router.push(`/${locale}/book?${params.toString()}`);
+  }
 
   return (
     <section id="top" className="ed-hero">
@@ -88,7 +137,7 @@ export function Hero() {
                     key={it.id}
                     type="button"
                     className={`ed-search-tab${tab === it.id ? ' on' : ''}`}
-                    onClick={() => setTab(it.id)}
+                    onClick={() => changeTab(it.id)}
                   >
                     <TabIcon size={15} aria-hidden="true" />
                     <span>{it.label}</span>
@@ -99,52 +148,61 @@ export function Hero() {
           </div>
 
           <div className="ed-search-row">
-            <div className="ed-field ed-field-grow">
-              <div className="ed-field-icon">
-                <MapPin size={18} aria-hidden="true" />
-              </div>
-              <div className="ed-field-body">
-                <div className="ed-field-label">{t('pickup')}</div>
-                <div className="ed-field-value ed-field-placeholder">{pickupPlaceholder}</div>
-              </div>
-              <button className="ed-field-swap" aria-label={t('swap')} type="button">
-                <ArrowDownUp size={14} aria-hidden="true" />
-              </button>
-            </div>
+            {/* Pickup slot */}
+            {lockedPickup ? (
+              <LockedSide
+                label={t('pickup')}
+                value={lockedPickup.address}
+                code="KEF"
+                icon={MapPin}
+              />
+            ) : (
+              <AutocompleteSlot
+                key={`pickup-${tab}`}
+                label={t('pickup')}
+                placeholder={pickupPlaceholder}
+                icon={MapPin}
+                onPick={setPickup}
+              />
+            )}
 
-            <div className="ed-field ed-field-grow">
-              <div className="ed-field-icon ed-field-icon-tinted">
-                <Navigation size={18} aria-hidden="true" />
-              </div>
-              <div className="ed-field-body">
-                <div className="ed-field-label">{t('dropoff')}</div>
-                <div className="ed-field-value">{dropLabel}</div>
-              </div>
-              <span className="ed-field-pill t-mono">
-                <Lock size={11} aria-hidden="true" /> {dropBadge}
-              </span>
-            </div>
+            {/* Dropoff slot */}
+            {lockedDropoff ? (
+              <LockedSide
+                label={t('dropoff')}
+                value={lockedDropoff.address}
+                code={tab === 'toAirport' ? 'KEF' : 'BLU'}
+                icon={Navigation}
+                tinted
+              />
+            ) : (
+              <AutocompleteSlot
+                key={`dropoff-${tab}`}
+                label={t('dropoff')}
+                placeholder={dropoffPlaceholder}
+                icon={Navigation}
+                onPick={setDropoff}
+                tinted
+              />
+            )}
 
+            {/* When (datetime-local replaces the old Date + Time chips) */}
             <div className="ed-field ed-field-compact">
               <div className="ed-field-icon">
                 <Calendar size={16} aria-hidden="true" />
               </div>
               <div className="ed-field-body">
-                <div className="ed-field-label">{t('date')}</div>
-                <div className="ed-field-value">{t('today')}</div>
+                <div className="ed-field-label">{t('scheduledTime')}</div>
+                <input
+                  type="datetime-local"
+                  value={scheduledTime}
+                  onChange={(e) => setScheduledTime(e.target.value)}
+                  className="ed-field-value t-mono w-full border-0 bg-transparent p-0 text-sm outline-none"
+                />
               </div>
             </div>
 
-            <div className="ed-field ed-field-compact">
-              <div className="ed-field-icon">
-                <Clock size={16} aria-hidden="true" />
-              </div>
-              <div className="ed-field-body">
-                <div className="ed-field-label">{t('time')}</div>
-                <div className="ed-field-value t-mono">14:30</div>
-              </div>
-            </div>
-
+            {/* Pax */}
             <div className="ed-field ed-field-compact ed-field-pax">
               <div className="ed-field-icon">
                 <Users size={16} aria-hidden="true" />
@@ -171,11 +229,17 @@ export function Hero() {
               </div>
             </div>
 
-            <Link href={`/${locale}/book`} className="ed-search-cta">
+            <button type="button" onClick={handleSubmit} className="ed-search-cta">
               <span>{t('search')}</span>
               <ArrowRight size={18} aria-hidden="true" />
-            </Link>
+            </button>
           </div>
+
+          {error && (
+            <p className="text-destructive ms-2 mt-2 text-xs" role="alert">
+              {error}
+            </p>
+          )}
 
           <div className="ed-search-foot-row">
             <div className="ed-search-chips">
@@ -210,5 +274,63 @@ export function Hero() {
         </aside>
       </div>
     </section>
+  );
+}
+
+interface LockedSideProps {
+  label: string;
+  value: string;
+  code: string;
+  icon: IconComponent;
+  tinted?: boolean;
+}
+
+function LockedSide({ label, value, code, icon: Icon, tinted = false }: LockedSideProps) {
+  return (
+    <div className="ed-field ed-field-grow">
+      <div className={`ed-field-icon${tinted ? ' ed-field-icon-tinted' : ''}`}>
+        <Icon size={18} aria-hidden="true" />
+      </div>
+      <div className="ed-field-body">
+        <div className="ed-field-label">{label}</div>
+        <div className="ed-field-value">{value}</div>
+      </div>
+      <span className="ed-field-pill t-mono">
+        <Lock size={11} aria-hidden="true" /> {code}
+      </span>
+    </div>
+  );
+}
+
+interface AutocompleteSlotProps {
+  label: string;
+  placeholder: string;
+  icon: IconComponent;
+  onPick: (p: PlacePick) => void;
+  tinted?: boolean;
+}
+
+function AutocompleteSlot({
+  label,
+  placeholder,
+  icon: Icon,
+  onPick,
+  tinted = false,
+}: AutocompleteSlotProps) {
+  return (
+    <div className="ed-field ed-field-grow">
+      <div className={`ed-field-icon${tinted ? ' ed-field-icon-tinted' : ''}`}>
+        <Icon size={18} aria-hidden="true" />
+      </div>
+      <div className="ed-field-body">
+        <div className="ed-field-label">{label}</div>
+        <PlacesAutocomplete
+          placeholder={placeholder}
+          onPick={onPick}
+          inputClassName="ed-field-value w-full border-0 bg-transparent p-0 text-sm outline-none placeholder:text-muted-foreground"
+          hideStatus
+        />
+      </div>
+    </div>
   );
 }

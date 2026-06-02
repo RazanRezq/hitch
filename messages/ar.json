@@ -16,6 +16,10 @@
     "back": "رجوع",
     "next": "التالي"
   },
+  "places": {
+    "loading": "جارٍ تحميل الخريطة…",
+    "error": "تعذر تحميل الخريطة"
+  },
   "nav": {
     "overview": "نظرة عامة",
     "bookings": "الحجوزات",
@@ -134,12 +138,16 @@
       "verbC": "لبيتك.",
       "sub": "المحطة الأخيرة من رحلتك — بأفضل صورة. تسعيرة ثابتة، سائق خاص، وبانتظارك عند البوابة مباشرة.",
       "searchLabel": "عرض الأسعار",
+      "searchErrorMissing": "اختر نقطة الانطلاق والوجهة أولاً.",
       "tabToAirport": "إلى المطار",
       "tabFromAirport": "من المطار",
       "tabBlueLagoon": "البحيرة الزرقاء",
+      "tabCustom": "مخصص",
       "pickup": "نقطة الانطلاق",
       "pickupPlaceholderFrom": "فندق أو عنوان أو معلم",
       "pickupPlaceholderTo": "نقطة الركوب",
+      "pickupPlaceholderCustom": "من أين؟",
+      "dropoffPlaceholderCustom": "الوجهة",
       "dropoff": "الوجهة",
       "dropAirport": "مطار كيفلافيك (KEF)",
       "dropCity": "Reykjavík 101",
@@ -148,6 +156,7 @@
       "date": "التاريخ",
       "today": "اليوم",
       "time": "الوقت",
+      "scheduledTime": "متى",
       "pax": "الركاب",
       "decrement": "تقليل عدد الركاب",
       "increment": "زيادة عدد الركاب",

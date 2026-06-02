@@ -16,6 +16,10 @@
     "back": "Til baka",
     "next": "Áfram"
   },
+  "places": {
+    "loading": "Hleður korti…",
+    "error": "Kort er ekki tiltækt"
+  },
   "nav": {
     "overview": "Yfirlit",
     "bookings": "Pantanir",
@@ -134,12 +138,16 @@
       "verbC": "Komin heim.",
       "sub": "Síðasti leggur ferðar þinnar — fullkomnaður. Læst verð, persónulegur bílstjóri, nákvæmlega við hliðið.",
       "searchLabel": "Sjá verð",
+      "searchErrorMissing": "Veldu sækju- og skilastað fyrst.",
       "tabToAirport": "Á flugvöll",
       "tabFromAirport": "Frá flugvelli",
       "tabBlueLagoon": "Bláa Lónið",
+      "tabCustom": "Sérpöntun",
       "pickup": "Sækja",
       "pickupPlaceholderFrom": "Hótel, heimilisfang eða kennileiti",
       "pickupPlaceholderTo": "Sækjustaður",
+      "pickupPlaceholderCustom": "Hvaðan?",
+      "dropoffPlaceholderCustom": "Áfangastaður",
       "dropoff": "Skila",
       "dropAirport": "Keflavíkurflugvöllur (KEF)",
       "dropCity": "Reykjavík 101",
@@ -148,6 +156,7 @@
       "date": "Dagsetning",
       "today": "Í dag",
       "time": "Tími",
+      "scheduledTime": "Hvenær",
       "pax": "Farþegar",
       "decrement": "Fækka farþegum",
       "increment": "Fjölga farþegum",

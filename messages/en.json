@@ -16,6 +16,10 @@
     "back": "Back",
     "next": "Next"
   },
+  "places": {
+    "loading": "Loading map…",
+    "error": "Map unavailable"
+  },
   "nav": {
     "overview": "Overview",
     "bookings": "Bookings",
@@ -134,12 +138,16 @@
       "verbC": "Home.",
       "sub": "The final leg of your journey — perfected. Fixed fare, personal driver, exactly at the gate.",
       "searchLabel": "See prices",
+      "searchErrorMissing": "Pick a pickup and drop-off first.",
       "tabToAirport": "To airport",
       "tabFromAirport": "From airport",
       "tabBlueLagoon": "Blue Lagoon",
+      "tabCustom": "Custom",
       "pickup": "Pickup",
       "pickupPlaceholderFrom": "Hotel, address, or landmark",
       "pickupPlaceholderTo": "Pickup point",
+      "pickupPlaceholderCustom": "Where from?",
+      "dropoffPlaceholderCustom": "Destination",
       "dropoff": "Dropoff",
       "dropAirport": "Keflavík Airport (KEF)",
       "dropCity": "Reykjavík 101",
@@ -148,6 +156,7 @@
       "date": "Date",
       "today": "Today",
       "time": "Time",
+      "scheduledTime": "When",
       "pax": "Pax",
       "decrement": "Fewer passengers",
       "increment": "More passengers",
