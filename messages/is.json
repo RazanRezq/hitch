@@ -35,6 +35,51 @@
     "eur": "Evra",
     "usd": "Bandaríkjadalur"
   },
+  "feedback": {
+    "meta": {
+      "title": "Tilkynna atvik · Hitch",
+      "description": "Sendu okkur tilkynningu um atvik eða kvörtun varðandi ferðina þína."
+    },
+    "eyebrow": "Tilkynning um atvik",
+    "title": "Tilkynna atvik eða kvörtun",
+    "subtitle": "Segðu okkur hvað gerðist. Reitir merktir með * eru nauðsynlegir.",
+    "backHome": "Til baka á forsíðu",
+    "fields": {
+      "email": "Netfang",
+      "name": "Nafn",
+      "phone": "Símanúmer",
+      "carNumber": "Bílnúmer",
+      "driverName": "Nafn ökumanns",
+      "incidentDateTime": "Dagsetning og tími atviks",
+      "incidentLocation": "Staðsetning atviks",
+      "pickupLocation": "Sótt frá",
+      "dropoffLocation": "Skilað til",
+      "description": "Lýsing á atvikinu",
+      "requestRefund": "Ég óska eftir endurgreiðslu",
+      "notifyAuthorities": "Vinsamlegast látið yfirvöld vita"
+    },
+    "placeholders": {
+      "email": "þú@example.com",
+      "phone": "+354 555 1234",
+      "description": "Lýstu því sem gerðist — dagsetning, tími, staðsetning og smáatriði."
+    },
+    "validation": {
+      "emailRequired": "Netfang er nauðsynlegt.",
+      "emailInvalid": "Sláðu inn gilt netfang.",
+      "descriptionRequired": "Vinsamlegast lýstu því sem gerðist.",
+      "descriptionMax": "Lýsing má að hámarki vera {max} stafir.",
+      "incidentDateRequired": "Sláðu inn hvenær atvikið átti sér stað."
+    },
+    "error": {
+      "generic": "Eitthvað fór úrskeiðis. Reyndu aftur."
+    },
+    "submit": "Senda tilkynningu",
+    "submitting": "Sendi…",
+    "autoReply": {
+      "subject": "Við höfum móttekið skilaboðin þín",
+      "body": "Þakka þér fyrir að hafa samband varðandi hegðun ökumanns.\nOkkur þykir það miður að þú skulir eiga slæma upplifun.\nSkilaboðin þín hafa borist og verða skoðuð innan 2 virkra daga.\nEf þú hefur ekki þegar gert það, vinsamlegast sendu dagsetningu, tíma, staðsetningu og lýsingu á atvikinu.\nÞakka þér fyrir að hjálpa okkur að verða betri."
+    }
+  },
   "book": {
     "backHome": "Aftur á forsíðu",
     "steps": {

@@ -64,6 +64,12 @@ export function isRtl(locale: Locale): boolean {
   return (RTL_LOCALES as readonly string[]).includes(locale);
 }
 
+// Every Hitch ride happens in Iceland, which is UTC+0 year-round (no DST).
+// Naive wall-clock inputs (e.g. an incident's datetime-local) are anchored to
+// this zone so the stored UTC instant reflects the real Iceland local time,
+// regardless of the submitter's browser timezone.
+export const APP_TIMEZONE = 'Atlantic/Reykjavik' as const;
+
 export const CURRENCIES = ['ISK', 'EUR', 'USD'] as const;
 export type Currency = (typeof CURRENCIES)[number];
 export const DEFAULT_CURRENCY: Currency = 'ISK';
