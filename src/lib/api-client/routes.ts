@@ -31,5 +31,8 @@ export const API_ROUTES = {
   webhooks: {
     stripe: '/api/webhooks/stripe',
   },
+  feedback: {
+    submit: '/api/feedback',
+  },
   health: '/api/health',
 } as const;

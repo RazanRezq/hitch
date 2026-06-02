@@ -35,6 +35,51 @@
     "eur": "Euro",
     "usd": "US dollar"
   },
+  "feedback": {
+    "meta": {
+      "title": "Report an incident · Hitch",
+      "description": "Tell us about an incident or complaint regarding your ride."
+    },
+    "eyebrow": "Incident report",
+    "title": "Report an incident or complaint",
+    "subtitle": "Tell us what happened. Fields marked with * are required.",
+    "backHome": "Back to home",
+    "fields": {
+      "email": "Email",
+      "name": "Name",
+      "phone": "Phone",
+      "carNumber": "Car number",
+      "driverName": "Driver name",
+      "incidentDateTime": "Date & time of incident",
+      "incidentLocation": "Incident location",
+      "pickupLocation": "Pickup location",
+      "dropoffLocation": "Drop-off location",
+      "description": "Description of the incident",
+      "requestRefund": "I would like to request a refund",
+      "notifyAuthorities": "Please notify the relevant authorities"
+    },
+    "placeholders": {
+      "email": "you@example.com",
+      "phone": "+354 555 1234",
+      "description": "Describe what happened — date, time, location and details."
+    },
+    "validation": {
+      "emailRequired": "Email is required.",
+      "emailInvalid": "Enter a valid email address.",
+      "descriptionRequired": "Please describe what happened.",
+      "descriptionMax": "Description must be {max} characters or fewer.",
+      "incidentDateRequired": "Please enter when the incident happened."
+    },
+    "error": {
+      "generic": "Something went wrong. Please try again."
+    },
+    "submit": "Send report",
+    "submitting": "Sending…",
+    "autoReply": {
+      "subject": "We received your report",
+      "body": "Thank you for contacting us about driver conduct.\nWe are very sorry for your experience.\nYour message has been received and will be reviewed within 2 business days.\nIf you haven’t already, please include: date, time, location, and a description of what happened.\nThank you for helping us improve."
+    }
+  },
   "book": {
     "backHome": "Back to home",
     "steps": {

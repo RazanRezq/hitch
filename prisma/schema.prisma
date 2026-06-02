@@ -392,6 +392,33 @@ model ExchangeRate {
   @@index([toCurrency, fetchedAt])
 }
 
+// -- Feedback / Incident Report --------------------------------------------
+//
+// STRICT: fully decoupled. No relations to Booking or User. Submitted from a
+// public QR-code form inside vehicles, by people who may not have an account.
+// Everything is a plain scalar; driver/car is captured as free text only.
+
+model Feedback {
+  id                String   @id @default(cuid())
+  name              String?
+  phone             String?
+  email             String // required — used for the auto-reply
+  carNumber         String?
+  driverName        String?
+  incidentLocation  String?
+  pickupLocation    String?
+  dropoffLocation   String?
+  incidentDateTime  DateTime
+  description       String   @db.Text
+  requestRefund     Boolean  @default(false)
+  notifyAuthorities Boolean  @default(false)
+  locale            String? // locale captured at submit, for the reply + context
+  createdAt         DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([email])
+}
+
 // -- Webhook Outbox (Stripe) ------------------------------------------------
 
 model WebhookEvent {

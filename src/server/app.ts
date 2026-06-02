@@ -8,6 +8,7 @@ import { paymentsRoute } from './routes/payments';
 import { quotesRoute } from './routes/quotes';
 import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
+import { feedbackRoute } from './routes/feedback';
 import { stripeWebhookRoute } from './routes/webhooks/stripe';
 
 /**
@@ -42,6 +43,7 @@ app.route('/api/payments', paymentsRoute);
 app.route('/api/quotes', quotesRoute);
 app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
+app.route('/api/feedback', feedbackRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);
 
 export type AppType = typeof app;
