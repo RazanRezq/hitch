@@ -18,10 +18,11 @@ export class ApiError extends Error {
 
 function getBaseUrl(explicit?: string): string {
   if (explicit) return explicit;
-  if (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_API_URL) {
-    return process.env.NEXT_PUBLIC_API_URL;
-  }
-  return 'http://localhost:3001';
+  // In the browser the Hono API is same-origin (mounted in Next at /api/*) — use a
+  // relative base so requests stay on the page origin and never trigger CORS.
+  if (typeof window !== 'undefined') return '';
+  // Server-side (SSR/RSC) has no origin, so it needs an absolute URL.
+  return process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3000';
 }
 
 async function request<T>(
