@@ -1,5 +1,8 @@
 import { PartySocket } from 'partysocket';
 
+/** WebSocket.OPEN readyState — local const so module eval never touches the global (SSR-safe). */
+const WS_OPEN = 1;
+
 export type WsMessage =
   | { action: 'subscribe'; channel: string; token?: string }
   | { action: 'unsubscribe'; channel: string }
@@ -23,6 +26,8 @@ function resolveWsUrl(explicit?: string): string {
 export class HitchWsClient {
   private socket: PartySocket;
   private handlers = new Map<string, Set<(payload: unknown) => void>>();
+  // Per-channel guest token, retained so subscriptions can be replayed on reconnect.
+  private tokens = new Map<string, string>();
 
   constructor(options: WsClientOptions = {}) {
     const url = new URL(resolveWsUrl(options.url));
@@ -35,7 +40,12 @@ export class HitchWsClient {
       protocol: url.protocol === 'wss:' ? 'wss' : 'ws',
     });
 
-    this.socket.addEventListener('open', () => options.onOpen?.());
+    this.socket.addEventListener('open', () => {
+      // A reconnect gives us a fresh server socket with no subscriptions —
+      // replay every active channel so realtime survives drops.
+      for (const channel of this.handlers.keys()) this.sendSubscribe(channel);
+      options.onOpen?.();
+    });
     this.socket.addEventListener('close', () => options.onClose?.());
     this.socket.addEventListener('error', (e) => options.onError?.(e));
     this.socket.addEventListener('message', (event) => this.dispatch(event.data));
@@ -48,7 +58,9 @@ export class HitchWsClient {
   ): () => void {
     if (!this.handlers.has(channel)) {
       this.handlers.set(channel, new Set());
-      this.send({ action: 'subscribe', channel, ...(token ? { token } : {}) });
+      if (token) this.tokens.set(channel, token);
+      // Subscribe now if already connected; otherwise the 'open' handler replays it.
+      if (this.socket.readyState === WS_OPEN) this.sendSubscribe(channel);
     }
     this.handlers.get(channel)!.add(handler);
 
@@ -58,9 +70,15 @@ export class HitchWsClient {
       set.delete(handler);
       if (set.size === 0) {
         this.handlers.delete(channel);
+        this.tokens.delete(channel);
         this.send({ action: 'unsubscribe', channel });
       }
     };
+  }
+
+  private sendSubscribe(channel: string): void {
+    const token = this.tokens.get(channel);
+    this.send({ action: 'subscribe', channel, ...(token ? { token } : {}) });
   }
 
   private send(msg: WsMessage): void {
