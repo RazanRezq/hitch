@@ -23,7 +23,9 @@ app.use(
 const { upgradeWebSocket, injectWebSocket } = createNodeWebSocket({ app });
 app.get('/ws', upgradeWebSocket(createWsHandler()));
 
-const port = Number(process.env.WS_PORT ?? process.env.API_PORT ?? 3001);
+// Railway (and most PaaS) inject PORT and route the public domain to it; we must
+// bind that. WS_PORT/API_PORT stay as explicit overrides; 3001 is the local default.
+const port = Number(process.env.WS_PORT ?? process.env.API_PORT ?? process.env.PORT ?? 3001);
 const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`[hitch-ws] listening on http://localhost:${info.port} (ws at /ws)`);
 });
