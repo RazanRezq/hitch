@@ -7,45 +7,13 @@ import {
   PAYMENT_STATUSES,
   createBookingSchema,
 } from '@/lib/types';
-import { auth } from '@/lib/auth';
 import { stripe } from '@/server/lib/stripe';
-import { signGuestToken, verifyGuestToken } from '@/server/lib/guestToken';
+import { signGuestToken } from '@/server/lib/guestToken';
+import { getSessionUserId, authorizeBookingAccess } from '@/server/lib/booking-access';
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
 import { createPaymentIntent } from '@/server/services/payments';
 import { getQuote } from '@/server/services/pricing/quote';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
-
-async function getSessionUserId(headers: Headers): Promise<string | null> {
-  const session = await auth.api.getSession({ headers });
-  return session?.user?.id ?? null;
-}
-
-type BookingRow = NonNullable<Awaited<ReturnType<typeof prisma.booking.findUnique>>>;
-type AuthResult =
-  | { ok: true; booking: BookingRow }
-  | { ok: false; status: 401 | 403 | 404; error: string };
-
-/**
- * Authorize access to a booking by either an authenticated owner or a valid
- * guest token (HMAC over bookingId). Returns the booking row when authorized,
- * or a 401/403/404 error.
- */
-async function authorizeBookingAccess(
-  bookingId: string,
-  sessionUserId: string | null,
-  guestToken: string | undefined,
-): Promise<AuthResult> {
-  const booking = await prisma.booking.findUnique({ where: { id: bookingId } });
-  if (!booking) return { ok: false, status: 404, error: 'Booking not found' };
-
-  if (sessionUserId && booking.passengerId === sessionUserId) {
-    return { ok: true, booking };
-  }
-  if (guestToken && verifyGuestToken(bookingId, guestToken)) {
-    return { ok: true, booking };
-  }
-  return { ok: false, status: sessionUserId ? 403 : 401, error: 'Forbidden' };
-}
 
 const cancelInputSchema = z
   .object({ reason: z.string().max(500).optional() })
