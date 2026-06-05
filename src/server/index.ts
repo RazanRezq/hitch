@@ -11,6 +11,7 @@ import { createNodeWebSocket } from '@hono/node-ws';
 import { cors } from 'hono/cors';
 import { app } from './app';
 import { createWsHandler } from './realtime/ws-server';
+import { initRedisPubSub } from './realtime/redis-pubsub';
 
 app.use(
   '*',
@@ -30,3 +31,10 @@ const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`[hitch-ws] listening on http://localhost:${info.port} (ws at /ws)`);
 });
 injectWebSocket(server);
+
+// Bridge Redis pub/sub → local WS channels so booking/dispatch events published
+// from other processes (Next.js API routes, BullMQ workers) fan out to the
+// sockets connected to THIS instance. Required for the realtime loop to close.
+void initRedisPubSub().catch((err) =>
+  console.error('[hitch-ws] redis pub/sub init failed', err),
+);

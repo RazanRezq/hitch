@@ -92,3 +92,15 @@ export const PAYMENT_STATUSES = {
   FAILED: 'FAILED',
 } as const;
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[keyof typeof PAYMENT_STATUSES];
+
+/**
+ * Realtime channel names — shared FE (subscribe) / BE (publish) so the two
+ * never drift. Mirrors the channel table in CLAUDE.md "REALTIME ARCHITECTURE".
+ */
+export const WS_CHANNELS = {
+  booking: (bookingId: string) => `booking:${bookingId}`,
+  driverJobs: (driverId: string) => `driver:${driverId}:jobs`,
+  dispatchGlobal: 'dispatch:global',
+  driverLocations: 'driver-locations',
+  userNotifications: (userId: string) => `user:${userId}:notifications`,
+} as const;

@@ -6,6 +6,7 @@ import { ArrowLeft, CheckCircle2, Copy, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { formatCurrencyMinor, formatDateTime, type Locale } from '@/lib/i18n-shared';
 import { useBooking } from '@/lib/api-client/hooks/useBooking';
+import { useBookingChannel, type WsStatus } from '@/lib/api-client/hooks/useBookingChannel';
 import { BOOKING_STATUSES } from '@/lib/types';
 import { cn } from '@/lib/ui';
 
@@ -20,6 +21,8 @@ export function Confirmation({
   const tCommon = useTranslations('book');
   const locale = useLocale() as Locale;
   const { data, isError } = useBooking(bookingId, guestToken);
+  // Realtime: subscribe to this booking's channel for instant status updates.
+  const wsStatus = useBookingChannel(bookingId, guestToken);
 
   const isConfirmed = data?.status === BOOKING_STATUSES.CONFIRMED;
   const isPending = !data || data.status === BOOKING_STATUSES.PENDING_PAYMENT;
@@ -61,6 +64,11 @@ export function Confirmation({
           {isConfirmed ? t('title') : t('pending')}
         </h1>
         <BookingIdChip bookingId={bookingId} label={t('bookingIdLabel')} />
+        <LiveIndicator
+          status={wsStatus}
+          liveLabel={t('live')}
+          offlineLabel={t('reconnecting')}
+        />
       </header>
 
       {data && (
@@ -108,6 +116,33 @@ export function Confirmation({
         {tCommon('backHome')}
       </Link>
     </main>
+  );
+}
+
+function LiveIndicator({
+  status,
+  liveLabel,
+  offlineLabel,
+}: {
+  status: WsStatus;
+  liveLabel: string;
+  offlineLabel: string;
+}) {
+  const isLive = status === 'live';
+  return (
+    <span
+      className="text-muted-foreground inline-flex items-center gap-1.5 text-xs"
+      aria-live="polite"
+    >
+      <span
+        className={cn(
+          'h-1.5 w-1.5 rounded-full',
+          isLive ? 'bg-primary motion-safe:animate-pulse' : 'bg-muted-foreground/40',
+        )}
+        aria-hidden="true"
+      />
+      {isLive ? liveLabel : offlineLabel}
+    </span>
   );
 }
 

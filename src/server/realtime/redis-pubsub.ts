@@ -1,4 +1,4 @@
-import { redis } from '../lib/redis.js';
+import { redis } from '../lib/redis';
 import { publish } from './channels';
 
 /**
