@@ -13,6 +13,7 @@ import { signGuestToken, verifyGuestToken } from '@/server/lib/guestToken';
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
 import { createPaymentIntent } from '@/server/services/payments';
 import { getQuote } from '@/server/services/pricing/quote';
+import { publishBookingUpdate } from '@/server/realtime/publish-booking';
 
 async function getSessionUserId(headers: Headers): Promise<string | null> {
   const session = await auth.api.getSession({ headers });
@@ -196,6 +197,8 @@ export const bookingsRoute = new Hono()
       }),
     ]);
 
+    publishBookingUpdate(booking.id, BOOKING_STATUSES.PENDING_PAYMENT);
+
     const guestToken = isGuest ? signGuestToken(booking.id) : undefined;
 
     return c.json({
@@ -309,6 +312,8 @@ export const bookingsRoute = new Hono()
           },
         }),
       ]);
+
+      publishBookingUpdate(booking.id, BOOKING_STATUSES.CANCELLED_BY_PASSENGER);
 
       return c.json({
         id: booking.id,

@@ -147,7 +147,9 @@
       "saveAccountTitle": "Save your bookings",
       "saveAccountBody": "Create an account to track this trip and re-book in one tap.",
       "saveAccountCta": "Create account",
-      "notFound": "Booking not found."
+      "notFound": "Booking not found.",
+      "live": "Live",
+      "reconnecting": "Reconnecting…"
     },
     "errors": {
       "quoteFailed": "Couldn't fetch a price.",

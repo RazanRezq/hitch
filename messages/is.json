@@ -147,7 +147,9 @@
       "saveAccountTitle": "Vistaðu bókanir þínar",
       "saveAccountBody": "Stofnaðu reikning til að fylgjast með ferðinni og bóka aftur með einum smelli.",
       "saveAccountCta": "Stofna reikning",
-      "notFound": "Bókun fannst ekki."
+      "notFound": "Bókun fannst ekki.",
+      "live": "Í beinni",
+      "reconnecting": "Tengist aftur…"
     },
     "errors": {
       "quoteFailed": "Gat ekki sótt verð.",

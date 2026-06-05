@@ -147,7 +147,9 @@
       "saveAccountTitle": "احفظ حجوزاتك",
       "saveAccountBody": "أنشئ حساباً لتتبع هذه الرحلة وإعادة الحجز بنقرة واحدة.",
       "saveAccountCta": "إنشاء حساب",
-      "notFound": "لم يتم العثور على الحجز."
+      "notFound": "لم يتم العثور على الحجز.",
+      "live": "مباشر",
+      "reconnecting": "إعادة الاتصال…"
     },
     "errors": {
       "quoteFailed": "تعذر جلب السعر.",

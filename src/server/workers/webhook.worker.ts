@@ -3,6 +3,7 @@ import type Stripe from 'stripe';
 import { prisma } from '../../lib/db';
 import { BOOKING_STATUSES, PAYMENT_STATUSES } from '../../lib/types';
 import { redis } from '../lib/redis.js';
+import { publishBookingUpdate } from '../realtime/publish-booking';
 
 /**
  * Consumes the `webhooks` queue. Each job points at a WebhookEvent row that
@@ -109,6 +110,8 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
       },
     }),
   ]);
+
+  publishBookingUpdate(booking.id, BOOKING_STATUSES.CONFIRMED);
 }
 
 /**
@@ -148,6 +151,8 @@ async function handleCanceled(intent: Stripe.PaymentIntent) {
       },
     }),
   ]);
+
+  publishBookingUpdate(booking.id, BOOKING_STATUSES.CANCELLED_BY_SYSTEM);
 }
 
 /**
