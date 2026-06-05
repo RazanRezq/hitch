@@ -26,9 +26,12 @@ export class HitchWsClient {
 
   constructor(options: WsClientOptions = {}) {
     const url = new URL(resolveWsUrl(options.url));
+    // Use basePath (not room): partysocket builds `${host}/${basePath}`, matching the
+    // server's literal `/ws` route. With `room` it would inject `/parties/<party>/<room>`,
+    // which the Hono WS server does not serve.
     this.socket = new PartySocket({
       host: url.host,
-      room: url.pathname.replace(/^\//, '') || 'ws',
+      basePath: url.pathname.replace(/^\//, '') || 'ws',
       protocol: url.protocol === 'wss:' ? 'wss' : 'ws',
     });
 
