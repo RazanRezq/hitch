@@ -1,7 +1,7 @@
 import { PartySocket } from 'partysocket';
 
 export type WsMessage =
-  | { action: 'subscribe'; channel: string }
+  | { action: 'subscribe'; channel: string; token?: string }
   | { action: 'unsubscribe'; channel: string }
   | { type: string; channel: string; payload: unknown };
 
@@ -41,10 +41,14 @@ export class HitchWsClient {
     this.socket.addEventListener('message', (event) => this.dispatch(event.data));
   }
 
-  subscribe(channel: string, handler: (payload: unknown) => void): () => void {
+  subscribe(
+    channel: string,
+    handler: (payload: unknown) => void,
+    token?: string,
+  ): () => void {
     if (!this.handlers.has(channel)) {
       this.handlers.set(channel, new Set());
-      this.send({ action: 'subscribe', channel });
+      this.send({ action: 'subscribe', channel, ...(token ? { token } : {}) });
     }
     this.handlers.get(channel)!.add(handler);
 

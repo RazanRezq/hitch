@@ -33,11 +33,16 @@ export function useBookingChannel(
       onError: () => setStatus('offline'),
     });
 
-    const unsubscribe = client.subscribe(WS_CHANNELS.booking(bookingId), () => {
-      void queryClient.invalidateQueries({
-        queryKey: ['booking', bookingId, guestToken ?? null],
-      });
-    });
+    const unsubscribe = client.subscribe(
+      WS_CHANNELS.booking(bookingId),
+      () => {
+        void queryClient.invalidateQueries({
+          queryKey: ['booking', bookingId, guestToken ?? null],
+        });
+      },
+      // Unauthenticated passengers authorize the channel with their guest token.
+      guestToken,
+    );
 
     return () => {
       unsubscribe();
