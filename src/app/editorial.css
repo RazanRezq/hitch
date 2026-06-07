@@ -1389,6 +1389,80 @@ body {
   .ed-faq-a-inner { padding-inline-start: 56px; padding-inline-end: 24px; }
 }
 
+/* ────────── Care band (safety · report a driver) ────────── */
+.ed-care { max-width: 1280px; margin: 96px auto 0; padding: 0 56px; scroll-margin-top: 96px; }
+.ed-care-inner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: var(--radius-xl);
+  background: oklch(0.06 0.005 240);
+  color: white;
+  padding: 88px 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.ed-care-aurora {
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  background:
+    radial-gradient(55% 60% at 18% 12%, rgba(91, 233, 185, 0.42) 0%, transparent 60%),
+    radial-gradient(52% 55% at 86% 90%, rgba(124, 58, 237, 0.42) 0%, transparent 62%),
+    radial-gradient(45% 45% at 62% 42%, rgba(56, 189, 248, 0.3) 0%, transparent 60%);
+  mix-blend-mode: screen;
+  animation: edHeroDrift 28s ease-in-out infinite;
+}
+.ed-care-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aurora-green);
+}
+.ed-care-title {
+  margin: 22px 0 0;
+  font-size: clamp(40px, 6vw, 88px);
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: white;
+}
+.ed-care-body {
+  margin: 22px auto 0;
+  max-width: 560px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+.ed-care-btn {
+  margin-top: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  color: oklch(0.05 0 0);
+  border: 0;
+  border-radius: 999px;
+  padding: 18px 32px;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 250ms, box-shadow 250ms;
+  text-decoration: none;
+}
+.ed-care-btn:hover { transform: translateY(-2px); box-shadow: 0 16px 40px -12px rgba(91, 233, 185, 0.5); }
+@media (max-width: 880px) {
+  .ed-care { padding: 0 24px; }
+  .ed-care-inner { padding: 56px 24px; border-radius: var(--radius-lg); }
+}
+
 /* ────────── Final CTA + Footer ────────── */
 .ed-finale {
   position: relative;

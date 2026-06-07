@@ -218,6 +218,12 @@
       "footPay": "Pay on arrival or in advance"
     },
     "wordmark": "HITCH",
+    "care": {
+      "eyebrow": "Safety and trust",
+      "title": "Because we care",
+      "body": "Something not right on your trip? Tell us — every report reaches a real person, and we act on it.",
+      "cta": "Report a driver"
+    },
     "live": {
       "tag": "LIVE FROM REYKJAVÍK",
       "time": "14:32:08",

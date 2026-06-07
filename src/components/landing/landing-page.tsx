@@ -3,6 +3,7 @@
 import { Header } from './header';
 import { Hero } from './hero';
 import {
+  CareBand,
   Coverage,
   EditorialTrips,
   Faq,
@@ -13,6 +14,7 @@ import {
   PulledQuote,
   WordmarkSpacer,
 } from './sections';
+import { useQrCareScroll } from './use-qr-care-scroll';
 
 /**
  * Editorial premium landing — the composition the user landed on across the
@@ -21,11 +23,13 @@ import {
  * coverage, FAQ, and the finale/footer. Trilingual + RTL via next-intl.
  */
 export function LandingPage() {
+  useQrCareScroll();
   return (
     <>
       <Header />
       <div className="ed-page">
         <Hero />
+        <CareBand />
         <WordmarkSpacer />
         <LiveConditions />
         <EditorialTrips />
