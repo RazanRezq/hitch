@@ -10,12 +10,11 @@ import { usePreferences } from '@/stores/preferences';
 import { useChangeLocale } from '@/lib/use-change-locale';
 import { HeaderDropdown } from './header-dropdown';
 
-const LOCALE_TAG: Record<Locale, string> = { is: 'is-IS', en: 'en-GB', ar: 'ar' };
+const LOCALE_TAG: Record<Locale, string> = { is: 'is-IS', en: 'en-GB' };
 /** Language endonyms — shown in each language's own script (standard). */
 const LOCALE_ENDONYM: Record<Locale, string> = {
   is: 'Íslenska',
   en: 'English',
-  ar: 'العربية',
 };
 const CURRENCY_SYMBOL: Record<Currency, string> = { ISK: 'kr.', EUR: '€', USD: '$' };
 
@@ -63,7 +62,7 @@ export function Header() {
     };
   }, []);
 
-  // Western digits always, even in Arabic (CLAUDE.md).
+  // Western digits always (CLAUDE.md).
   const timeStr = time
     ? time.toLocaleTimeString(LOCALE_TAG[locale], {
         hour: '2-digit',

@@ -2,7 +2,7 @@
   "meta": {
     "title": "Hitch — Fixed-fare airport transfers in Iceland",
     "titleTemplate": "%s · Hitch",
-    "description": "Book your KEF ↔ Reykjavík ride in seconds. Locked price, personal driver, exactly at the gate. Available in Icelandic, English and Arabic.",
+    "description": "Book your KEF ↔ Reykjavík ride in seconds. Locked price, personal driver, exactly at the gate. Available in Icelandic and English.",
     "ogTitle": "Hitch — Land. Hitch. Home.",
     "ogDescription": "Fixed-fare airport transfers across Iceland. KEF, Reykjavík, Blue Lagoon — booked in under a minute.",
     "tagline": "Land. Hitch. Home."
@@ -304,7 +304,7 @@
         { "q": "Can I cancel?", "a": "Yes — free up to an hour before pickup. After that, a 50% cancellation fee applies." },
         { "q": "Which payment methods do you accept?", "a": "Visa, Mastercard, Amex, Apple Pay, and Google Pay. Charges are in ISK." },
         { "q": "Are child seats available?", "a": "Yes — add them in the booking flow. Free of charge for passengers." },
-        { "q": "Does the driver speak English?", "a": "Every driver speaks Icelandic and English. Many also speak Polish, German, or Arabic." }
+        { "q": "Does the driver speak English?", "a": "Every driver speaks Icelandic and English. Many also speak Polish or German." }
       ]
     },
     "finale": {

@@ -416,27 +416,6 @@ body {
   letter-spacing: -0.025em;
   color: oklch(0.62 0.22 277);
 }
-[lang='ar'] .ed-italic { font-style: normal; font-weight: 600; }
-
-/* Arabic display typography: Cairo is a cursive script with tall ascenders
-   and diacritics. The Latin-tuned tight leading (0.9–0.96) makes stacked
-   lines collide, and negative letter-spacing cramps glyph joining. Relax
-   leading and neutralize tracking for all display-scale headings. */
-[lang='ar'] .ed-display,
-[lang='ar'] .ed-eyebrow-title,
-[lang='ar'] .ed-cov-title,
-[lang='ar'] .ed-finale-title {
-  line-height: 1.3;
-  letter-spacing: 0;
-}
-[lang='ar'] .ed-mani-t {
-  line-height: 1.35;
-  letter-spacing: 0;
-}
-[lang='ar'] .ed-quote-body {
-  line-height: 1.7;
-  letter-spacing: 0;
-}
 
 .ed-eyebrow { display: flex; flex-direction: column; gap: 16px; margin-bottom: 36px; }
 .ed-eyebrow > .t-mono { font-size: 11px; letter-spacing: 0.14em; color: var(--muted-foreground); }

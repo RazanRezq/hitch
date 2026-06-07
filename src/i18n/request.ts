@@ -1,13 +1,11 @@
 import { getRequestConfig } from 'next-intl/server';
 import isMessages from '@/../messages/is.json';
 import enMessages from '@/../messages/en.json';
-import arMessages from '@/../messages/ar.json';
 import { routing } from './routing';
 
 const MESSAGES = {
   is: isMessages,
   en: enMessages,
-  ar: arMessages,
 } as const;
 
 export default getRequestConfig(async ({ requestLocale }) => {

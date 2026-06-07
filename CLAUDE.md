@@ -2,7 +2,7 @@
 
 > **READ THIS ENTIRE FILE before writing, modifying, or suggesting ANY code.**
 > These rules are NON-NEGOTIABLE for functional correctness. Everything else is a canvas.
-> Last updated: April 2026
+> Last updated: June 2026
 
 ## ⚡ RULES CONFIRMATION
 
@@ -36,7 +36,7 @@ When AI reads rules like "use tokens only" or "200ms transitions," it interprets
 
 - **Break the grid when it serves the design** — especially on the passenger landing page
 - **Hardcoded colors ALLOWED** for decorative elements (hero gradients, empty state illustrations, map overlays, trip success moments)
-- **Custom display fonts ALLOWED** for hero headings, marketing copy, editorial layouts — in addition to required DM Sans / Cairo / Space Mono for functional UI
+- **Custom display fonts ALLOWED** for hero headings, marketing copy, editorial layouts — in addition to required DM Sans / Space Mono for functional UI
 - **Animation timing is intent-driven, not millisecond-capped** — a 1.2s staged reveal is fine if it communicates something. Only hard rule: respect `prefers-reduced-motion`.
 - **Signature moments are expected, not optional**
 - **Iceland-inspired aesthetic welcome** — think northern lights, volcanic landscapes, minimalist Nordic design. Not required, but encouraged.
@@ -65,13 +65,17 @@ When AI reads rules like "use tokens only" or "200ms transitions," it interprets
 
 **Both web surfaces share one Next.js app at the repo root.** Passenger lives at `/[locale]/*`, admin/dispatcher at `/[locale]/admin/*`. There is no monorepo and no `apps/` or `packages/` directory.
 
-### Languages (Phase 1 — ALL THREE from day one)
+### Languages (Phase 1 — both from day one)
 
 | Locale | Code | Direction | Role |
 |---|---|---|---|
 | Icelandic | `is` | LTR | **Default** |
 | English | `en` | LTR | Secondary |
-| Arabic | `ar` | **RTL** | Secondary |
+
+> Arabic (`ar`, RTL) was removed in June 2026. The RTL plumbing (Radix
+> `DirectionProvider`, logical-property conventions, the `.text-ltr` utility)
+> is intentionally retained so a future RTL locale can be re-added cleanly, but
+> **no RTL locale currently ships**.
 
 ### Currencies
 
@@ -166,11 +170,11 @@ hitch/
 ├── prisma/
 │   ├── schema.prisma
 │   └── seed.ts
-├── messages/                   # next-intl translations (is/en/ar)
+├── messages/                   # next-intl translations (is/en)
 ├── public/
 └── src/
     ├── app/
-    │   ├── [locale]/           # passenger surface (is/en/ar)
+    │   ├── [locale]/           # passenger surface (is/en)
     │   │   ├── layout.tsx      # ROOT html/body/fonts/<NextIntlClientProvider>
     │   │   ├── page.tsx        # landing
     │   │   ├── book/page.tsx
@@ -233,7 +237,7 @@ npm run build                   # prisma generate + next build
 
 ## 🌍 INTERNATIONALIZATION (i18n)
 
-**This is a trilingual Phase 1 app from day one.** Icelandic default, English secondary, Arabic with full RTL.
+**This is a bilingual Phase 1 app from day one.** Icelandic default, English secondary. (Arabic/RTL was removed June 2026 — RTL plumbing is retained but no RTL locale ships.)
 
 ### Setup — `next-intl`
 
@@ -242,9 +246,9 @@ npm run build                   # prisma generate + next build
 import { defineRouting } from 'next-intl/routing';
 
 export const routing = defineRouting({
-  locales: ['is', 'en', 'ar'],
+  locales: ['is', 'en'],
   defaultLocale: 'is',
-  localePrefix: 'always',  // /is/..., /en/..., /ar/...
+  localePrefix: 'always',  // /is/..., /en/...
 });
 ```
 
@@ -253,8 +257,7 @@ export const routing = defineRouting({
 ```
 messages/
 ├── is.json     # Icelandic (source of truth)
-├── en.json     # English
-└── ar.json     # Arabic
+└── en.json     # English
 ```
 
 Keys are grouped by feature/page: `landing.hero.title`, `booking.confirm.cta`, etc.
@@ -271,7 +274,6 @@ Keys are grouped by feature/page: `landing.hero.title`, `booking.confirm.cta`, e
 Available in the header of every page (passenger + dashboard):
 - Shows current language with flag/code
 - On change: updates URL segment, saves preference to user profile (if logged in) or cookie
-- RTL switch must feel instant — pre-load both direction stylesheets
 
 ### Date/Time
 
@@ -279,9 +281,9 @@ Use `date-fns` with locale imports:
 
 ```ts
 import { format } from 'date-fns';
-import { is, enGB, arSA } from 'date-fns/locale';
+import { is, enGB } from 'date-fns/locale';
 
-const locales = { is, en: enGB, ar: arSA };
+const locales = { is, en: enGB };
 
 format(new Date(), 'dd.MM.yyyy HH:mm', { locale: locales[currentLocale] });
 ```
@@ -290,20 +292,24 @@ Icelandic convention: `dd.MM.yyyy`, 24-hour time.
 
 ---
 
-## 🔤 RTL (Arabic Layout) — Mandatory
+## 🔤 RTL — Retained Plumbing (no RTL locale currently ships)
 
-Arabic is **not an afterthought**. It's a first-class locale tested on every component.
+There is **no RTL locale today** (Arabic was removed June 2026), so `dir` always
+resolves to `ltr`. The RTL plumbing below is kept anyway so a future RTL locale
+re-adds cleanly — and because logical-property discipline is good practice
+regardless of direction. Treat these as conventions, not an active test surface.
 
 ### Setup
 
-**Root layout** wraps the app in Radix `DirectionProvider`:
+**Root layout** still wraps the app in Radix `DirectionProvider`. `dir` is
+`ltr` until an RTL locale is added back to `RTL_LOCALES`:
 
 ```tsx
 // src/app/[locale]/layout.tsx
 import { DirectionProvider } from '@radix-ui/react-direction';
 
 export default function LocaleLayout({ children, params: { locale } }) {
-  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+  const dir = 'ltr'; // derive from RTL_LOCALES when an RTL locale returns
   return (
     <html lang={locale} dir={dir}>
       <body>
@@ -352,10 +358,9 @@ Use a utility class:
 
 - [ ] No `ml-`, `mr-`, `pl-`, `pr-`, `left-`, `right-`, `text-left`, `text-right`?
 - [ ] No `flex-row-reverse`?
-- [ ] Renders correctly in Arabic (switch and visually check)?
 - [ ] Icons on the correct side?
 - [ ] Form field labels align correctly?
-- [ ] Modal/dropdown positioning flips correctly?
+- [ ] Modal/dropdown positioning uses logical (start/end) anchoring?
 
 ---
 
@@ -375,19 +380,19 @@ Use a utility class:
 export function formatCurrency(
   amountInCurrency: number,
   currency: 'ISK' | 'EUR' | 'USD',
-  locale: 'is' | 'en' | 'ar'
+  locale: 'is' | 'en'
 ): string {
-  const localeMap = { is: 'is-IS', en: 'en-IS', ar: 'ar' };
+  const localeMap = { is: 'is-IS', en: 'en-IS' };
   return new Intl.NumberFormat(localeMap[locale], {
     style: 'currency',
     currency,
-    numberingSystem: 'latn',  // Western digits ALWAYS — even in Arabic
+    numberingSystem: 'latn',  // Western digits ALWAYS
     maximumFractionDigits: currency === 'ISK' ? 0 : 2,
   }).format(amountInCurrency);
 }
 
-export function formatNumber(num: number, locale: 'is' | 'en' | 'ar'): string {
-  const localeMap = { is: 'is-IS', en: 'en-IS', ar: 'ar' };
+export function formatNumber(num: number, locale: 'is' | 'en'): string {
+  const localeMap = { is: 'is-IS', en: 'en-IS' };
   return new Intl.NumberFormat(localeMap[locale], {
     numberingSystem: 'latn',
   }).format(num);
@@ -398,7 +403,7 @@ export function formatNumber(num: number, locale: 'is' | 'en' | 'ar'): string {
 
 - **ISK has no decimals** — display `12.500 kr.`, not `12.500,00 kr.`
 - **EUR/USD have 2 decimals** — `€89,50` or `$92.00`
-- **Arabic always uses Western digits** — `١٢٬٥٠٠` is FORBIDDEN, use `12,500`
+- **Western digits always** — force `numberingSystem: 'latn'`; non-Latin digit systems are FORBIDDEN, use `12,500`
 - **Icelandic uses `.` for thousands, `,` for decimals** — `12.500,50`
 - **Format on display only** — never store formatted strings in the DB
 
@@ -512,7 +517,6 @@ EXCHANGE_RATE_API_KEY
 |---|---|---|---|
 | Icelandic (is) | **DM Sans** | 400, 500, 600, 700 | `next/font/google` |
 | English (en) | **DM Sans** | 400, 500, 600, 700 | `next/font/google` |
-| Arabic (ar) | **Cairo** | 400, 500, 600, 700 | `next/font/google` |
 | All (mono) | **Space Mono** | 400, 700 | `next/font/google` |
 
 DM Sans supports all Icelandic glyphs: ð, þ, æ, ö, á, í, ó, ú, ý. Verified.
@@ -521,10 +525,9 @@ DM Sans supports all Icelandic glyphs: ð, þ, æ, ö, á, í, ó, ú, ý. Verif
 
 ```tsx
 // src/app/[locale]/layout.tsx
-import { DM_Sans, Cairo, Space_Mono } from 'next/font/google';
+import { DM_Sans, Space_Mono } from 'next/font/google';
 
 const dmSans = DM_Sans({ subsets: ['latin', 'latin-ext'], variable: '--font-sans' });
-const cairo = Cairo({ subsets: ['arabic'], variable: '--font-sans-ar' });
 const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], variable: '--font-mono' });
 ```
 
@@ -532,10 +535,8 @@ const spaceMono = Space_Mono({ subsets: ['latin'], weight: ['400', '700'], varia
 
 ```css
 :root {
+  /* Indirection kept for future locale fonts — add a [lang="xx"] override here */
   --font-sans-active: var(--font-sans);
-}
-[lang="ar"] {
-  --font-sans-active: var(--font-sans-ar);
 }
 body {
   font-family: var(--font-sans-active), system-ui, sans-serif;
@@ -545,7 +546,7 @@ body {
 ### Font-family rules
 
 - **Functional UI** (body text, forms, buttons, labels, navigation): NEVER hardcode — use CSS variable so locale switching works
-- **Display typography** (hero headings, marketing, editorial): custom fonts ALLOWED for creative direction. Ensure Arabic equivalent exists if the section shows in RTL.
+- **Display typography** (hero headings, marketing, editorial): custom fonts ALLOWED for creative direction. If an RTL locale is ever re-added, ensure a matching script face exists for that section.
 - **Monospace data** (booking IDs, receipts, GPS coords): always Space Mono
 
 ### UI Geometry
@@ -645,19 +646,18 @@ Animation is **intent-driven, not millisecond-capped.** Ask "does this communica
 - Default country: `+354` (Iceland)
 - Validate with `libphonenumber-js`
 - Display with spaces: `+354 555 1234`
-- Wrap in `.text-ltr` utility for Arabic layouts
+- Wrap in `.text-ltr` utility (keeps numerals bidi-stable; matters again if an RTL locale returns)
 
 ### Booking IDs
 
 - Format: `HTCH-XXXX-XXXX` (generated server-side)
 - Display in Space Mono font
-- Wrap in `.text-ltr` utility for Arabic layouts
+- Wrap in `.text-ltr` utility (keeps the ID bidi-stable; matters again if an RTL locale returns)
 - Copy-to-clipboard button on every display
 
 ### Dates
 
 - Icelandic/English: `dd.MM.yyyy`
-- Arabic: `dd/MM/yyyy`
 - Times: 24-hour everywhere (`14:30`, not `2:30 PM`)
 - Store UTC in DB, display in passenger's local timezone
 
@@ -1039,7 +1039,7 @@ Any value in MORE THAN ONE FILE must be centralized.
 - **API paths** → `src/lib/api-client/routes.ts`
 - **Role strings** → `src/lib/types/constants.ts`
 - **Booking statuses** → same constants file
-- **Locale codes** → `src/lib/types/constants.ts` (`is`, `en`, `ar`)
+- **Locale codes** → `src/lib/types/constants.ts` (`is`, `en`)
 - **Currency codes** → `src/lib/types/constants.ts`
 - **Layout dimensions** → CSS variables
 - **Z-index values** → CSS variables
@@ -1058,10 +1058,9 @@ Any value in MORE THAN ONE FILE must be centralized.
 - [ ] Every user-facing string uses `t()`?
 - [ ] Logical properties (`ms-`, `me-`, `text-start`)? No `ml-`, `mr-`, `left-`, `right-`?
 - [ ] No `flex-row-reverse`?
-- [ ] RTL tested (switch to `ar` and check)?
 - [ ] Icelandic chars render (ð, þ, æ, ö, á, í, ó, ú, ý)?
 - [ ] ISK is the source of truth? Display currency derived?
-- [ ] Western digits only (even in Arabic)?
+- [ ] Western digits only (`numberingSystem: 'latn'`)?
 - [ ] Using Prisma types directly (not duplicating)?
 - [ ] API call through TanStack Query or Hono client (not raw fetch)?
 - [ ] Mutation has `Idempotency-Key`?
@@ -1085,13 +1084,13 @@ Any value in MORE THAN ONE FILE must be centralized.
 - [ ] `npm run lint` — zero warnings
 - [ ] `npm test` — all passing
 - [ ] No `console.log`, no `any`, no hardcoded secrets
-- [ ] New strings added to all 3 locales (is/en/ar)
+- [ ] New strings added to both locales (is/en)
 - [ ] Environment variables in `.env.example`
 - [ ] Prisma migration created (if schema changed)
 - [ ] New Shadcn components styled per Soft Pop theme
-- [ ] RTL-audited (switch to Arabic, visually verify)
+- [ ] Logical properties used (no `ml-`/`mr-`/`left-`/`right-`)
 - [ ] Loading / error / empty states present
-- [ ] Works: mobile + desktop + dark mode + RTL
+- [ ] Works: mobile + desktop + dark mode
 - [ ] WebSocket subscriptions clean up on unmount
 - [ ] Sensitive actions logged to BookingEvent or audit table
 - [ ] Commit: `type(scope): description`
@@ -1126,10 +1125,10 @@ npx shadcn@latest add button
 ## 🔑 GOLDEN RULES
 
 1. **Stack is locked**: Next.js + Hono + PostgreSQL + Prisma + Better Auth + Native WebSockets + BullMQ + Railway + DO Spaces. Don't substitute.
-2. **Icelandic-first, trilingual from day one**: is (default) + en + ar with full RTL
-3. **RTL is first-class**: Arabic tested on every component, logical properties only
+2. **Icelandic-first, bilingual from day one**: is (default) + en (no RTL locale ships; Arabic removed June 2026)
+3. **Logical properties only**: `ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`text-start` — RTL plumbing retained for a future locale
 4. **ISK is the source of truth**: all internal pricing in ISK, display currency derived
-5. **Western digits always**: even in Arabic UI, never Arabic-Indic digits
+5. **Western digits always**: force `numberingSystem: 'latn'`, never non-Latin digit systems
 6. **Payment safety > everything**: Manual capture, idempotency, state machine, webhook outbox
 7. **Server state ≠ Client state**: TanStack Query for API data, Zustand for UI state
 8. **Type everything**: No `any`, shared types between apps, `import type` for types

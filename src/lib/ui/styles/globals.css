@@ -28,12 +28,8 @@
 
   --radius: 1rem;
 
-  /* Active font-family (locale switches this) */
+  /* Active font-family (kept as an indirection for future locale fonts) */
   --font-sans-active: var(--font-sans);
-}
-
-[lang='ar'] {
-  --font-sans-active: var(--font-sans-ar);
 }
 
 .dark {

@@ -2,7 +2,7 @@
   "meta": {
     "title": "Hitch — Föst fargjöld á flugvallarakstri á Íslandi",
     "titleTemplate": "%s · Hitch",
-    "description": "Bókaðu ferðina þína KEF ↔ Reykjavík á örfáum sekúndum. Læst verð, persónulegur bílstjóri, nákvæmlega við hliðið. Á íslensku, ensku og arabísku.",
+    "description": "Bókaðu ferðina þína KEF ↔ Reykjavík á örfáum sekúndum. Læst verð, persónulegur bílstjóri, nákvæmlega við hliðið. Á íslensku og ensku.",
     "ogTitle": "Hitch — Lentu. Hitt’ann. Komin heim.",
     "ogDescription": "Föst fargjöld í flugvallarakstri um allt Ísland. KEF, Reykjavík, Bláa Lónið — bókað á innan við mínútu.",
     "tagline": "Lentu. Hitt’ann. Komin heim."
@@ -304,7 +304,7 @@
         { "q": "Get ég afpantað?", "a": "Já — frítt fram að klukkustund fyrir sækju. Eftir það 50% gjald." },
         { "q": "Hvaða greiðslumáta tekið þið?", "a": "Visa, Mastercard, Amex, Apple Pay og Google Pay. Færslur teknar í ISK." },
         { "q": "Eru barnasæti í boði?", "a": "Já — bætið við í bókuninni. 0 kr. fyrir farþega." },
-        { "q": "Talar bílstjórinn ensku?", "a": "Allir bílstjórar tala íslensku og ensku. Margir tala líka pólsku, þýsku eða arabísku." }
+        { "q": "Talar bílstjórinn ensku?", "a": "Allir bílstjórar tala íslensku og ensku. Margir tala líka pólsku eða þýsku." }
       ]
     },
     "finale": {

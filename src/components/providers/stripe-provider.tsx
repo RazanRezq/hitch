@@ -20,11 +20,10 @@ function getStripe(): Promise<Stripe | null> {
 }
 
 // Stripe Elements doesn't ship an Icelandic translation, so fall back to
-// English for `is`. Arabic is supported natively.
+// English for `is`.
 const LOCALE_MAP: Record<Locale, StripeElementLocale> = {
   is: 'en',
   en: 'en',
-  ar: 'ar',
 };
 
 /**

@@ -11,18 +11,15 @@ export function generateImageMetadata() {
   return [{ id: 'og', size, contentType, alt }];
 }
 
-// Satori needs raw font bytes to render text — its default fallback has no
-// Arabic coverage and renders Latin in a generic face. Fetch DM Sans (Latin)
-// and Cairo (Arabic) once per process from Google Fonts' static CDN and
-// cache the bytes.
+// Satori needs raw font bytes to render text — its default fallback renders
+// Latin in a generic face. Fetch DM Sans (Latin) once per process from Google
+// Fonts' static CDN and cache the bytes.
 const FONT_URLS = {
   dmSans:
     'https://cdn.jsdelivr.net/npm/@fontsource/dm-sans@5.0.20/files/dm-sans-latin-700-normal.woff',
-  cairo:
-    'https://cdn.jsdelivr.net/npm/@fontsource/cairo@5.0.18/files/cairo-arabic-700-normal.woff',
 } as const;
 
-let fontCache: { dmSans: ArrayBuffer; cairo: ArrayBuffer } | null = null;
+let fontCache: { dmSans: ArrayBuffer } | null = null;
 async function loadFonts() {
   if (fontCache) return fontCache;
   const fetchFont = async (url: string) => {
@@ -30,11 +27,8 @@ async function loadFonts() {
     if (!res.ok) throw new Error(`Failed to fetch font ${url}: ${res.status}`);
     return res.arrayBuffer();
   };
-  const [dmSans, cairo] = await Promise.all([
-    fetchFont(FONT_URLS.dmSans),
-    fetchFont(FONT_URLS.cairo),
-  ]);
-  fontCache = { dmSans, cairo };
+  const [dmSans] = await Promise.all([fetchFont(FONT_URLS.dmSans)]);
+  fontCache = { dmSans };
   return fontCache;
 }
 
@@ -51,7 +45,6 @@ export default async function OgImage({
 
   const tagline = t('tagline');
   const subline = t('ogDescription');
-  const isRtl = locale === 'ar';
   const fonts = await loadFonts();
 
   return new ImageResponse(
@@ -64,16 +57,14 @@ export default async function OgImage({
           flexDirection: 'column',
           justifyContent: 'space-between',
           padding: '72px 80px',
-          fontFamily: isRtl
-            ? '"Cairo", "DM Sans"'
-            : '"DM Sans", "Cairo"',
+          fontFamily: '"DM Sans"',
           background:
             'radial-gradient(120% 100% at 0% 0%, #2E1065 0%, transparent 55%),' +
             'radial-gradient(120% 100% at 100% 0%, #0EA5E9 0%, transparent 50%),' +
             'radial-gradient(140% 120% at 100% 100%, #14B8A6 0%, transparent 55%),' +
             'linear-gradient(135deg, #0B1026 0%, #1E1B4B 50%, #0B1026 100%)',
           color: '#FFFFFF',
-          direction: isRtl ? 'rtl' : 'ltr',
+          direction: 'ltr',
         }}
       >
         {/* aurora highlight sweep */}
@@ -205,12 +196,6 @@ export default async function OgImage({
         {
           name: 'DM Sans',
           data: fonts.dmSans,
-          weight: 700,
-          style: 'normal',
-        },
-        {
-          name: 'Cairo',
-          data: fonts.cairo,
           weight: 700,
           style: 'normal',
         },

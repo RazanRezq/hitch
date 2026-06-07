@@ -27,7 +27,6 @@ async function main() {
       name: {
         is: 'Keflavíkurflugvöllur',
         en: 'Keflavík Airport',
-        ar: 'مطار كيفلافيك',
       },
       polygon: {
         type: 'Polygon',
@@ -46,7 +45,7 @@ async function main() {
       airportSurchargeISK: 1500,
     },
     {
-      name: { is: 'Reykjavík miðbær', en: 'Reykjavík Center', ar: 'وسط ريكيافيك' },
+      name: { is: 'Reykjavík miðbær', en: 'Reykjavík Center' },
       polygon: {
         type: 'Polygon',
         coordinates: [
@@ -64,7 +63,7 @@ async function main() {
       airportSurchargeISK: 0,
     },
     {
-      name: { is: 'Bláa Lónið', en: 'Blue Lagoon', ar: 'البحيرة الزرقاء' },
+      name: { is: 'Bláa Lónið', en: 'Blue Lagoon' },
       polygon: {
         type: 'Polygon',
         coordinates: [
