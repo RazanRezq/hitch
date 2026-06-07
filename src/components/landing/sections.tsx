@@ -13,6 +13,7 @@ import {
   Plane,
   Plus,
   Route,
+  ShieldCheck,
   Star,
   Users,
 } from 'lucide-react';
@@ -82,6 +83,29 @@ export function WordmarkSpacer() {
       <span className="ed-wordmark-dot">·</span>
       <span>{mark}</span>
     </div>
+  );
+}
+
+/* ───────────── Care band (safety · report a driver) ───────────── */
+export function CareBand() {
+  const ref = useReveal();
+  const t = useTranslations('landing.care');
+  const locale = useLocale();
+  return (
+    <section id="care" ref={ref} className="ed-care h-reveal">
+      <div className="ed-care-inner">
+        <div className="ed-care-aurora" aria-hidden="true" />
+        <span className="t-mono ed-care-eyebrow">
+          <ShieldCheck size={14} aria-hidden="true" /> {t('eyebrow')}
+        </span>
+        <h2 className="ed-care-title">{t('title')}</h2>
+        <p className="ed-care-body">{t('body')}</p>
+        <Link href={`/${locale}/feedback`} className="ed-care-btn">
+          <ShieldCheck size={18} aria-hidden="true" />
+          <span>{t('cta')}</span>
+        </Link>
+      </div>
+    </section>
   );
 }
 

@@ -218,6 +218,12 @@
       "footPay": "Greitt við komu eða fyrirfram"
     },
     "wordmark": "HITCH",
+    "care": {
+      "eyebrow": "Öryggi og traust",
+      "title": "Því okkur er annt um þig",
+      "body": "Var eitthvað sem fór ekki sem skyldi í ferðinni? Segðu okkur frá því — hver ábending fer til raunverulegrar manneskju og við bregðumst við.",
+      "cta": "Tilkynna bílstjóra"
+    },
     "live": {
       "tag": "BEINT FRÁ REYKJAVÍK",
       "time": "14:32:08",
