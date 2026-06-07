@@ -2,7 +2,7 @@
 
 Ride-booking platform for **KEF ↔ Reykjavík** airport transfers.
 
-Trilingual (Icelandic / English / Arabic with RTL) from day one, multi-currency (ISK / EUR / USD), native WebSockets, Stripe manual capture.
+Bilingual (Icelandic / English) from day one, multi-currency (ISK / EUR / USD), native WebSockets, Stripe manual capture.
 
 ## Prerequisites
 
@@ -25,7 +25,7 @@ npm run dev                   # starts the Next.js app
 
 | Surface / Process | URL / Command | Purpose |
 |---|---|---|
-| Passenger web | http://localhost:3000/[locale] | Public booking (trilingual) |
+| Passenger web | http://localhost:3000/[locale] | Public booking (bilingual) |
 | Admin / dispatcher | http://localhost:3000/[locale]/admin | Nested under the same Next.js app |
 | Hono API | http://localhost:3000/api/* | Mounted inside Next.js via `src/app/api/[[...route]]/route.ts` |
 | WebSocket server | `npm run ws` | Separate process, `src/server/index.ts` (Next.js route handlers can't host long-lived WS) |
@@ -41,7 +41,7 @@ This is a **single Next.js app** (no monorepo, no Turborepo, no workspaces). One
 hitch/
 ├── package.json              # plain npm, no workspaces
 ├── prisma/                   # schema.prisma, seed.ts, migrations
-├── messages/                 # is.json, en.json, ar.json
+├── messages/                 # is.json, en.json
 ├── public/
 └── src/
     ├── app/

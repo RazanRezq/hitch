@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Metadata } from 'next';
-import { DM_Sans, Cairo, Space_Mono } from 'next/font/google';
+import { DM_Sans, Space_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
@@ -14,18 +14,11 @@ const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
 const OG_LOCALE: Record<AppLocale, string> = {
   is: 'is_IS',
   en: 'en_US',
-  ar: 'ar_AR',
 };
 
 const dmSans = DM_Sans({
   subsets: ['latin', 'latin-ext'],
   variable: '--font-sans',
-  display: 'swap',
-});
-
-const cairo = Cairo({
-  subsets: ['arabic'],
-  variable: '--font-sans-ar',
   display: 'swap',
 });
 
@@ -127,14 +120,15 @@ export default async function LocaleLayout({
   if (!routing.locales.includes(locale as AppLocale)) notFound();
 
   setRequestLocale(locale);
-  const dir = locale === 'ar' ? 'rtl' : 'ltr';
+  // No RTL locale currently ships; RTL plumbing is retained for future locales.
+  const dir = 'ltr';
   const messages = await getMessages();
 
   return (
     <html
       lang={locale}
       dir={dir}
-      className={`${dmSans.variable} ${cairo.variable} ${spaceMono.variable}`}
+      className={`${dmSans.variable} ${spaceMono.variable}`}
       suppressHydrationWarning
     >
       <body

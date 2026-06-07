@@ -54,10 +54,12 @@ export const VEHICLE_TYPES = {
 } as const;
 export type VehicleType = (typeof VEHICLE_TYPES)[keyof typeof VEHICLE_TYPES];
 
-export const LOCALES = ['is', 'en', 'ar'] as const;
+export const LOCALES = ['is', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'is';
-export const RTL_LOCALES = ['ar'] as const;
+// RTL plumbing is retained (logical properties, DirectionProvider) even though
+// no RTL locale currently ships — keep this in sync if one is added back.
+export const RTL_LOCALES = [] as const;
 export type RtlLocale = (typeof RTL_LOCALES)[number];
 
 export function isRtl(locale: Locale): boolean {

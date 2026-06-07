@@ -53,7 +53,7 @@ export function Logo({
       aria-label="Hitch"
       className={className}
       // Brand wordmark is LTR-only content (like booking IDs / phone
-      // numbers) — never reorder it under an RTL (ar) layout.
+      // numbers) — never reorder it under an RTL layout.
       style={{
         display: 'block',
         overflow: 'visible',

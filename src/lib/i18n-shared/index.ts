@@ -1,5 +1,5 @@
 import { format as formatDateFn } from 'date-fns';
-import { is, enGB, arSA } from 'date-fns/locale';
+import { is, enGB } from 'date-fns/locale';
 import type { Currency, Locale } from '@/lib/types';
 
 export {
@@ -16,13 +16,12 @@ export type { Locale, Currency } from '@/lib/types';
 const LOCALE_TAG: Record<Locale, string> = {
   is: 'is-IS',
   en: 'en-IS',
-  ar: 'ar',
 };
 
-const DATE_FNS_LOCALE = { is, en: enGB, ar: arSA };
+const DATE_FNS_LOCALE = { is, en: enGB };
 
 /**
- * Format currency with Western digits always, even in Arabic. ISK has no decimals;
+ * Format currency with Western digits always. ISK has no decimals;
  * EUR/USD have 2. See CLAUDE.md "Currency & Number Formatting".
  */
 export function formatCurrency(amount: number, currency: Currency, locale: Locale): string {
@@ -58,13 +57,13 @@ export function formatNumber(value: number, locale: Locale): string {
 
 export function formatDate(value: Date | string | number, locale: Locale): string {
   const date = value instanceof Date ? value : new Date(value);
-  const pattern = locale === 'ar' ? 'dd/MM/yyyy' : 'dd.MM.yyyy';
+  const pattern = 'dd.MM.yyyy';
   return formatDateFn(date, pattern, { locale: DATE_FNS_LOCALE[locale] });
 }
 
 export function formatDateTime(value: Date | string | number, locale: Locale): string {
   const date = value instanceof Date ? value : new Date(value);
-  const pattern = locale === 'ar' ? 'dd/MM/yyyy HH:mm' : 'dd.MM.yyyy HH:mm';
+  const pattern = 'dd.MM.yyyy HH:mm';
   return formatDateFn(date, pattern, { locale: DATE_FNS_LOCALE[locale] });
 }
 

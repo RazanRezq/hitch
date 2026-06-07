@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const localeSchema = z.enum(['is', 'en', 'ar']);
+export const localeSchema = z.enum(['is', 'en']);
 export const currencySchema = z.enum(['ISK', 'EUR', 'USD']);
 export const userRoleSchema = z.enum(['SUPER_ADMIN', 'DISPATCHER', 'DRIVER', 'PASSENGER']);
 

@@ -25,7 +25,6 @@ enum UserRole {
 enum Locale {
   is
   en
-  ar
 }
 
 enum Currency {
@@ -335,7 +334,7 @@ model Rating {
 
 model PricingZone {
   id                   String   @id @default(cuid())
-  name                 Json     // { is: "...", en: "...", ar: "..." }
+  name                 Json     // { is: "...", en: "..." }
   polygon              Json     // GeoJSON polygon
   baseFareISK          Int
   perKmRateISK         Int

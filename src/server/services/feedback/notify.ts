@@ -1,6 +1,5 @@
 import isMessages from '@/../messages/is.json';
 import enMessages from '@/../messages/en.json';
-import arMessages from '@/../messages/ar.json';
 import { resend } from '@/server/lib/resend';
 import { LOCALES, type Locale } from '@/lib/types';
 import type { Feedback } from '@/lib/db';
@@ -19,7 +18,6 @@ const BUSINESS_TO = process.env.FEEDBACK_NOTIFY_TO ?? 'business@hitch.is';
 const AUTO_REPLY: Record<Locale, { subject: string; body: string }> = {
   is: isMessages.feedback.autoReply,
   en: enMessages.feedback.autoReply,
-  ar: arMessages.feedback.autoReply,
 };
 
 function escapeHtml(value: string): string {
