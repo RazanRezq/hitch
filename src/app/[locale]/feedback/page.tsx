@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { getTranslations, setRequestLocale } from 'next-intl/server';
 import { routing, type AppLocale } from '@/i18n/routing';
+import { Header } from '@/components/landing/header';
 import { FeedbackForm } from '@/components/feedback/feedback-form';
 
 export function generateStaticParams() {
@@ -29,5 +30,10 @@ export default async function FeedbackPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <FeedbackForm />;
+  return (
+    <>
+      <Header showSectionNav={false} />
+      <FeedbackForm />
+    </>
+  );
 }

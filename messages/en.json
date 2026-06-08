@@ -43,7 +43,14 @@
     "eyebrow": "Incident report",
     "title": "Report an incident or complaint",
     "subtitle": "Tell us what happened. Fields marked with * are required.",
+    "reassure": "Your report is reviewed within 2 business days and kept confidential.",
     "backHome": "Back to home",
+    "groups": {
+      "contact": "Your contact details",
+      "ride": "The ride",
+      "what": "What happened",
+      "requests": "Requests"
+    },
     "fields": {
       "email": "Email",
       "name": "Name",

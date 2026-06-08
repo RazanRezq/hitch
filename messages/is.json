@@ -43,7 +43,14 @@
     "eyebrow": "Tilkynning um atvik",
     "title": "Tilkynna atvik eða kvörtun",
     "subtitle": "Segðu okkur hvað gerðist. Reitir merktir með * eru nauðsynlegir.",
+    "reassure": "Tilkynningin þín er skoðuð innan 2 virkra daga og meðhöndluð sem trúnaðarmál.",
     "backHome": "Til baka á forsíðu",
+    "groups": {
+      "contact": "Samskiptaupplýsingar þínar",
+      "ride": "Ferðin",
+      "what": "Hvað gerðist",
+      "requests": "Beiðnir"
+    },
     "fields": {
       "email": "Netfang",
       "name": "Nafn",

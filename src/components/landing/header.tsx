@@ -18,7 +18,12 @@ const LOCALE_ENDONYM: Record<Locale, string> = {
 };
 const CURRENCY_SYMBOL: Record<Currency, string> = { ISK: 'kr.', EUR: '€', USD: '$' };
 
-export function Header() {
+/**
+ * `showSectionNav` toggles the landing-only section anchors (Fly/Fleet/…),
+ * which don't exist off the landing page (e.g. /feedback). Logo, language +
+ * currency switchers, sign-in, book CTA and the info strip always render.
+ */
+export function Header({ showSectionNav = true }: { showSectionNav?: boolean }) {
   const t = useTranslations('landing.header');
   const tc = useTranslations('currency');
   const { locale, change: changeLocale } = useChangeLocale();
@@ -32,7 +37,9 @@ export function Header() {
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 8);
-      const hero = document.querySelector('.ed-hero, .ed-finale, .ed-cov, .h-hero');
+      const hero = document.querySelector(
+        '.ed-hero, .ed-finale, .ed-cov, .h-hero, .ed-incident-hero',
+      );
       if (!hero) {
         setOverHero(false);
         return;
@@ -107,20 +114,22 @@ export function Header() {
           <Logo size={28} />
         </Link>
 
-        <nav className="ed-header-nav" aria-label="Primary">
-          <a href="#top" className="ed-nav-link is-active">
-            <span>{t('fly')}</span>
-          </a>
-          <a href="#fleet" className="ed-nav-link">
-            <span>{t('fleet')}</span>
-          </a>
-          <a href="#coverage" className="ed-nav-link">
-            <span>{t('coverage')}</span>
-          </a>
-          <a href="#stories" className="ed-nav-link">
-            <span>{t('stories')}</span>
-          </a>
-        </nav>
+        {showSectionNav && (
+          <nav className="ed-header-nav" aria-label="Primary">
+            <a href="#top" className="ed-nav-link is-active">
+              <span>{t('fly')}</span>
+            </a>
+            <a href="#fleet" className="ed-nav-link">
+              <span>{t('fleet')}</span>
+            </a>
+            <a href="#coverage" className="ed-nav-link">
+              <span>{t('coverage')}</span>
+            </a>
+            <a href="#stories" className="ed-nav-link">
+              <span>{t('stories')}</span>
+            </a>
+          </nav>
+        )}
 
         <div className="ed-header-tools">
           <HeaderDropdown
