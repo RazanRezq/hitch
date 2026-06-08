@@ -21,6 +21,23 @@ const SESSION_KEY = 'hitch:qr-care-scroll';
 const CARE_SECTION_ID = 'care';
 // Cancel triggers — any sign the user has taken control of the page.
 const INTERACTION_EVENTS = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
+// The fixed header overlays the top of the viewport, so centring is measured
+// against the area below it. Falls back gracefully to full-viewport centring
+// if the header isn't found.
+const HEADER_SELECTOR = '.ed-header';
+
+/** Smoothly scroll so the card is vertically centred in the area below the header. */
+function scrollCardIntoCentre(el: HTMLElement) {
+  const headerH = document.querySelector(HEADER_SELECTOR)?.getBoundingClientRect().height ?? 0;
+  const rect = el.getBoundingClientRect();
+  const elTopAbsolute = rect.top + window.scrollY;
+  const available = window.innerHeight - headerH;
+  // When the card is taller than the available space, fall back to pinning its
+  // top just below the header (the most of it we can show).
+  const gap = Math.max(0, (available - rect.height) / 2);
+  const target = Math.max(0, elTopAbsolute - headerH - gap);
+  window.scrollTo({ top: target, behavior: 'smooth' });
+}
 
 export function useQrCareScroll() {
   useEffect(() => {
@@ -46,9 +63,8 @@ export function useQrCareScroll() {
       controller.abort(); // detach the interaction listeners
       if (cancelled) return;
       sessionStorage.setItem(SESSION_KEY, '1');
-      document
-        .getElementById(CARE_SECTION_ID)
-        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const el = document.getElementById(CARE_SECTION_ID);
+      if (el) scrollCardIntoCentre(el);
     }, CARE_SCROLL_DELAY_MS);
 
     const cancel = () => {
