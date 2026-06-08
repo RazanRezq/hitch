@@ -7,6 +7,7 @@ import { API_ROUTES } from '../routes';
 export interface SubmitFeedbackResponse {
   ok: boolean;
   id?: string;
+  reference?: string | null;
 }
 
 // Takes the schema's parsed output: incidentDateTime is a Date here, which

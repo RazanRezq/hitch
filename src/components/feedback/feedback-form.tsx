@@ -122,6 +122,7 @@ export function FeedbackForm() {
         descriptionRequired: t('validation.descriptionRequired'),
         descriptionMax: t('validation.descriptionMax', { max: FEEDBACK_DESCRIPTION_MAX }),
         incidentDateRequired: t('validation.incidentDateRequired'),
+        locationRequired: t('validation.locationRequired'),
       }),
     [t],
   );
@@ -147,6 +148,7 @@ export function FeedbackForm() {
   if (mutation.isSuccess) {
     const body = t('autoReply.body');
     const [heading, ...rest] = body.split('\n').filter(Boolean);
+    const reference = mutation.data?.reference;
     return (
       <main className="mx-auto flex min-h-screen w-full max-w-xl flex-col items-center justify-center gap-6 px-5 py-12 text-center">
         <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 text-primary">
@@ -160,6 +162,16 @@ export function FeedbackForm() {
             </p>
           ))}
         </div>
+        {reference && (
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl border border-border bg-card px-6 py-4">
+            <span className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {t('referenceLabel')}
+            </span>
+            <span className="text-ltr font-mono text-lg font-semibold text-foreground">
+              {reference}
+            </span>
+          </div>
+        )}
         <Link
           href={`/${locale}`}
           className="inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors hover:bg-primary/90"
@@ -249,6 +261,7 @@ export function FeedbackForm() {
         <TextField
           name="incidentLocation"
           label={t('fields.incidentLocation')}
+          required
           register={register}
           error={errors.incidentLocation}
         />

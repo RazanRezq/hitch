@@ -35,6 +35,7 @@ export interface FeedbackMessages {
   descriptionRequired: string;
   descriptionMax: string;
   incidentDateRequired: string;
+  locationRequired: string;
 }
 
 const DEFAULT_MESSAGES: FeedbackMessages = {
@@ -43,6 +44,7 @@ const DEFAULT_MESSAGES: FeedbackMessages = {
   descriptionRequired: 'Please describe what happened.',
   descriptionMax: `Description must be ${MAX_DESCRIPTION} characters or fewer.`,
   incidentDateRequired: 'Please enter when the incident happened.',
+  locationRequired: 'Please enter where it happened.',
 };
 
 const optionalTrimmed = (max = 500) =>
@@ -67,7 +69,12 @@ export function createFeedbackSchema(messages: Partial<FeedbackMessages> = {}) {
       .max(320),
     carNumber: optionalTrimmed(40),
     driverName: optionalTrimmed(200),
-    incidentLocation: optionalTrimmed(500),
+    // Required: where the incident happened. Pickup/drop-off stay optional.
+    incidentLocation: z
+      .string({ message: m.locationRequired })
+      .trim()
+      .min(1, m.locationRequired)
+      .max(500),
     pickupLocation: optionalTrimmed(500),
     dropoffLocation: optionalTrimmed(500),
     // datetime-local sends naive "YYYY-MM-DDTHH:mm" → anchored to Iceland time.
