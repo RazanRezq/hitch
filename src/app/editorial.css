@@ -1369,7 +1369,7 @@ body {
 }
 
 /* ────────── Care band (safety · report a driver) ────────── */
-.ed-care { max-width: 1280px; margin: 96px auto 0; padding: 0 56px; scroll-margin-top: 96px; }
+.ed-care { max-width: 1280px; margin: 96px auto 0; padding: 0 56px; }
 .ed-care-inner {
   position: relative;
   isolation: isolate;
