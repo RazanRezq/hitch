@@ -68,16 +68,19 @@
       "emailInvalid": "Enter a valid email address.",
       "descriptionRequired": "Please describe what happened.",
       "descriptionMax": "Description must be {max} characters or fewer.",
-      "incidentDateRequired": "Please enter when the incident happened."
+      "incidentDateRequired": "Please enter when the incident happened.",
+      "locationRequired": "Please enter where it happened."
     },
     "error": {
       "generic": "Something went wrong. Please try again."
     },
     "submit": "Send report",
     "submitting": "Sending…",
+    "referenceLabel": "Reference number",
     "autoReply": {
       "subject": "We received your report",
-      "body": "Thank you for contacting us about driver conduct.\nWe are very sorry for your experience.\nYour message has been received and will be reviewed within 2 business days.\nIf you haven’t already, please include: date, time, location, and a description of what happened.\nThank you for helping us improve."
+      "body": "Thank you for contacting us about driver conduct.\nWe are very sorry for your experience.\nYour message has been received and will be reviewed within 2 business days.\nThank you for helping us improve.",
+      "copyHeading": "A copy of your report"
     }
   },
   "book": {

@@ -8,7 +8,7 @@ export function generateBookingCode(): string {
   return `HTCH-${randomSegment(4)}-${randomSegment(4)}`;
 }
 
-function randomSegment(length: number): string {
+export function randomSegment(length: number): string {
   const bytes = new Uint8Array(length);
   globalThis.crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => ALPHABET[b % ALPHABET.length]).join('');

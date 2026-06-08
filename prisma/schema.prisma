@@ -399,6 +399,10 @@ model ExchangeRate {
 
 model Feedback {
   id                String   @id @default(cuid())
+  // Human-friendly reference shown to the user + emailed (RPT-XXXX-XXXX).
+  // Nullable so the additive migration is safe for any pre-existing rows;
+  // every new submission sets it.
+  reference         String?  @unique
   name              String?
   phone             String?
   email             String // required — used for the auto-reply

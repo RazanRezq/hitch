@@ -68,16 +68,19 @@
       "emailInvalid": "Sláðu inn gilt netfang.",
       "descriptionRequired": "Vinsamlegast lýstu því sem gerðist.",
       "descriptionMax": "Lýsing má að hámarki vera {max} stafir.",
-      "incidentDateRequired": "Sláðu inn hvenær atvikið átti sér stað."
+      "incidentDateRequired": "Sláðu inn hvenær atvikið átti sér stað.",
+      "locationRequired": "Sláðu inn hvar atvikið átti sér stað."
     },
     "error": {
       "generic": "Eitthvað fór úrskeiðis. Reyndu aftur."
     },
     "submit": "Senda tilkynningu",
     "submitting": "Sendi…",
+    "referenceLabel": "Tilvísunarnúmer",
     "autoReply": {
       "subject": "Við höfum móttekið skilaboðin þín",
-      "body": "Þakka þér fyrir að hafa samband varðandi hegðun ökumanns.\nOkkur þykir það miður að þú skulir eiga slæma upplifun.\nSkilaboðin þín hafa borist og verða skoðuð innan 2 virkra daga.\nEf þú hefur ekki þegar gert það, vinsamlegast sendu dagsetningu, tíma, staðsetningu og lýsingu á atvikinu.\nÞakka þér fyrir að hjálpa okkur að verða betri."
+      "body": "Þakka þér fyrir að hafa samband varðandi hegðun ökumanns.\nOkkur þykir það miður að þú skulir eiga slæma upplifun.\nSkilaboðin þín hafa borist og verða skoðuð innan 2 virkra daga.\nÞakka þér fyrir að hjálpa okkur að verða betri.",
+      "copyHeading": "Afrit af tilkynningu þinni"
     }
   },
   "book": {
