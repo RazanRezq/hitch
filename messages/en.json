@@ -83,6 +83,10 @@
       "email": "you@example.com",
       "phone": "+354 555 1234",
       "bookingReference": "HTCH-XXXX-XXXX",
+      "carNumber": "e.g. AB 123",
+      "incidentLocation": "e.g. Reykjanesbraut, near KEF",
+      "pickupLocation": "e.g. Keflavík Airport (KEF)",
+      "dropoffLocation": "e.g. Reykjavík city centre",
       "description": "Describe what happened — date, time, location and details."
     },
     "validation": {
