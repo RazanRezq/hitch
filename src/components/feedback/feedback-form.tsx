@@ -230,6 +230,54 @@ export function FeedbackForm() {
           <span>{t('emergency')}</span>
         </p>
 
+        {/* Lead with the story — let an upset passenger say what happened first,
+            then ask the structured details below. */}
+        <fieldset className="ed-incident-group">
+          <legend className="ed-incident-legend">{t('groups.what')}</legend>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="feedback-description" className="text-sm font-medium text-foreground">
+              {t('fields.description')}
+              <span className="text-destructive"> *</span>
+            </label>
+            <textarea
+              id="feedback-description"
+              rows={6}
+              maxLength={FEEDBACK_DESCRIPTION_MAX}
+              aria-invalid={errors.description ? true : undefined}
+              aria-describedby={
+                errors.description ? 'feedback-description-error' : 'feedback-description-count'
+              }
+              placeholder={t('placeholders.description')}
+              className={cn(inputClass, 'resize-y')}
+              {...register('description')}
+            />
+            <div className="flex items-center justify-between gap-2">
+              {errors.description?.message ? (
+                <p id="feedback-description-error" role="alert" className="text-sm text-destructive">
+                  {errors.description.message}
+                </p>
+              ) : (
+                <span aria-hidden="true" />
+              )}
+              <span
+                id="feedback-description-count"
+                className="text-ltr shrink-0 font-mono text-xs text-muted-foreground"
+              >
+                {descriptionLength}/{FEEDBACK_DESCRIPTION_MAX}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">{t('evidence.label')}</span>
+            <EvidenceUploader
+              onChange={(keys) =>
+                setValue('attachments', keys, { shouldValidate: false, shouldDirty: true })
+              }
+            />
+          </div>
+        </fieldset>
+
         <fieldset className="ed-incident-group">
           <legend className="ed-incident-legend">{t('groups.contact')}</legend>
           <TextField
@@ -312,52 +360,6 @@ export function FeedbackForm() {
               label={t('fields.dropoffLocation')}
               register={register}
               error={errors.dropoffLocation}
-            />
-          </div>
-        </fieldset>
-
-        <fieldset className="ed-incident-group">
-          <legend className="ed-incident-legend">{t('groups.what')}</legend>
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="feedback-description" className="text-sm font-medium text-foreground">
-              {t('fields.description')}
-              <span className="text-destructive"> *</span>
-            </label>
-            <textarea
-              id="feedback-description"
-              rows={6}
-              maxLength={FEEDBACK_DESCRIPTION_MAX}
-              aria-invalid={errors.description ? true : undefined}
-              aria-describedby={
-                errors.description ? 'feedback-description-error' : 'feedback-description-count'
-              }
-              placeholder={t('placeholders.description')}
-              className={cn(inputClass, 'resize-y')}
-              {...register('description')}
-            />
-            <div className="flex items-center justify-between gap-2">
-              {errors.description?.message ? (
-                <p id="feedback-description-error" role="alert" className="text-sm text-destructive">
-                  {errors.description.message}
-                </p>
-              ) : (
-                <span aria-hidden="true" />
-              )}
-              <span
-                id="feedback-description-count"
-                className="text-ltr shrink-0 font-mono text-xs text-muted-foreground"
-              >
-                {descriptionLength}/{FEEDBACK_DESCRIPTION_MAX}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <span className="text-sm font-medium text-foreground">{t('evidence.label')}</span>
-            <EvidenceUploader
-              onChange={(keys) =>
-                setValue('attachments', keys, { shouldValidate: false, shouldDirty: true })
-              }
             />
           </div>
         </fieldset>
