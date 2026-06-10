@@ -100,7 +100,7 @@ export function CareBand() {
         </span>
         <h2 className="ed-care-title">{t('title')}</h2>
         <p className="ed-care-body">{t('body')}</p>
-        <Link href={`/${locale}/feedback`} className="ed-care-btn">
+        <Link href={`/${locale}/complaint`} className="ed-care-btn">
           <ShieldCheck size={18} aria-hidden="true" />
           <span>{t('cta')}</span>
         </Link>

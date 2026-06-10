@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { fromZonedTime } from 'date-fns-tz';
 import { APP_TIMEZONE, LOCALES } from '../constants';
+import { EVIDENCE_MAX_FILES } from './uploadSchema';
 
 // True when a datetime string already carries an explicit offset (…Z or ±HH:mm).
 const HAS_OFFSET = /([zZ])$|([+-]\d{2}:?\d{2})$/;
@@ -36,6 +37,7 @@ export interface FeedbackMessages {
   descriptionMax: string;
   incidentDateRequired: string;
   locationRequired: string;
+  consentRequired: string;
 }
 
 const DEFAULT_MESSAGES: FeedbackMessages = {
@@ -45,6 +47,7 @@ const DEFAULT_MESSAGES: FeedbackMessages = {
   descriptionMax: `Description must be ${MAX_DESCRIPTION} characters or fewer.`,
   incidentDateRequired: 'Please enter when the incident happened.',
   locationRequired: 'Please enter where it happened.',
+  consentRequired: 'Please confirm you consent to us processing this report.',
 };
 
 const optionalTrimmed = (max = 500) =>
@@ -67,6 +70,8 @@ export function createFeedbackSchema(messages: Partial<FeedbackMessages> = {}) {
       .min(1, m.emailRequired)
       .email(m.emailInvalid)
       .max(320),
+    // Optional HTCH-XXXX-XXXX from the customer's booking, to link the report.
+    bookingReference: optionalTrimmed(40),
     carNumber: optionalTrimmed(40),
     driverName: optionalTrimmed(200),
     // Required: where the incident happened. Pickup/drop-off stay optional.
@@ -97,6 +102,10 @@ export function createFeedbackSchema(messages: Partial<FeedbackMessages> = {}) {
       .max(MAX_DESCRIPTION, m.descriptionMax),
     requestRefund: z.boolean().default(false),
     notifyAuthorities: z.boolean().default(false),
+    // DO Spaces object keys for evidence uploaded ahead of submit (see uploads route).
+    attachments: z.array(z.string().min(1).max(512)).max(EVIDENCE_MAX_FILES).default([]),
+    // GDPR: explicit, required consent to process the report (must be ticked).
+    consent: z.boolean().refine((v) => v === true, m.consentRequired),
     locale: z.enum(LOCALES).optional(),
     // Honeypot: real users never see or fill this. Bots do. Left unconstrained so
     // a filled value passes validation and is dropped silently by the route

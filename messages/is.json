@@ -43,11 +43,33 @@
     "eyebrow": "Tilkynning um atvik",
     "title": "Tilkynna atvik eða kvörtun",
     "subtitle": "Segðu okkur hvað gerðist. Reitir merktir með * eru nauðsynlegir.",
+    "reassure": "Tilkynningin þín er skoðuð innan 2 virkra daga og meðhöndluð sem trúnaðarmál.",
+    "help": "Þarftu aðstoð strax? Hringdu",
+    "emergency": "Ef þú ert í bráðri hættu, hringdu í 112 — ekki nota þetta eyðublað.",
+    "consent": "Ég samþykki að Hitch vinni úr upplýsingunum í þessari tilkynningu til að rannsaka hana og bregðast við.",
     "backHome": "Til baka á forsíðu",
+    "evidence": {
+      "label": "Myndir eða gögn (valfrjálst)",
+      "add": "Bæta við skrám",
+      "hint": "Allt að {max} myndir eða PDF · hámark {mb} MB hver.",
+      "uploading": "Hleð upp",
+      "failed": "Upphleðsla mistókst",
+      "remove": "Fjarlægja {name}",
+      "errorTooMany": "Þú getur hengt við allt að {max} skrár.",
+      "errorTooLarge": "{name} er of stór (hámark {max} MB).",
+      "errorType": "{name} er ekki studd skráartegund."
+    },
+    "groups": {
+      "contact": "Samskiptaupplýsingar þínar",
+      "ride": "Ferðin",
+      "what": "Hvað gerðist",
+      "requests": "Beiðnir"
+    },
     "fields": {
       "email": "Netfang",
       "name": "Nafn",
       "phone": "Símanúmer",
+      "bookingReference": "Bókunarnúmer",
       "carNumber": "Bílnúmer",
       "driverName": "Nafn ökumanns",
       "incidentDateTime": "Dagsetning og tími atviks",
@@ -61,6 +83,7 @@
     "placeholders": {
       "email": "þú@example.com",
       "phone": "+354 555 1234",
+      "bookingReference": "HTCH-XXXX-XXXX",
       "description": "Lýstu því sem gerðist — dagsetning, tími, staðsetning og smáatriði."
     },
     "validation": {
@@ -69,7 +92,8 @@
       "descriptionRequired": "Vinsamlegast lýstu því sem gerðist.",
       "descriptionMax": "Lýsing má að hámarki vera {max} stafir.",
       "incidentDateRequired": "Sláðu inn hvenær atvikið átti sér stað.",
-      "locationRequired": "Sláðu inn hvar atvikið átti sér stað."
+      "locationRequired": "Sláðu inn hvar atvikið átti sér stað.",
+      "consentRequired": "Vinsamlegast staðfestu að þú samþykkir að við vinnum úr þessari tilkynningu."
     },
     "error": {
       "generic": "Eitthvað fór úrskeiðis. Reyndu aftur."
@@ -77,6 +101,7 @@
     "submit": "Senda tilkynningu",
     "submitting": "Sendi…",
     "referenceLabel": "Tilvísunarnúmer",
+    "attachmentsLabel": "Viðhengi",
     "autoReply": {
       "subject": "Við höfum móttekið skilaboðin þín",
       "body": "Þakka þér fyrir að hafa samband varðandi hegðun ökumanns.\nOkkur þykir það miður að þú skulir eiga slæma upplifun.\nSkilaboðin þín hafa borist og verða skoðuð innan 2 virkra daga.\nÞakka þér fyrir að hjálpa okkur að verða betri.",

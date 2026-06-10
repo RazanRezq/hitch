@@ -1442,6 +1442,269 @@ body {
   .ed-care-inner { padding: 56px 24px; border-radius: var(--radius-lg); }
 }
 
+/* ────────── Incident / feedback page ────────── */
+.ed-incident {
+  min-height: 100vh;
+  padding-block-end: 80px;
+  background: var(--background);
+}
+/* Dark aurora reassurance band — creative-freedom surface (CLAUDE.md). The
+   absolute, transparent site header overlays it, so the top padding clears it. */
+.ed-incident-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: oklch(0.06 0.005 240);
+  color: white;
+  padding: 136px 24px 124px;
+  text-align: center;
+}
+.ed-incident-aurora {
+  position: absolute;
+  inset: -25%;
+  z-index: -1;
+  background:
+    radial-gradient(55% 60% at 18% 12%, rgba(91, 233, 185, 0.42) 0%, transparent 60%),
+    radial-gradient(52% 55% at 86% 90%, rgba(124, 58, 237, 0.42) 0%, transparent 62%),
+    radial-gradient(45% 45% at 62% 42%, rgba(56, 189, 248, 0.3) 0%, transparent 60%);
+  mix-blend-mode: screen;
+  animation: edHeroDrift 28s ease-in-out infinite;
+}
+.ed-incident-hero-inner {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.ed-incident-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--aurora-green);
+}
+.ed-incident-title {
+  margin: 18px 0 0;
+  font-size: clamp(34px, 5vw, 64px);
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-weight: 700;
+  color: white;
+}
+.ed-incident-sub {
+  margin: 18px auto 0;
+  max-width: 520px;
+  font-size: 16px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+.ed-incident-reassure {
+  margin: 24px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(91, 233, 185, 0.12);
+  border: 1px solid rgba(91, 233, 185, 0.25);
+  color: var(--aurora-green);
+  font-size: 13px;
+  line-height: 1.4;
+  text-align: start;
+}
+.ed-incident-help {
+  margin: 18px 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  text-decoration: none;
+  transition: color 200ms;
+}
+.ed-incident-help:hover {
+  color: white;
+}
+.ed-incident-help-num {
+  color: white;
+  font-weight: 600;
+}
+
+/* Functional form card — tokens only (STRICT tier). Pulled up over the band. */
+.ed-incident-card {
+  position: relative;
+  z-index: 1;
+  width: min(680px, 100% - 32px);
+  margin-inline: auto;
+  margin-block-start: -64px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 24px 60px -28px rgba(26, 26, 26, 0.22);
+  padding: 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+/* Emergency notice — 112 belongs above the form, visually distinct (amber). */
+.ed-incident-emergency {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 18px;
+  border-radius: var(--radius-lg);
+  background: color-mix(in oklch, var(--accent) 16%, var(--card));
+  border: 1px solid color-mix(in oklch, var(--accent) 45%, transparent);
+  color: var(--foreground);
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 500;
+}
+.ed-incident-emergency svg {
+  flex-shrink: 0;
+  color: var(--accent);
+}
+.ed-incident-group {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.ed-incident-legend {
+  width: 100%;
+  padding: 0;
+  /* Explicit margin (not flex gap) — a <legend> in a flex fieldset doesn't
+     reliably participate in the parent's `gap`. */
+  margin-block-end: 18px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+.ed-incident-legend::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+/* The description's char-counter row adds a line of height below the textarea;
+   pull the following group up so this gap matches the other section gaps. */
+.ed-incident-group:has(textarea) {
+  margin-block-end: -22px;
+}
+
+/* Resolved / success moment — echoes the band the passenger arrived through. */
+.ed-incident-done {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 148px 24px 80px;
+  background: var(--background);
+}
+.ed-incident-done-inner {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  width: min(560px, 100% - 32px);
+  background: oklch(0.06 0.005 240);
+  color: white;
+  border-radius: var(--radius-xl);
+  padding: 64px 40px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+.ed-incident-done-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  background: rgba(91, 233, 185, 0.14);
+  color: var(--aurora-green);
+}
+.ed-incident-done-title {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: white;
+}
+.ed-incident-done-body {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.72);
+}
+.ed-incident-done-btn {
+  margin-block-start: 16px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: white;
+  color: oklch(0.05 0 0);
+  border-radius: 999px;
+  padding: 16px 30px;
+  font-size: 15px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 250ms, box-shadow 250ms;
+}
+.ed-incident-done-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 40px -12px rgba(91, 233, 185, 0.5);
+}
+/* Reference number — subtle light-on-dark panel; the value is the one piece
+   the passenger may need to quote later, so it gets mono emphasis. */
+.ed-incident-done-ref {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-block-start: 4px;
+  padding: 14px 24px;
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+.ed-incident-done-ref-label {
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.55);
+}
+.ed-incident-done-ref-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: white;
+}
+
+@media (max-width: 720px) {
+  .ed-incident-hero { padding: 132px 20px 104px; }
+  .ed-incident-card {
+    margin-block-start: -56px;
+    padding: 24px 20px;
+    border-radius: var(--radius-lg);
+  }
+  .ed-incident-done-inner { padding: 52px 24px; border-radius: var(--radius-lg); }
+}
+
 /* ────────── Final CTA + Footer ────────── */
 .ed-finale {
   position: relative;

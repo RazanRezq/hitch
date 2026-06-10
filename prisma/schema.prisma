@@ -406,6 +406,7 @@ model Feedback {
   name              String?
   phone             String?
   email             String // required — used for the auto-reply
+  bookingReference  String? // optional HTCH-XXXX-XXXX linking to a booking
   carNumber         String?
   driverName        String?
   incidentLocation  String?
@@ -415,6 +416,8 @@ model Feedback {
   description       String   @db.Text
   requestRefund     Boolean  @default(false)
   notifyAuthorities Boolean  @default(false)
+  // DO Spaces object keys for uploaded evidence (private; read via signed URLs).
+  attachments       String[] @default([])
   locale            String? // locale captured at submit, for the reply + context
   createdAt         DateTime @default(now())
 
