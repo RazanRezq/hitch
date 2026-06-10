@@ -43,7 +43,7 @@ app.route('/api/payments', paymentsRoute);
 app.route('/api/quotes', quotesRoute);
 app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
-app.route('/api/feedback', feedbackRoute);
+app.route('/api/complaint', feedbackRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);
 
 export type AppType = typeof app;
