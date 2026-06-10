@@ -194,10 +194,6 @@ export function FeedbackForm() {
       <section className="ed-incident-hero">
         <div className="ed-incident-aurora" aria-hidden="true" />
         <div className="ed-incident-hero-inner">
-          <span className="t-mono ed-incident-eyebrow">
-            <ShieldCheck size={14} aria-hidden="true" />
-            {t('eyebrow')}
-          </span>
           <h1 className="ed-incident-title">{t('title')}</h1>
           <p className="ed-incident-sub">{t('subtitle')}</p>
           <div className="ed-incident-meta">
