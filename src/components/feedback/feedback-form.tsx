@@ -323,6 +323,7 @@ export function FeedbackForm() {
             <TextField
               name="carNumber"
               label={t('fields.carNumber')}
+              placeholder={t('placeholders.carNumber')}
               register={register}
               error={errors.carNumber}
             />
@@ -344,6 +345,7 @@ export function FeedbackForm() {
           <TextField
             name="incidentLocation"
             label={t('fields.incidentLocation')}
+            placeholder={t('placeholders.incidentLocation')}
             required
             register={register}
             error={errors.incidentLocation}
@@ -352,12 +354,14 @@ export function FeedbackForm() {
             <TextField
               name="pickupLocation"
               label={t('fields.pickupLocation')}
+              placeholder={t('placeholders.pickupLocation')}
               register={register}
               error={errors.pickupLocation}
             />
             <TextField
               name="dropoffLocation"
               label={t('fields.dropoffLocation')}
+              placeholder={t('placeholders.dropoffLocation')}
               register={register}
               error={errors.dropoffLocation}
             />
