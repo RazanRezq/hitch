@@ -8,7 +8,7 @@ import { redis } from '@/server/lib/redis';
 import { notifyFeedback } from '@/server/services/feedback/notify';
 
 /**
- * POST /api/feedback — public, no auth. Accessed from the in-vehicle QR form.
+ * POST /api/complaint — public, no auth. Accessed from the in-vehicle QR form.
  *
  * Order matters: validate → rate-limit → save to DB FIRST → fire-and-forget the
  * dual email. Email failures never affect the response (graceful degradation).
