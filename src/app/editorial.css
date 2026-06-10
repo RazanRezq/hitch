@@ -187,6 +187,12 @@ body {
   color: inherit;
   display: inline-flex;
   align-items: center;
+  /* Optically centre the wordmark with the header tools: the logo's viewBox
+     carries pin headroom + empty space below the baseline, so its box-centre
+     sits above the visible wordmark. Nudge up via position (not transform —
+     that's reserved for the :hover scale). */
+  position: relative;
+  inset-block-start: -4px;
   transition: transform 350ms cubic-bezier(0.22, 1, 0.36, 1), opacity 200ms;
 }
 .ed-header-logo:hover { transform: scale(1.03); }
@@ -244,7 +250,11 @@ body {
 }
 
 /* Tools cluster */
-.ed-header-tools { display: flex; align-items: center; gap: 8px; }
+/* Pin to the last grid column so the cluster stays right-aligned even when the
+   nav is absent (minimal header) or display:none (mobile) — otherwise it would
+   auto-place into the middle 1fr column and the right-anchored menu would open
+   off the left edge of the screen. */
+.ed-header-tools { display: flex; align-items: center; gap: 8px; grid-column: 3; justify-self: end; }
 .ed-pill-divider {
   width: 1px;
   height: 14px;
@@ -300,6 +310,7 @@ body {
   padding: 6px;
   list-style: none;
   min-width: 200px;
+  max-width: calc(100vw - 24px);
   background: var(--card);
   color: var(--foreground);
   border: 1px solid var(--border);
