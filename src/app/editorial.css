@@ -1512,36 +1512,35 @@ body {
   line-height: 1.6;
   color: rgba(255, 255, 255, 0.72);
 }
-.ed-incident-reassure {
-  margin: 24px 0 0;
-  display: inline-flex;
+/* One quiet meta row (reassurance + help phone) instead of stacked boxes —
+   keeps the band calm: the title is the only strong element. */
+.ed-incident-meta {
+  margin: 28px auto 0;
+  max-width: 640px;
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
-  padding: 10px 18px;
-  border-radius: 999px;
-  background: rgba(91, 233, 185, 0.12);
-  border: 1px solid rgba(91, 233, 185, 0.25);
-  color: var(--aurora-green);
+  justify-content: center;
+  gap: 10px 24px;
   font-size: 13px;
-  line-height: 1.4;
-  text-align: start;
+  color: rgba(255, 255, 255, 0.6);
 }
-.ed-incident-help {
-  margin: 18px 0 0;
+.ed-incident-meta-item {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.72);
+}
+.ed-incident-meta-item svg {
+  flex-shrink: 0;
+  color: var(--aurora-green);
+}
+.ed-incident-meta-link {
+  color: rgba(255, 255, 255, 0.85);
   text-decoration: none;
   transition: color 200ms;
 }
-.ed-incident-help:hover {
+.ed-incident-meta-link:hover {
   color: white;
-}
-.ed-incident-help-num {
-  color: white;
-  font-weight: 600;
 }
 
 /* Functional form card — tokens only (STRICT tier). Pulled up over the band. */

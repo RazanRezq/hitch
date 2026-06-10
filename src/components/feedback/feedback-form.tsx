@@ -200,15 +200,20 @@ export function FeedbackForm() {
           </span>
           <h1 className="ed-incident-title">{t('title')}</h1>
           <p className="ed-incident-sub">{t('subtitle')}</p>
-          <p className="ed-incident-reassure">
-            <ShieldCheck size={15} aria-hidden="true" />
-            {t('reassure')}
-          </p>
-          <a href={`tel:${phone.replace(/\s+/g, '')}`} className="ed-incident-help">
-            <Phone size={15} aria-hidden="true" />
-            <span>{t('help')}</span>
-            <span className="text-ltr t-mono ed-incident-help-num">{phone}</span>
-          </a>
+          <div className="ed-incident-meta">
+            <span className="ed-incident-meta-item">
+              <ShieldCheck size={14} aria-hidden="true" />
+              {t('reassure')}
+            </span>
+            <a
+              href={`tel:${phone.replace(/\s+/g, '')}`}
+              className="ed-incident-meta-item ed-incident-meta-link"
+              aria-label={`${t('help')} ${phone}`}
+            >
+              <Phone size={14} aria-hidden="true" />
+              <span className="text-ltr t-mono">{phone}</span>
+            </a>
+          </div>
         </div>
       </section>
 
