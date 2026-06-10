@@ -40,10 +40,9 @@
       "title": "Report an incident · Hitch",
       "description": "Tell us about an incident or complaint regarding your ride."
     },
-    "eyebrow": "Incident report",
     "title": "Report an incident or complaint",
-    "subtitle": "Tell us what happened.",
-    "reassure": "We take every report seriously.",
+    "subtitle": "We apologize for the behavior you experienced.",
+    "reassure": "We take all matters seriously · Your privacy is kept confidential",
     "help": "Need help right now? Call",
     "emergency": "In case of an emergency, call 112.",
     "consent": "I consent to Hitch processing the information in this report to investigate and respond to it.",
