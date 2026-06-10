@@ -44,7 +44,21 @@
     "title": "Report an incident or complaint",
     "subtitle": "Tell us what happened. Fields marked with * are required.",
     "reassure": "Your report is reviewed within 2 business days and kept confidential.",
+    "help": "Need help right now? Call",
+    "emergency": "If you're in immediate danger, call 112 — don't use this form.",
+    "consent": "I consent to Hitch processing the information in this report to investigate and respond to it.",
     "backHome": "Back to home",
+    "evidence": {
+      "label": "Photos or evidence (optional)",
+      "add": "Add files",
+      "hint": "Up to {max} images or PDFs · max {mb} MB each.",
+      "uploading": "Uploading",
+      "failed": "Upload failed",
+      "remove": "Remove {name}",
+      "errorTooMany": "You can attach up to {max} files.",
+      "errorTooLarge": "{name} is too large (max {max} MB).",
+      "errorType": "{name} isn't a supported file type."
+    },
     "groups": {
       "contact": "Your contact details",
       "ride": "The ride",
@@ -55,6 +69,7 @@
       "email": "Email",
       "name": "Name",
       "phone": "Phone",
+      "bookingReference": "Booking reference",
       "carNumber": "Car number",
       "driverName": "Driver name",
       "incidentDateTime": "Date & time of incident",
@@ -68,6 +83,7 @@
     "placeholders": {
       "email": "you@example.com",
       "phone": "+354 555 1234",
+      "bookingReference": "HTCH-XXXX-XXXX",
       "description": "Describe what happened — date, time, location and details."
     },
     "validation": {
@@ -76,7 +92,8 @@
       "descriptionRequired": "Please describe what happened.",
       "descriptionMax": "Description must be {max} characters or fewer.",
       "incidentDateRequired": "Please enter when the incident happened.",
-      "locationRequired": "Please enter where it happened."
+      "locationRequired": "Please enter where it happened.",
+      "consentRequired": "Please confirm you consent to us processing this report."
     },
     "error": {
       "generic": "Something went wrong. Please try again."
@@ -84,6 +101,7 @@
     "submit": "Send report",
     "submitting": "Sending…",
     "referenceLabel": "Reference number",
+    "attachmentsLabel": "Files attached",
     "autoReply": {
       "subject": "We received your report",
       "body": "Thank you for contacting us about driver conduct.\nWe are very sorry for your experience.\nYour message has been received and will be reviewed within 2 business days.\nThank you for helping us improve.",

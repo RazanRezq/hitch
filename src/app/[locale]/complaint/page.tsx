@@ -32,7 +32,7 @@ export default async function FeedbackPage({
   setRequestLocale(locale);
   return (
     <>
-      <Header showSectionNav={false} />
+      <Header variant="minimal" />
       <FeedbackForm />
     </>
   );

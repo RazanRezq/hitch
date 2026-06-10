@@ -19,11 +19,15 @@ const LOCALE_ENDONYM: Record<Locale, string> = {
 const CURRENCY_SYMBOL: Record<Currency, string> = { ISK: 'kr.', EUR: '€', USD: '$' };
 
 /**
- * `showSectionNav` toggles the landing-only section anchors (Fly/Fleet/…),
- * which don't exist off the landing page (e.g. /feedback). Logo, language +
- * currency switchers, sign-in, book CTA and the info strip always render.
+ * `variant`:
+ * - `full` (default) — the landing header: info strip, section nav, language +
+ *   currency switchers, sign-in and book CTA.
+ * - `minimal` — logo + language switcher only. For off-tone surfaces like the
+ *   incident-report page, where the marketing chrome (cars-on-shift boast,
+ *   currency, "Book now") is irrelevant or jarring.
  */
-export function Header({ showSectionNav = true }: { showSectionNav?: boolean }) {
+export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
+  const minimal = variant === 'minimal';
   const t = useTranslations('landing.header');
   const tc = useTranslations('currency');
   const { locale, change: changeLocale } = useChangeLocale();
@@ -90,31 +94,33 @@ export function Header({ showSectionNav = true }: { showSectionNav?: boolean }) 
 
   return (
     <header className={cls}>
-      <div className="ed-header-strip" aria-hidden="true">
-        <div className="ed-header-strip-inner">
-          <span className="t-mono">{t('coords')}</span>
-          <span className="ed-strip-dot">·</span>
-          <span className="t-mono">
-            {timeStr} {t('local')}
-          </span>
-          <span className="ed-strip-dot">·</span>
-          <span className="t-mono ed-strip-live">
-            <span className="ed-livedot" />
-            {t('cars')}
-          </span>
-          <span className="ed-strip-spacer" />
-          <span className="t-mono ed-strip-channel">{t('channel')}</span>
-          <span className="ed-strip-dot">·</span>
-          <span className="t-mono text-ltr">{t('phone')}</span>
+      {!minimal && (
+        <div className="ed-header-strip" aria-hidden="true">
+          <div className="ed-header-strip-inner">
+            <span className="t-mono">{t('coords')}</span>
+            <span className="ed-strip-dot">·</span>
+            <span className="t-mono">
+              {timeStr} {t('local')}
+            </span>
+            <span className="ed-strip-dot">·</span>
+            <span className="t-mono ed-strip-live">
+              <span className="ed-livedot" />
+              {t('cars')}
+            </span>
+            <span className="ed-strip-spacer" />
+            <span className="t-mono ed-strip-channel">{t('channel')}</span>
+            <span className="ed-strip-dot">·</span>
+            <span className="t-mono text-ltr">{t('phone')}</span>
+          </div>
         </div>
-      </div>
+      )}
 
       <div className="ed-header-main">
         <Link href={`/${locale}`} className="ed-header-logo" aria-label={t('logoHome')}>
           <Logo size={28} />
         </Link>
 
-        {showSectionNav && (
+        {!minimal && (
           <nav className="ed-header-nav" aria-label="Primary">
             <a href="#top" className="ed-nav-link is-active">
               <span>{t('fly')}</span>
@@ -144,25 +150,31 @@ export function Header({ showSectionNav = true }: { showSectionNav?: boolean }) 
               hint: l.toUpperCase(),
             }))}
           />
-          <div className="ed-pill-divider" aria-hidden="true" />
-          <HeaderDropdown
-            ariaLabel={t('currencyLabel')}
-            value={currency}
-            onChange={(v) => setCurrency(v)}
-            options={CURRENCIES.map((c) => ({
-              value: c,
-              short: c,
-              label: tc(c.toLowerCase() as 'isk' | 'eur' | 'usd'),
-              hint: CURRENCY_SYMBOL[c],
-            }))}
-          />
-          <Link href={`/${locale}/book`} className="ed-header-signin">
-            {t('signin')}
-          </Link>
-          <Link href={`/${locale}/book`} className="ed-header-cta">
-            <span>{t('book')}</span>
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
+          {!minimal && (
+            <>
+              <div className="ed-pill-divider" aria-hidden="true" />
+              <HeaderDropdown
+                ariaLabel={t('currencyLabel')}
+                value={currency}
+                onChange={(v) => setCurrency(v)}
+                options={CURRENCIES.map((c) => ({
+                  value: c,
+                  short: c,
+                  label: tc(c.toLowerCase() as 'isk' | 'eur' | 'usd'),
+                  hint: CURRENCY_SYMBOL[c],
+                }))}
+              />
+              <Link href={`/${locale}/book`} className="ed-header-signin">
+                {t('signin')}
+              </Link>
+            </>
+          )}
+          {!minimal && (
+            <Link href={`/${locale}/book`} className="ed-header-cta">
+              <span>{t('book')}</span>
+              <ArrowRight size={16} aria-hidden="true" />
+            </Link>
+          )}
         </div>
       </div>
     </header>

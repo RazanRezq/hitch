@@ -1,8 +1,18 @@
 import isMessages from '@/../messages/is.json';
 import enMessages from '@/../messages/en.json';
 import { resend } from '@/server/lib/resend';
+import { getDownloadUrl } from '@/server/services/storage';
 import { LOCALES, type Locale } from '@/lib/types';
 import type { Feedback } from '@/lib/db';
+
+// Evidence links in the internal email live long enough for a reviewer to open
+// them within the 2-business-day SLA. 7 days is the SigV4 presigned-URL maximum.
+const ATTACHMENT_LINK_TTL_SECONDS = 7 * 24 * 60 * 60;
+
+interface AttachmentLink {
+  name: string;
+  url: string;
+}
 
 /**
  * Dual email dispatch for an incident report:
@@ -31,17 +41,20 @@ const COPY: Record<
     autoReply: { subject: string; body: string; copyHeading: string };
     fields: FieldLabels;
     referenceLabel: string;
+    attachmentsLabel: string;
   }
 > = {
   is: {
     autoReply: isMessages.feedback.autoReply,
     fields: isMessages.feedback.fields,
     referenceLabel: isMessages.feedback.referenceLabel,
+    attachmentsLabel: isMessages.feedback.attachmentsLabel,
   },
   en: {
     autoReply: enMessages.feedback.autoReply,
     fields: enMessages.feedback.fields,
     referenceLabel: enMessages.feedback.referenceLabel,
+    attachmentsLabel: enMessages.feedback.attachmentsLabel,
   },
 };
 
@@ -82,7 +95,23 @@ function whenLabel(f: Feedback): string {
   return f.incidentDateTime.toISOString().replace('T', ' ').slice(0, 16);
 }
 
-function businessHtml(f: Feedback): string {
+function attachmentsHtml(links: AttachmentLink[]): string {
+  if (links.length === 0) return '';
+  const items = links
+    .map(
+      (l) =>
+        `<li style="margin:2px 0"><a href="${escapeHtml(l.url)}">${escapeHtml(
+          l.name,
+        )}</a></li>`,
+    )
+    .join('');
+  return `
+    <h3 style="font-family:sans-serif">Evidence (${links.length}) — links expire in 7 days</h3>
+    <ul style="font-family:sans-serif;font-size:14px;padding-inline-start:18px;margin:0">${items}</ul>
+  `;
+}
+
+function businessHtml(f: Feedback, attachmentLinks: AttachmentLink[]): string {
   return `
     <h2 style="font-family:sans-serif">New incident / complaint report</h2>
     <table style="font-family:sans-serif;font-size:14px;border-collapse:collapse">
@@ -90,6 +119,7 @@ function businessHtml(f: Feedback): string {
       ${row('Name', f.name)}
       ${row('Email', f.email)}
       ${row('Phone', f.phone)}
+      ${row('Booking reference', f.bookingReference)}
       ${row('Car number', f.carNumber)}
       ${row('Driver name', f.driverName)}
       ${row('Incident location', f.incidentLocation)}
@@ -105,12 +135,13 @@ function businessHtml(f: Feedback): string {
     <p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap">${nl2br(
       f.description,
     )}</p>
+    ${attachmentsHtml(attachmentLinks)}
   `;
 }
 
 // Customer-facing copy of what they submitted, with localized field labels.
 function customerReportHtml(f: Feedback, locale: Locale): string {
-  const { fields, referenceLabel, autoReply } = COPY[locale];
+  const { fields, referenceLabel, attachmentsLabel, autoReply } = COPY[locale];
   return `
     <h3 style="font-family:sans-serif;font-size:15px;margin:24px 0 8px">${escapeHtml(
       autoReply.copyHeading,
@@ -119,6 +150,7 @@ function customerReportHtml(f: Feedback, locale: Locale): string {
       ${row(referenceLabel, f.reference)}
       ${row(fields.email, f.email)}
       ${row(fields.phone, f.phone)}
+      ${row(fields.bookingReference, f.bookingReference)}
       ${row(fields.carNumber, f.carNumber)}
       ${row(fields.driverName, f.driverName)}
       ${row(fields.incidentDateTime, whenLabel(f))}
@@ -127,6 +159,7 @@ function customerReportHtml(f: Feedback, locale: Locale): string {
       ${row(fields.dropoffLocation, f.dropoffLocation)}
       ${flagRow(fields.requestRefund, f.requestRefund)}
       ${flagRow(fields.notifyAuthorities, f.notifyAuthorities)}
+      ${row(attachmentsLabel, f.attachments.length > 0 ? String(f.attachments.length) : '')}
     </table>
     <h3 style="font-family:sans-serif;font-size:15px;margin:16px 0 8px">${escapeHtml(
       fields.description,
@@ -155,12 +188,19 @@ async function sendBusinessNotification(f: Feedback): Promise<string> {
   const subject = `[Incident] ${f.name ?? f.email}${
     f.requestRefund ? ' · refund requested' : ''
   }`;
+  // Resolve a short-lived signed download URL per evidence key (private bucket).
+  const attachmentLinks: AttachmentLink[] = await Promise.all(
+    f.attachments.map(async (key, i) => ({
+      name: key.split('/').pop() ?? `file-${i + 1}`,
+      url: await getDownloadUrl(key, ATTACHMENT_LINK_TTL_SECONDS),
+    })),
+  );
   return send('business-notification', {
     from: FROM,
     to: BUSINESS_TO,
     replyTo: f.email,
     subject,
-    html: businessHtml(f),
+    html: businessHtml(f, attachmentLinks),
   });
 }
 

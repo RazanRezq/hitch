@@ -5,7 +5,7 @@ import { useForm, useWatch, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { CheckCircle2, Loader2, Send, ShieldCheck } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, Loader2, Phone, Send, ShieldCheck } from 'lucide-react';
 import {
   createFeedbackSchema,
   FEEDBACK_DESCRIPTION_MAX,
@@ -15,6 +15,7 @@ import {
 } from '@/lib/types';
 import { useSubmitFeedback } from '@/lib/api-client/hooks/useSubmitFeedback';
 import { cn } from '@/lib/ui';
+import { EvidenceUploader } from './evidence-uploader';
 
 // Form shape is the schema's input type so the resolver lines up exactly.
 type FormValues = FeedbackSubmitInput;
@@ -23,6 +24,7 @@ const DEFAULT_VALUES: FormValues = {
   name: '',
   phone: '',
   email: '',
+  bookingReference: '',
   carNumber: '',
   driverName: '',
   incidentLocation: '',
@@ -32,6 +34,8 @@ const DEFAULT_VALUES: FormValues = {
   description: '',
   requestRefund: false,
   notifyAuthorities: false,
+  attachments: [],
+  consent: false,
   website: '',
 };
 
@@ -111,6 +115,8 @@ function CheckboxField({
 
 export function FeedbackForm() {
   const t = useTranslations('feedback');
+  // Reuse the centralized phone number from the header namespace (single source).
+  const phone = useTranslations('landing.header')('phone');
   const locale = useLocale() as Locale;
   const mutation = useSubmitFeedback();
 
@@ -123,6 +129,7 @@ export function FeedbackForm() {
         descriptionMax: t('validation.descriptionMax', { max: FEEDBACK_DESCRIPTION_MAX }),
         incidentDateRequired: t('validation.incidentDateRequired'),
         locationRequired: t('validation.locationRequired'),
+        consentRequired: t('validation.consentRequired'),
       }),
     [t],
   );
@@ -131,6 +138,7 @@ export function FeedbackForm() {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<FormValues, unknown, FeedbackSubmitValues>({
     resolver: zodResolver(schema),
@@ -196,6 +204,11 @@ export function FeedbackForm() {
             <ShieldCheck size={15} aria-hidden="true" />
             {t('reassure')}
           </p>
+          <a href={`tel:${phone.replace(/\s+/g, '')}`} className="ed-incident-help">
+            <Phone size={15} aria-hidden="true" />
+            <span>{t('help')}</span>
+            <span className="text-ltr t-mono ed-incident-help-num">{phone}</span>
+          </a>
         </div>
       </section>
 
@@ -209,6 +222,12 @@ export function FeedbackForm() {
           className="pointer-events-none absolute h-0 w-0 overflow-hidden opacity-0"
           {...register('website')}
         />
+
+        {/* Safety first: real emergencies belong with 112, not a web form. */}
+        <p role="note" className="ed-incident-emergency">
+          <AlertTriangle size={18} aria-hidden="true" />
+          <span>{t('emergency')}</span>
+        </p>
 
         <fieldset className="ed-incident-group">
           <legend className="ed-incident-legend">{t('groups.contact')}</legend>
@@ -244,6 +263,13 @@ export function FeedbackForm() {
 
         <fieldset className="ed-incident-group">
           <legend className="ed-incident-legend">{t('groups.ride')}</legend>
+          <TextField
+            name="bookingReference"
+            label={t('fields.bookingReference')}
+            placeholder={t('placeholders.bookingReference')}
+            register={register}
+            error={errors.bookingReference}
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <TextField
               name="carNumber"
@@ -324,6 +350,15 @@ export function FeedbackForm() {
               </span>
             </div>
           </div>
+
+          <div className="flex flex-col gap-2">
+            <span className="text-sm font-medium text-foreground">{t('evidence.label')}</span>
+            <EvidenceUploader
+              onChange={(keys) =>
+                setValue('attachments', keys, { shouldValidate: false, shouldDirty: true })
+              }
+            />
+          </div>
         </fieldset>
 
         <fieldset className="ed-incident-group">
@@ -339,6 +374,32 @@ export function FeedbackForm() {
             register={register}
           />
         </fieldset>
+
+        {/* GDPR: explicit, required consent before the report can be sent. */}
+        <div className="flex flex-col gap-1.5">
+          <label
+            htmlFor="feedback-consent"
+            className="flex cursor-pointer items-start gap-3 rounded-2xl border border-border bg-card p-4"
+          >
+            <input
+              id="feedback-consent"
+              type="checkbox"
+              className="mt-0.5 h-5 w-5 shrink-0 rounded accent-primary"
+              aria-invalid={errors.consent ? true : undefined}
+              aria-describedby={errors.consent ? 'feedback-consent-error' : undefined}
+              {...register('consent')}
+            />
+            <span className="text-sm text-foreground">
+              {t('consent')}
+              <span className="text-destructive"> *</span>
+            </span>
+          </label>
+          {errors.consent?.message && (
+            <p id="feedback-consent-error" role="alert" className="text-sm text-destructive">
+              {errors.consent.message}
+            </p>
+          )}
+        </div>
 
         {mutation.isError && (
           <p role="alert" className="text-sm text-destructive">

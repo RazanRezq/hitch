@@ -46,6 +46,7 @@ export const feedbackRoute = new Hono().post(
       name: body.name,
       phone: body.phone,
       email: body.email,
+      bookingReference: body.bookingReference,
       carNumber: body.carNumber,
       driverName: body.driverName,
       incidentLocation: body.incidentLocation,
@@ -55,6 +56,7 @@ export const feedbackRoute = new Hono().post(
       description: body.description,
       requestRefund: body.requestRefund,
       notifyAuthorities: body.notifyAuthorities,
+      attachments: body.attachments,
       locale: body.locale,
     };
 
