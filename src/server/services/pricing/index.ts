@@ -19,10 +19,16 @@ export async function quoteISK(
 ): Promise<PricingQuote> {
   const distanceKm = calculateDistance(pickup, dropoff);
   const baseFare = 2500;
-  const perKm = Math.round(distanceKm * 380);
   const airportSurcharge = options.isAirportPickup ? 1500 : 0;
+  // ISK is zero-decimal and Stripe requires ISK charge amounts to be divisible
+  // by 100. Round the fare to the nearest 100 ISK so the displayed, stored, and
+  // charged price all agree and are chargeable. The per-km line absorbs the
+  // rounding so the breakdown still sums exactly to the total.
+  const rawTotal = baseFare + Math.round(distanceKm * 380) + airportSurcharge;
+  const basePriceISK = Math.round(rawTotal / 100) * 100;
+  const perKm = basePriceISK - baseFare - airportSurcharge;
   return {
-    basePriceISK: baseFare + perKm + airportSurcharge,
+    basePriceISK,
     distanceKm,
     breakdownISK: { baseFare, perKm, airportSurcharge },
   };
