@@ -30,3 +30,33 @@ export async function createPaymentIntent(params: {
     { idempotencyKey: params.idempotencyKey },
   );
 }
+
+/**
+ * Capture a previously-authorized manual-capture PaymentIntent. Called when a
+ * driver is assigned/accepts (CLAUDE.md "Manual Capture Flow"): never before the
+ * intent reaches requires_capture. Idempotent so a retried assign won't double-capture.
+ */
+export async function capturePaymentIntent(params: {
+  intentId: string;
+  idempotencyKey: string;
+  amountToCapture?: number;
+}) {
+  return stripe.paymentIntents.capture(
+    params.intentId,
+    params.amountToCapture !== undefined ? { amount_to_capture: params.amountToCapture } : {},
+    { idempotencyKey: params.idempotencyKey },
+  );
+}
+
+/**
+ * Void (cancel) an uncaptured PaymentIntent — e.g. system cancellation or no
+ * driver found before capture. Idempotent.
+ */
+export async function voidPaymentIntent(params: {
+  intentId: string;
+  idempotencyKey: string;
+}) {
+  return stripe.paymentIntents.cancel(params.intentId, undefined, {
+    idempotencyKey: params.idempotencyKey,
+  });
+}

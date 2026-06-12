@@ -10,6 +10,7 @@ import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
 import { feedbackRoute } from './routes/feedback';
 import { stripeWebhookRoute } from './routes/webhooks/stripe';
+import { adminRoute } from './routes/admin';
 
 /**
  * Bare Hono app. No transport here — Next.js mounts this via the catch-all route
@@ -45,5 +46,6 @@ app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
 app.route('/api/complaint', feedbackRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);
+app.route('/api/admin', adminRoute);
 
 export type AppType = typeof app;

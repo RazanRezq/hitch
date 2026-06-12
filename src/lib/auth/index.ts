@@ -6,6 +6,12 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
   secret: process.env.BETTER_AUTH_SECRET,
   baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
+  // The Next app (and its mounted /api/auth) runs on :3000; allow same-origin
+  // dashboard sign-in even when BETTER_AUTH_URL points at the WS process.
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
+    'http://localhost:3000',
+  ],
   emailAndPassword: {
     enabled: true,
     minPasswordLength: 8,

@@ -4,6 +4,7 @@ import { prisma } from '../../lib/db';
 import { BOOKING_STATUSES, PAYMENT_STATUSES } from '../../lib/types';
 import { redis } from '../lib/redis.js';
 import { publishBookingUpdate } from '../realtime/publish-booking';
+import { enqueueDispatch } from '../queues/dispatch';
 
 /**
  * Consumes the `webhooks` queue. Each job points at a WebhookEvent row that
@@ -112,6 +113,10 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
   ]);
 
   publishBookingUpdate(booking.id, BOOKING_STATUSES.CONFIRMED);
+  // Hand off to the dispatch queue (never dispatch inline). Fire-and-forget.
+  void enqueueDispatch(booking.id).catch((err) =>
+    console.error('[webhook] enqueueDispatch failed', booking.id, err),
+  );
 }
 
 /**

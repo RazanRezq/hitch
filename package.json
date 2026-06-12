@@ -17,6 +17,7 @@
     "ws:dev": "node --env-file-if-exists=.env --import tsx --watch src/server/index.ts",
     "workers": "node --env-file-if-exists=.env --import tsx src/server/workers/index.ts",
     "workers:dev": "node --env-file-if-exists=.env --import tsx --watch src/server/workers/index.ts",
+    "simulate": "node --env-file-if-exists=.env --import tsx scripts/simulate-drivers.ts",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
