@@ -105,6 +105,7 @@ enum BookingEventType {
 
 model User {
   id                      String    @id @default(cuid())
+  clerkId                 String?   @unique
   email                   String    @unique
   phone                   String?   @unique
   name                    String?
