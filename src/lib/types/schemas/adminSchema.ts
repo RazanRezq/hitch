@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { BOOKING_STATUSES, type BookingStatus } from '../constants';
+import { BOOKING_STATUSES, VEHICLE_TYPES, type BookingStatus, type VehicleType } from '../constants';
 
 const BOOKING_STATUS_VALUES = Object.values(BOOKING_STATUSES) as [
   BookingStatus,
@@ -69,3 +69,27 @@ export type UpdateDriverInput = z.infer<typeof updateDriverSchema>;
 /** POST /api/admin/drivers/:id/online body. */
 export const setDriverOnlineSchema = z.object({ isOnline: z.boolean() });
 export type SetDriverOnlineInput = z.infer<typeof setDriverOnlineSchema>;
+
+const vehicleTypeSchema = z.enum(
+  Object.values(VEHICLE_TYPES) as [VehicleType, ...VehicleType[]],
+);
+
+/** POST /api/admin/vehicles body. */
+export const createVehicleSchema = z.object({
+  driverId: z.string().min(1),
+  vehicleType: vehicleTypeSchema,
+  // number (not coerce) so the form's valueAsNumber input type matches the
+  // output type — avoids the zodResolver input/output mismatch in react-hook-form.
+  capacity: z.number().int().min(1).max(20),
+  licensePlate: z.string().trim().min(1).max(16),
+  make: z.string().trim().min(1).max(60),
+  model: z.string().trim().min(1).max(60),
+  year: z.number().int().min(1980).max(2100),
+  color: z.string().trim().min(1).max(40),
+  isActive: z.boolean().optional(),
+});
+export type CreateVehicleInput = z.infer<typeof createVehicleSchema>;
+
+/** PATCH /api/admin/vehicles/:id body. */
+export const updateVehicleSchema = createVehicleSchema.partial();
+export type UpdateVehicleInput = z.infer<typeof updateVehicleSchema>;

@@ -52,6 +52,10 @@ export const API_ROUTES = {
     },
     vehicles: {
       list: '/api/admin/vehicles',
+      create: '/api/admin/vehicles',
+      byId: (id: string) => `/api/admin/vehicles/${id}`,
+      update: (id: string) => `/api/admin/vehicles/${id}`,
+      remove: (id: string) => `/api/admin/vehicles/${id}`,
     },
     stats: {
       overview: '/api/admin/stats/overview',
