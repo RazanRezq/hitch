@@ -10,5 +10,7 @@ const intlMiddleware = createMiddleware(routing);
 export default clerkMiddleware((_auth, req) => intlMiddleware(req));
 
 export const config = {
-  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)'],
+  // First entry: next-intl's locale routing (also covers Clerk's /__clerk handshake,
+  // which isn't api/_next/a-file). Second entry makes Clerk's auto-proxy explicit.
+  matcher: ['/((?!api|_next|_vercel|.*\\..*).*)', '/__clerk/:path*'],
 };

@@ -126,22 +126,22 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <ClerkProvider>
-      <html
-        lang={locale}
-        dir={dir}
-        className={`${dmSans.variable} ${spaceMono.variable}`}
+    <html
+      lang={locale}
+      dir={dir}
+      className={`${dmSans.variable} ${spaceMono.variable}`}
+      suppressHydrationWarning
+    >
+      <body
+        className="min-h-screen bg-background text-foreground antialiased"
         suppressHydrationWarning
       >
-        <body
-          className="min-h-screen bg-background text-foreground antialiased"
-          suppressHydrationWarning
-        >
+        <ClerkProvider>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <Providers dir={dir}>{children}</Providers>
           </NextIntlClientProvider>
-        </body>
-      </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   );
 }

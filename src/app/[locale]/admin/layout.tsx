@@ -25,7 +25,7 @@ export default async function AdminLayout({
   const { locale } = await params;
 
   const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) redirect(`/${locale}/login`);
+  if (!clerkUserId) redirect(`/${locale}/sign-in`);
 
   const dbUser = await prisma.user.findUnique({
     where: { clerkId: clerkUserId },
