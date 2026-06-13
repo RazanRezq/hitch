@@ -1,6 +1,7 @@
 import type { Context, MiddlewareHandler } from 'hono';
 import type { UserRole } from '@/lib/types';
-import { auth } from './index';
+import { prisma } from '@/lib/db';
+import { getClerkUserId } from './index';
 
 export interface AuthVariables {
   user: {
@@ -9,25 +10,25 @@ export interface AuthVariables {
     role: UserRole;
     name?: string | null;
   };
-  sessionToken: string;
 }
 
 /**
- * Reads the current session from a Better Auth cookie/header and attaches
- * `c.get('user')`. Throws 401 if missing or invalid.
+ * Verifies the Clerk session on the request and attaches the matching Postgres
+ * `User` as `c.get('user')`. 401 if not signed in, or signed in but not yet
+ * synced into Postgres (the Clerk webhook creates the row). Works in both the
+ * Next-mounted API and the standalone WS process.
  */
 export const requireAuth: MiddlewareHandler = async (c, next) => {
-  const session = await auth.api.getSession({ headers: c.req.raw.headers });
-  if (!session?.user) {
-    return c.json({ error: 'Unauthorized' }, 401);
-  }
-  c.set('user', {
-    id: session.user.id,
-    email: session.user.email,
-    role: (session.user as { role?: UserRole }).role ?? 'PASSENGER',
-    name: session.user.name,
+  const clerkUserId = await getClerkUserId(c.req.raw);
+  if (!clerkUserId) return c.json({ error: 'Unauthorized' }, 401);
+
+  const user = await prisma.user.findUnique({
+    where: { clerkId: clerkUserId },
+    select: { id: true, email: true, role: true, name: true },
   });
-  c.set('sessionToken', session.session.token);
+  if (!user) return c.json({ error: 'Unauthorized' }, 401);
+
+  c.set('user', { id: user.id, email: user.email, role: user.role, name: user.name });
   await next();
 };
 

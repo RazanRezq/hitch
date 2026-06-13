@@ -1,6 +1,5 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
-import { auth } from '@/lib/auth';
 
 import { bookingsRoute } from './routes/bookings';
 import { driversRoute } from './routes/drivers';
@@ -10,6 +9,7 @@ import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
 import { feedbackRoute } from './routes/feedback';
 import { stripeWebhookRoute } from './routes/webhooks/stripe';
+import { clerkWebhookRoute } from './routes/webhooks/clerk';
 
 /**
  * Bare Hono app. No transport here — Next.js mounts this via the catch-all route
@@ -33,9 +33,6 @@ app.get('/api/health', (c) =>
   c.json({ status: 'ok', version: process.env.npm_package_version ?? '0.0.0' }),
 );
 
-// Better Auth mounts its own routes
-app.on(['POST', 'GET'], '/api/auth/*', (c) => auth.handler(c.req.raw));
-
 // Feature routes
 app.route('/api/bookings', bookingsRoute);
 app.route('/api/drivers', driversRoute);
@@ -45,5 +42,6 @@ app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
 app.route('/api/complaint', feedbackRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);
+app.route('/api/webhooks/clerk', clerkWebhookRoute);
 
 export type AppType = typeof app;

@@ -7,8 +7,12 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
  * server-side — verification recomputes the HMAC.
  */
 function getSecret(): string {
-  const s = process.env.BETTER_AUTH_SECRET;
-  if (!s) throw new Error('BETTER_AUTH_SECRET is not set');
+  // Dedicated secret for guest-booking tokens, independent of the account-auth
+  // provider. Falls back to BETTER_AUTH_SECRET so tokens minted before the Clerk
+  // migration keep validating during cutover (set GUEST_TOKEN_SECRET to the old
+  // BETTER_AUTH_SECRET value to preserve in-flight guest sessions).
+  const s = process.env.GUEST_TOKEN_SECRET ?? process.env.BETTER_AUTH_SECRET;
+  if (!s) throw new Error('GUEST_TOKEN_SECRET is not set');
   return s;
 }
 
