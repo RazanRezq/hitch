@@ -136,7 +136,7 @@ export default async function LocaleLayout({
         className="min-h-screen bg-background text-foreground antialiased"
         suppressHydrationWarning
       >
-        <ClerkProvider>
+        <ClerkProvider afterSignOutUrl={`/${locale}/sign-in`}>
           <NextIntlClientProvider locale={locale} messages={messages}>
             <Providers dir={dir}>{children}</Providers>
           </NextIntlClientProvider>
