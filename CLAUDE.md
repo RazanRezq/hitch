@@ -124,7 +124,7 @@ Three one-tap cards:
 | Framework | **Hono** | Mounted INSIDE the Next.js app via a catch-all handler at `src/app/api/[[...route]]/route.ts` using `hono/vercel`'s `handle()`. Bare app lives at `src/server/app.ts`. |
 | Validation | Zod + `@hono/zod-validator` | |
 | ORM | Prisma | PostgreSQL |
-| Auth | Better Auth | Works with Hono + Prisma |
+| Auth | **Clerk** (account auth) + HMAC guest tokens | `@clerk/backend` verifies sessions in BOTH the Next-mounted API and the standalone WS process; Postgres `User` is synced via a Clerk webhook (roles stay in Postgres). Guest bookings use short-lived HMAC tokens (no account). |
 | Realtime | Native WebSockets (`@hono/node-ws`) + Redis pub/sub. **Runs as a separate process** (`npm run ws`) because Next.js route handlers cannot host long-lived WS — same Hono `app`, different transport, entry at `src/server/index.ts`. NOT Socket.io. | |
 | Jobs/Queue | BullMQ + Redis | Dispatch, webhooks, payouts, exchange rates. Run via `npm run workers` (separate process). |
 | Payments | Stripe (manual capture, multi-currency) | |
@@ -145,7 +145,7 @@ Three one-tap cards:
 - **MongoDB / Mongoose** — PostgreSQL + Prisma only
 - **Express** — we use Hono
 - **Socket.io** — native WebSockets only
-- **Supabase clients** — Better Auth + Prisma directly
+- **Supabase clients** — Clerk (account auth) + Prisma directly
 - **Fastify** — Hono only
 - **Redux, MobX, Recoil, Jotai** — Zustand for client state
 - **Styled-components, Emotion, CSS Modules** — Tailwind v4 only
@@ -191,7 +191,7 @@ hitch/
     │   ├── ui/                 # Shadcn components + design tokens
     │   ├── types/              # Shared types + constants (LOCALES, ROLES, ...)
     │   ├── db/                 # Prisma client export
-    │   ├── auth/               # Better Auth config
+    │   ├── auth/               # Clerk backend client + Hono auth middleware
     │   ├── utils/              # Geo, currency, phone, booking helpers
     │   ├── i18n-shared/        # Formatters (formatCurrency, formatDate, ...)
     │   └── api-client/         # TanStack Query hooks + WS client + API_ROUTES
@@ -439,8 +439,12 @@ Configured via `@import "tailwindcss"` + `@theme inline { ... }` in `globals.css
 # API
 DATABASE_URL
 REDIS_URL
-BETTER_AUTH_SECRET
-BETTER_AUTH_URL
+GUEST_TOKEN_SECRET                 # HMAC secret for guest-booking tokens
+
+# Clerk (account auth — EU data region)
+CLERK_SECRET_KEY
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+CLERK_WEBHOOK_SECRET               # svix signing secret for the user-sync webhook
 
 # Stripe
 STRIPE_SECRET_KEY
@@ -693,7 +697,7 @@ Anything not shared.
 
 ```
 Client → WSS /ws (Hono)
-  ↓ Better Auth validates session
+  ↓ Clerk validates session (@clerk/backend, networkless)
   ↓ Client sends { action: "subscribe", channel: "booking:abc123" }
   ↓ Server validates RBAC
   ↓ Socket added to channel map
@@ -820,7 +824,7 @@ hitch-production/
 ## 🔐 SECURITY
 
 ### Authentication
-- Better Auth sessions via secure cookies (web)
+- Clerk sessions via secure cookies (web); guest bookings via short-lived HMAC tokens
 - JWT tokens for mobile (Phase 2)
 - Session: 7 days rolling, 30 days absolute max
 
@@ -1124,7 +1128,7 @@ npx shadcn@latest add button
 
 ## 🔑 GOLDEN RULES
 
-1. **Stack is locked**: Next.js + Hono + PostgreSQL + Prisma + Better Auth + Native WebSockets + BullMQ + Railway + DO Spaces. Don't substitute.
+1. **Stack is locked**: Next.js + Hono + PostgreSQL + Prisma + Clerk (auth) + Native WebSockets + BullMQ + Railway + DO Spaces. Don't substitute.
 2. **Icelandic-first, bilingual from day one**: is (default) + en (no RTL locale ships; Arabic removed June 2026)
 3. **Logical properties only**: `ms-`/`me-`/`ps-`/`pe-`/`start-`/`end-`/`text-start` — RTL plumbing retained for a future locale
 4. **ISK is the source of truth**: all internal pricing in ISK, display currency derived

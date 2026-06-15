@@ -4,6 +4,7 @@ import { DM_Sans, Space_Mono } from 'next/font/google';
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations, setRequestLocale } from 'next-intl/server';
 import { notFound } from 'next/navigation';
+import { ClerkProvider } from '@clerk/nextjs';
 import { routing, type AppLocale } from '@/i18n/routing';
 import { Providers } from '@/providers';
 import '../globals.css';
@@ -135,9 +136,11 @@ export default async function LocaleLayout({
         className="min-h-screen bg-background text-foreground antialiased"
         suppressHydrationWarning
       >
-        <NextIntlClientProvider locale={locale} messages={messages}>
-          <Providers dir={dir}>{children}</Providers>
-        </NextIntlClientProvider>
+        <ClerkProvider afterSignOutUrl={`/${locale}/sign-in`}>
+          <NextIntlClientProvider locale={locale} messages={messages}>
+            <Providers dir={dir}>{children}</Providers>
+          </NextIntlClientProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

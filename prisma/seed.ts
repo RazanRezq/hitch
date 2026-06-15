@@ -1,7 +1,7 @@
 /**
- * Dev seed. Creates staff logins (super admin + dispatcher), pricing zones,
- * exchange rates, online drivers with vehicles + a document each, sample
- * passengers, and bookings across the lifecycle. Do NOT run against production.
+ * Dev seed. Seeds pricing zones, exchange rates, online drivers with vehicles +
+ * a document each, sample passengers, and bookings across the lifecycle, and
+ * promotes the configured admin email to SUPER_ADMIN. Do NOT run against production.
  *
  * Assignable bookings (SEARCHING) get a REAL manual-capture Stripe test
  * PaymentIntent when STRIPE_SECRET_KEY is set, so the dispatcher assign → capture
@@ -9,36 +9,35 @@
  * (assign will surface a clear Stripe error — set a test key to demo capture).
  */
 import { prisma } from '@/lib/db';
-import { auth } from '@/lib/auth';
 import { stripe } from '@/server/lib/stripe';
 import { BOOKING_STATUSES, PAYMENT_STATUSES, type BookingStatus } from '@/lib/types';
 
 type SeededUser = Awaited<ReturnType<typeof prisma.user.upsert>>;
 
-const PASSWORD = process.env.SEED_PASSWORD ?? 'hitch1234';
 const KEF = { lat: 63.985, lng: -22.605, address: 'Keflavíkurflugvöllur (KEF)' };
 const RVK = { lat: 64.1466, lng: -21.9426, address: 'Reykjavík 101' };
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/** Ensure a staff user exists with a password (via Better Auth) and the right role. */
-async function ensureStaff(email: string, name: string, role: 'SUPER_ADMIN' | 'DISPATCHER') {
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    if (existing.role !== role) {
-      await prisma.user.update({ where: { id: existing.id }, data: { role } });
-    }
-    return existing;
+/**
+ * Clerk owns identity, so the seed can't create a login. Account auth = sign up
+ * via Clerk → the Clerk webhook creates a Postgres User (PASSENGER) → promote
+ * here. This grants the role to an already-synced user by email; if they haven't
+ * signed up yet it prints instructions (re-run after signing up). See the
+ * prod-railway-topology-and-clerk note: admin = manual SUPER_ADMIN promote.
+ */
+async function promoteByEmail(email: string, role: 'SUPER_ADMIN' | 'DISPATCHER'): Promise<void> {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    console.warn(
+      `[seed] ${email} not found — sign in via Clerk at /sign-in first, then re-run db:seed to grant ${role}.`,
+    );
+    return;
   }
-  try {
-    await auth.api.signUpEmail({ body: { email, password: PASSWORD, name } });
-  } catch (e) {
-    console.warn(`[seed] signUpEmail failed for ${email}:`, (e as Error).message);
+  if (user.role !== role) {
+    await prisma.user.update({ where: { id: user.id }, data: { role } });
   }
-  return prisma.user.update({
-    where: { email },
-    data: { role, preferredLocale: 'is', preferredCurrency: 'ISK' },
-  });
+  console.log(`[seed] ${email} → ${role}`);
 }
 
 /** Create a manual-capture test intent already at requires_capture, or null. */
@@ -60,13 +59,9 @@ async function createCapturableIntent(amountISK: number): Promise<string | null>
 }
 
 async function main() {
-  // --- Staff ---------------------------------------------------------------
-  const admin = await ensureStaff(
-    process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is',
-    'Hitch Admin',
-    'SUPER_ADMIN',
-  );
-  await ensureStaff('dispatch@hitch.is', 'Hitch Dispatch', 'DISPATCHER');
+  // --- Staff: promote Clerk-synced users by email --------------------------
+  await promoteByEmail(process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is', 'SUPER_ADMIN');
+  await promoteByEmail('dispatch@hitch.is', 'DISPATCHER');
 
   // --- Pricing zones -------------------------------------------------------
   const zones = [
@@ -288,8 +283,10 @@ async function main() {
     console.log('[seed] created sample bookings');
   }
 
+  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is';
   console.log(
-    `[seed] staff: ${admin.email} + dispatch@hitch.is (password "${PASSWORD}") · ${drivers.length} drivers · ${passengers.length} passengers · ${zones.length} zones`,
+    `[seed] ${drivers.length} drivers · ${passengers.length} passengers · ${zones.length} zones. ` +
+      `Admin: sign in via Clerk at /sign-in, then re-run db:seed to promote ${adminEmail} to SUPER_ADMIN.`,
   );
 }
 

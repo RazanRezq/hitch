@@ -1,52 +1,29 @@
-import { betterAuth } from 'better-auth';
-import { prismaAdapter } from 'better-auth/adapters/prisma';
-import { prisma } from '@/lib/db';
+import { createClerkClient } from '@clerk/backend';
 
-export const auth = betterAuth({
-  database: prismaAdapter(prisma, { provider: 'postgresql' }),
-  secret: process.env.BETTER_AUTH_SECRET,
-  baseURL: process.env.BETTER_AUTH_URL ?? 'http://localhost:3001',
-  // The Next app (and its mounted /api/auth) runs on :3000; allow same-origin
-  // dashboard sign-in even when BETTER_AUTH_URL points at the WS process.
-  trustedOrigins: [
-    process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000',
-    'http://localhost:3000',
-  ],
-  emailAndPassword: {
-    enabled: true,
-    minPasswordLength: 8,
-    maxPasswordLength: 128,
-  },
-  session: {
-    expiresIn: 60 * 60 * 24 * 7, // 7 days rolling
-    updateAge: 60 * 60 * 24, // 1 day
-  },
-  user: {
-    additionalFields: {
-      role: {
-        type: 'string',
-        required: false,
-        defaultValue: 'PASSENGER',
-      },
-      phone: {
-        type: 'string',
-        required: false,
-      },
-      preferredLocale: {
-        type: 'string',
-        required: false,
-        defaultValue: 'is',
-      },
-      preferredCurrency: {
-        type: 'string',
-        required: false,
-        defaultValue: 'ISK',
-      },
-    },
-  },
+/**
+ * Account auth is handled by Clerk. We use the @clerk/backend client (not
+ * @clerk/nextjs) because the same Hono `app` runs in two runtimes: inside the
+ * Next route handler AND in the standalone WS process (`npm run ws`). Only the
+ * backend client can verify a session from a raw Request in both. See CLAUDE.md
+ * "SECURITY → Authentication".
+ *
+ * Clerk owns identity; Postgres `User` (synced via the Clerk webhook) remains the
+ * source of truth for app data + RBAC roles. Guest bookings stay token-based
+ * (see lib/guestToken) and never touch Clerk.
+ */
+export const clerk = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY,
+  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
 });
 
-export type Auth = typeof auth;
-export type Session = Auth['$Infer']['Session'];
+/**
+ * Networkless verification of the Clerk session on a raw Request (cookie or
+ * Bearer token). Returns the Clerk user id, or null if not signed in.
+ */
+export async function getClerkUserId(request: Request): Promise<string | null> {
+  const state = await clerk.authenticateRequest(request);
+  if (!state.isSignedIn) return null;
+  return state.toAuth().userId ?? null;
+}
 
 export * from './middleware';

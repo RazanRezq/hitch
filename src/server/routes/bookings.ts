@@ -40,7 +40,7 @@ export const bookingsRoute = new Hono()
       return c.json({ error: 'Idempotency-Key header is required' }, 400);
     }
 
-    const sessionUserId = await getSessionUserId(c.req.raw.headers);
+    const sessionUserId = await getSessionUserId(c.req.raw);
 
     let passenger: Awaited<ReturnType<typeof prisma.user.findUnique>>;
     if (sessionUserId) {
@@ -186,7 +186,7 @@ export const bookingsRoute = new Hono()
   .get('/:id', async (c) => {
     const id = c.req.param('id');
     const guestToken = c.req.query('t');
-    const sessionUserId = await getSessionUserId(c.req.raw.headers);
+    const sessionUserId = await getSessionUserId(c.req.raw);
 
     const result = await authorizeBookingAccess(id, sessionUserId, guestToken);
     if (!result.ok) return c.json({ error: result.error }, result.status);
@@ -224,7 +224,7 @@ export const bookingsRoute = new Hono()
       const id = c.req.param('id');
       const guestToken = c.req.query('t');
       const reason = (c.req.valid('json') as { reason?: string } | undefined)?.reason;
-      const sessionUserId = await getSessionUserId(c.req.raw.headers);
+      const sessionUserId = await getSessionUserId(c.req.raw);
 
       const access = await authorizeBookingAccess(id, sessionUserId, guestToken);
       if (!access.ok) return c.json({ error: access.error }, access.status);

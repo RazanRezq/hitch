@@ -17,7 +17,7 @@ export function createWsHandler() {
     const subs = new Set<string>();
     // Resolve identity lazily and once — reused across every subscribe.
     let authPromise: Promise<WsAuth> | undefined;
-    const getAuth = () => (authPromise ??= loadWsAuth(c.req.raw.headers));
+    const getAuth = () => (authPromise ??= loadWsAuth(c.req.raw));
 
     return {
       onOpen(_evt: Event, ws: WSContext) {

@@ -1,11 +1,20 @@
-import { auth } from '@/lib/auth';
+import { getClerkUserId } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { verifyGuestToken } from './guestToken';
 
-/** Resolve the authenticated user id from a request's session cookie, if any. */
-export async function getSessionUserId(headers: Headers): Promise<string | null> {
-  const session = await auth.api.getSession({ headers });
-  return session?.user?.id ?? null;
+/**
+ * Resolve the authenticated app user id (Postgres `User.id`) from a request's
+ * Clerk session, or null for guests. Maps the Clerk user → Postgres `User` via
+ * `clerkId` (populated by the Clerk webhook).
+ */
+export async function getSessionUserId(request: Request): Promise<string | null> {
+  const clerkUserId = await getClerkUserId(request);
+  if (!clerkUserId) return null;
+  const user = await prisma.user.findUnique({
+    where: { clerkId: clerkUserId },
+    select: { id: true },
+  });
+  return user?.id ?? null;
 }
 
 export type BookingRow = NonNullable<Awaited<ReturnType<typeof prisma.booking.findUnique>>>;

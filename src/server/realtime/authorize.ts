@@ -7,9 +7,9 @@ export interface WsAuth {
   role: UserRole | null;
 }
 
-/** Resolve a connection's identity once from its handshake cookies. */
-export async function loadWsAuth(headers: Headers): Promise<WsAuth> {
-  const userId = await getSessionUserId(headers);
+/** Resolve a connection's identity once from its handshake request (Clerk session). */
+export async function loadWsAuth(request: Request): Promise<WsAuth> {
+  const userId = await getSessionUserId(request);
   if (!userId) return { userId: null, role: null };
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { role: true } });
   return { userId, role: user?.role ?? null };
