@@ -185,102 +185,138 @@ async function main() {
     );
   }
 
-  // --- Bookings (only when none exist, so re-runs stay idempotent) ----------
+  // --- Bookings + ratings ---------------------------------------------------
+  // SEED_RESET=1 wipes existing mock bookings so the set can be regenerated
+  // (e.g. after fixing the Stripe key, to mint real capturable intents).
+  if (process.env.SEED_RESET) {
+    await prisma.rating.deleteMany({});
+    await prisma.payment.deleteMany({});
+    await prisma.booking.deleteMany({}); // cascades BookingEvent + TripLocationHistory
+    console.log('[seed] SEED_RESET — cleared existing bookings, payments, ratings');
+  }
   const existingBookings = await prisma.booking.count();
   if (existingBookings === 0) {
-    let n = 0;
+    const DAY = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    type PaymentStatusValue = (typeof PAYMENT_STATUSES)[keyof typeof PAYMENT_STATUSES];
+
+    // A few corridor destinations so the list/map aren't all the same trip.
+    const BLU = { lat: 63.8804, lng: -22.4495, address: 'Bláa Lónið' };
+    const HFJ = { lat: 64.0671, lng: -21.9396, address: 'Hafnarfjörður' };
+    const KOP = { lat: 64.1109, lng: -21.9128, address: 'Kópavogur' };
+    const ROUTES = [
+      { from: KEF, to: RVK, km: 49, priceISK: 14900, vt: 'SEDAN' as const, fromAirport: true },
+      { from: RVK, to: KEF, km: 49, priceISK: 14900, vt: 'SUV' as const, fromAirport: false },
+      { from: KEF, to: BLU, km: 25, priceISK: 11900, vt: 'SUV' as const, fromAirport: true },
+      { from: KEF, to: HFJ, km: 40, priceISK: 12900, vt: 'SEDAN' as const, fromAirport: true },
+      { from: KEF, to: KOP, km: 43, priceISK: 13500, vt: 'VAN' as const, fromAirport: true },
+    ];
+
+    let seq = 0;
     const mkBooking = async (opts: {
       status: BookingStatus;
-      withDriver?: (typeof drivers)[number];
-      paymentStatus: (typeof PAYMENT_STATUSES)[keyof typeof PAYMENT_STATUSES];
-      captured?: boolean;
+      driver?: SeededUser | null;
+      paymentStatus: PaymentStatusValue;
+      capturedAt?: Date | null;
+      createdAt?: Date;
       realIntentId?: string | null;
+      rate?: number;
     }) => {
-      const passenger = passengers[n % passengers.length]!;
-      n++;
-      const basePriceISK = 12500;
+      const route = ROUTES[seq % ROUTES.length]!;
+      const passenger = passengers[seq % passengers.length]!;
+      seq++;
+      const created = opts.createdAt ?? new Date(now);
       const booking = await prisma.booking.create({
         data: {
           passengerId: passenger.id,
-          driverId: opts.withDriver?.id,
-          vehicleId: (opts.withDriver as { _vehicleId?: string } | undefined)?._vehicleId,
-          pickupLat: KEF.lat,
-          pickupLng: KEF.lng,
-          pickupAddress: KEF.address,
-          dropoffLat: RVK.lat,
-          dropoffLng: RVK.lng,
-          dropoffAddress: RVK.address,
-          pickupAirportCode: 'KEF',
-          scheduledTime: new Date(Date.now() + 60 * 60 * 1000),
-          vehicleTypeRequested: 'SEDAN',
-          passengerCount: 2,
-          estimatedDistanceKm: 49,
-          basePriceISK,
+          driverId: opts.driver?.id,
+          vehicleId: (opts.driver as { _vehicleId?: string } | undefined)?._vehicleId,
+          pickupLat: route.from.lat,
+          pickupLng: route.from.lng,
+          pickupAddress: route.from.address,
+          dropoffLat: route.to.lat,
+          dropoffLng: route.to.lng,
+          dropoffAddress: route.to.address,
+          pickupAirportCode: route.fromAirport ? 'KEF' : null,
+          flightNumber: route.fromAirport ? `FI${300 + seq}` : null,
+          scheduledTime: new Date(created.getTime() + 60 * 60 * 1000),
+          vehicleTypeRequested: route.vt,
+          passengerCount: 1 + (seq % 4),
+          estimatedDistanceKm: route.km,
+          basePriceISK: route.priceISK,
           displayCurrency: 'ISK',
-          displayPrice: basePriceISK,
+          displayPrice: route.priceISK,
           exchangeRate: 1,
           status: opts.status,
+          createdAt: created,
         },
       });
       await prisma.payment.create({
         data: {
           bookingId: booking.id,
           stripeIntentId: opts.realIntentId ?? `seed_${booking.id}`,
-          amount: basePriceISK,
+          amount: route.priceISK,
           currency: 'ISK',
-          amountISK: basePriceISK,
+          amountISK: route.priceISK,
           status: opts.paymentStatus,
-          capturedAt: opts.captured ? new Date() : null,
+          capturedAt: opts.capturedAt ?? null,
         },
       });
-      await prisma.bookingEvent.create({
-        data: { bookingId: booking.id, type: 'CREATED', actorId: passenger.id, payload: {} },
+      await prisma.bookingEvent.createMany({
+        data: [
+          { bookingId: booking.id, type: 'CREATED', actorId: passenger.id },
+          { bookingId: booking.id, type: 'STATUS_CHANGED', payload: { to: opts.status } },
+        ],
       });
-      await prisma.bookingEvent.create({
-        data: {
-          bookingId: booking.id,
-          type: 'STATUS_CHANGED',
-          payload: { to: opts.status },
-        },
-      });
+      if (opts.driver && opts.rate) {
+        await prisma.rating.create({
+          data: {
+            bookingId: booking.id,
+            raterId: passenger.id,
+            rateeId: opts.driver.id,
+            score: opts.rate,
+            comment: opts.rate >= 5 ? 'Great ride, right on time.' : 'Good trip.',
+          },
+        });
+      }
       return booking;
     };
 
-    // Completed (captured) — feeds revenue + driver recent trips
-    for (let i = 0; i < 4; i++) {
+    // 14 completed across the last 7 days (revenue trend; 3 captured today) + ratings.
+    for (let i = 0; i < 14; i++) {
+      const daysAgo = i < 3 ? 0 : i % 7;
+      const created = new Date(now - daysAgo * DAY - 3 * 60 * 60 * 1000);
       await mkBooking({
         status: BOOKING_STATUSES.COMPLETED,
-        withDriver: drivers[i % drivers.length],
+        driver: drivers[i % drivers.length],
         paymentStatus: PAYMENT_STATUSES.SUCCEEDED,
-        captured: true,
+        capturedAt: new Date(created.getTime() + 2 * 60 * 60 * 1000),
+        createdAt: created,
+        rate: 4 + (i % 2),
       });
     }
-    // In transit (assigned)
+    // Active trips (assigned).
+    for (let i = 0; i < 3; i++)
+      await mkBooking({ status: BOOKING_STATUSES.IN_TRANSIT, driver: drivers[i], paymentStatus: PAYMENT_STATUSES.SUCCEEDED, capturedAt: new Date(now) });
+    for (let i = 0; i < 2; i++)
+      await mkBooking({ status: BOOKING_STATUSES.ACCEPTED, driver: drivers[i + 1], paymentStatus: PAYMENT_STATUSES.SUCCEEDED, capturedAt: new Date(now) });
+    await mkBooking({ status: BOOKING_STATUSES.DRIVER_ARRIVING, driver: drivers[3], paymentStatus: PAYMENT_STATUSES.SUCCEEDED, capturedAt: new Date(now) });
+    // Pending payment + terminal variety.
+    for (let i = 0; i < 2; i++)
+      await mkBooking({ status: BOOKING_STATUSES.PENDING_PAYMENT, paymentStatus: PAYMENT_STATUSES.REQUIRES_PAYMENT_METHOD });
+    for (let i = 0; i < 2; i++)
+      await mkBooking({ status: BOOKING_STATUSES.CANCELLED_BY_PASSENGER, paymentStatus: PAYMENT_STATUSES.CANCELED, createdAt: new Date(now - (i + 1) * DAY) });
+    await mkBooking({ status: BOOKING_STATUSES.NO_SHOW, driver: drivers[0], paymentStatus: PAYMENT_STATUSES.SUCCEEDED, capturedAt: new Date(now - DAY) });
+    // Assignable now: CONFIRMED + SEARCHING get real manual-capture Stripe test intents.
     for (let i = 0; i < 2; i++) {
-      await mkBooking({
-        status: BOOKING_STATUSES.IN_TRANSIT,
-        withDriver: drivers[i],
-        paymentStatus: PAYMENT_STATUSES.SUCCEEDED,
-        captured: true,
-      });
+      const realIntentId = await createCapturableIntent(13900);
+      await mkBooking({ status: BOOKING_STATUSES.CONFIRMED, paymentStatus: PAYMENT_STATUSES.REQUIRES_CAPTURE, realIntentId });
     }
-    // Pending payment
-    for (let i = 0; i < 2; i++) {
-      await mkBooking({
-        status: BOOKING_STATUSES.PENDING_PAYMENT,
-        paymentStatus: PAYMENT_STATUSES.REQUIRES_PAYMENT_METHOD,
-      });
+    for (let i = 0; i < 4; i++) {
+      const realIntentId = await createCapturableIntent(13900);
+      await mkBooking({ status: BOOKING_STATUSES.SEARCHING, paymentStatus: PAYMENT_STATUSES.REQUIRES_CAPTURE, realIntentId });
     }
-    // Searching — assignable. Real Stripe test intent when possible.
-    for (let i = 0; i < 2; i++) {
-      const realIntentId = await createCapturableIntent(12500);
-      await mkBooking({
-        status: BOOKING_STATUSES.SEARCHING,
-        paymentStatus: PAYMENT_STATUSES.REQUIRES_CAPTURE,
-        realIntentId,
-      });
-    }
-    console.log('[seed] created sample bookings');
+    console.log('[seed] created 31 bookings (+ ratings) across the lifecycle');
   }
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is';
