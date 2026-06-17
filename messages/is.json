@@ -104,10 +104,14 @@
     "submit": "Senda tilkynningu",
     "submitting": "Sendi…",
     "referenceLabel": "Tilvísunarnúmer",
+    "referenceHint": "Geymdu þetta númer — vísaðu í það ef þú hefur samband.",
+    "copyReference": "Afrita tilvísunarnúmer",
+    "copied": "Afritað",
+    "emailSent": "Afrit hefur verið sent á netfangið þitt.",
     "attachmentsLabel": "Viðhengi",
     "autoReply": {
       "subject": "Við höfum móttekið skilaboðin þín",
-      "body": "Þakka þér fyrir að hafa samband varðandi hegðun ökumanns.\nOkkur þykir það miður að þú skulir eiga slæma upplifun.\nSkilaboðin þín hafa borist og verða skoðuð innan 2 virkra daga.\nÞakka þér fyrir að hjálpa okkur að verða betri.",
+      "body": "Þakka þér fyrir að hafa samband við Hitch vegna óviðeigandi hegðunar.\nVið biðjumst afsökunar að við höfum ekki staðist þínar væntingar.\nOkkur þykir það mjög leitt. Við viljum að þú eigir sem besta upplifun.\nSkilaboðin þín hafa borist og verða skoðuð strax til þæginda fyrir þig.\nÞakka þér fyrir að hjálpa okkur að verða betri.",
       "copyHeading": "Afrit af tilkynningu þinni"
     }
   },

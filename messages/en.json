@@ -104,10 +104,14 @@
     "submit": "Send report",
     "submitting": "Sending…",
     "referenceLabel": "Reference number",
+    "referenceHint": "Keep this number — quote it if you contact us.",
+    "copyReference": "Copy reference number",
+    "copied": "Copied",
+    "emailSent": "A copy has been sent to your email.",
     "attachmentsLabel": "Files attached",
     "autoReply": {
       "subject": "We received your report",
-      "body": "Thank you for contacting us about driver conduct.\nWe are very sorry for your experience.\nYour message has been received and will be reviewed within 2 business days.\nThank you for helping us improve.",
+      "body": "Thank you for contacting Hitch regarding misconduct.\nWe apologize that we did not meet your expectations.\nWe are very sorry. We want you to have the best experience.\nYour message has been received and will be reviewed immediately for your convenience.\nThank you for helping us improve.",
       "copyHeading": "A copy of your report"
     }
   },
