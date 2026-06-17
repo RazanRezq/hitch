@@ -17,12 +17,15 @@
     "ws:dev": "node --env-file-if-exists=.env --import tsx --watch src/server/index.ts",
     "workers": "node --env-file-if-exists=.env --import tsx src/server/workers/index.ts",
     "workers:dev": "node --env-file-if-exists=.env --import tsx --watch src/server/workers/index.ts",
+    "simulate": "node --env-file-if-exists=.env --import tsx scripts/simulate-drivers.ts",
     "db:generate": "prisma generate",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
-    "format": "prettier --write \"src/**/*.{ts,tsx,json,md,css}\""
+    "format": "prettier --write \"src/**/*.{ts,tsx,json,md,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -71,14 +74,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.4",
+    "@testing-library/react": "^16.3.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.4",
+    "jsdom": "^26.1.0",
     "prettier": "^3.4.2",
     "prisma": "^6.1.0",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.4"
   }
 }

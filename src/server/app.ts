@@ -2,14 +2,13 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 
 import { bookingsRoute } from './routes/bookings';
-import { driversRoute } from './routes/drivers';
-import { paymentsRoute } from './routes/payments';
 import { quotesRoute } from './routes/quotes';
 import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
 import { feedbackRoute } from './routes/feedback';
 import { stripeWebhookRoute } from './routes/webhooks/stripe';
 import { clerkWebhookRoute } from './routes/webhooks/clerk';
+import { adminRoute } from './routes/admin';
 
 /**
  * Bare Hono app. No transport here — Next.js mounts this via the catch-all route
@@ -35,13 +34,12 @@ app.get('/api/health', (c) =>
 
 // Feature routes
 app.route('/api/bookings', bookingsRoute);
-app.route('/api/drivers', driversRoute);
-app.route('/api/payments', paymentsRoute);
 app.route('/api/quotes', quotesRoute);
 app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
 app.route('/api/complaint', feedbackRoute);
 app.route('/api/webhooks/stripe', stripeWebhookRoute);
 app.route('/api/webhooks/clerk', clerkWebhookRoute);
+app.route('/api/admin', adminRoute);
 
 export type AppType = typeof app;

@@ -8,12 +8,10 @@ import { Sidebar } from '@/components/admin/Sidebar';
 const STAFF_ROLES: readonly string[] = [USER_ROLES.SUPER_ADMIN, USER_ROLES.DISPATCHER];
 
 /**
- * Admin section layout — nested inside the root [locale]/layout. Does NOT render
- * <html>/<body>/<NextIntlClientProvider> (the root layout already handles that).
- *
- * Server-side RBAC gate: Clerk session → Postgres User (by clerkId) → role.
- * Unauthenticated → /login; non-staff → home. The /api/admin/* routes enforce
- * the same roles server-side; this is the front-of-house guard.
+ * Admin section layout — nested inside the root [locale]/layout (does NOT render
+ * <html>/<body>). Server-side RBAC gate: Clerk session → Postgres User (by
+ * clerkId) → role. Unauthenticated → /sign-in; non-staff → home. The /api/admin/*
+ * routes enforce the same roles server-side; this is the front-of-house guard.
  */
 export default async function AdminLayout({
   children,
@@ -36,7 +34,7 @@ export default async function AdminLayout({
   return (
     <div className="flex min-h-screen">
       <Sidebar locale={locale} />
-      <main className="flex-1 p-8">{children}</main>
+      <main className="flex-1 p-6 max-md:pt-20 md:p-8">{children}</main>
     </div>
   );
 }

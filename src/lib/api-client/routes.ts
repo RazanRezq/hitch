@@ -10,15 +10,6 @@ export const API_ROUTES = {
     cancel: (id: string) => `/api/bookings/${id}/cancel`,
     assign: (id: string) => `/api/bookings/${id}/assign`,
   },
-  drivers: {
-    list: '/api/drivers',
-    create: '/api/drivers',
-    byId: (id: string) => `/api/drivers/${id}`,
-    documents: (id: string) => `/api/drivers/${id}/documents`,
-  },
-  payments: {
-    intent: '/api/payments/intent',
-  },
   quotes: {
     create: '/api/quotes',
   },
@@ -33,6 +24,33 @@ export const API_ROUTES = {
   },
   feedback: {
     submit: '/api/complaint',
+  },
+  admin: {
+    bookings: {
+      list: '/api/admin/bookings',
+      byId: (id: string) => `/api/admin/bookings/${id}`,
+      assign: (id: string) => `/api/admin/bookings/${id}/assign`,
+      status: (id: string) => `/api/admin/bookings/${id}/status`,
+    },
+    drivers: {
+      list: '/api/admin/drivers',
+      byId: (id: string) => `/api/admin/drivers/${id}`,
+      create: '/api/admin/drivers',
+      update: (id: string) => `/api/admin/drivers/${id}`,
+      online: (id: string) => `/api/admin/drivers/${id}/online`,
+      verifyDocument: (id: string, docId: string) =>
+        `/api/admin/drivers/${id}/documents/${docId}/verify`,
+    },
+    vehicles: {
+      list: '/api/admin/vehicles',
+      create: '/api/admin/vehicles',
+      byId: (id: string) => `/api/admin/vehicles/${id}`,
+      update: (id: string) => `/api/admin/vehicles/${id}`,
+      remove: (id: string) => `/api/admin/vehicles/${id}`,
+    },
+    stats: {
+      overview: '/api/admin/stats/overview',
+    },
   },
   health: '/api/health',
 } as const;

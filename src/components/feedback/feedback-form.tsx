@@ -1,11 +1,21 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm, useWatch, type UseFormRegister } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { AlertTriangle, CheckCircle2, Loader2, Phone, Send, ShieldCheck } from 'lucide-react';
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Copy,
+  Loader2,
+  Mail,
+  Phone,
+  Send,
+  ShieldCheck,
+} from 'lucide-react';
 import {
   createFeedbackSchema,
   FEEDBACK_DESCRIPTION_MAX,
@@ -113,6 +123,53 @@ function CheckboxField({
   );
 }
 
+// Reference chip — the one value a passenger may need to quote later, so it
+// gets mono emphasis plus tap-to-copy (matching the booking-ID chip pattern).
+function ReferenceChip({
+  reference,
+  label,
+  hint,
+  copyLabel,
+  copiedLabel,
+}: {
+  reference: string;
+  label: string;
+  hint: string;
+  copyLabel: string;
+  copiedLabel: string;
+}) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(reference);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // clipboard blocked — ignore
+    }
+  }
+
+  return (
+    <div className="ed-incident-done-ref">
+      <span className="ed-incident-done-ref-label">{label}</span>
+      <div className="ed-incident-done-ref-row">
+        <span className="text-ltr ed-incident-done-ref-value">{reference}</span>
+        <button
+          type="button"
+          onClick={copy}
+          className="ed-incident-done-ref-copy"
+          aria-label={copyLabel}
+        >
+          {copied ? <Check size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
+          <span aria-live="polite">{copied ? copiedLabel : null}</span>
+        </button>
+      </div>
+      <span className="ed-incident-done-ref-hint">{hint}</span>
+    </div>
+  );
+}
+
 export function FeedbackForm() {
   const t = useTranslations('feedback');
   // Reuse the centralized phone number from the header namespace (single source).
@@ -154,7 +211,8 @@ export function FeedbackForm() {
 
   // Success — an aurora "resolved" moment echoing the report band and the
   // CareBand the passenger came from. Uses the client copy shared with the
-  // auto-reply email.
+  // auto-reply email. Entrance is staged via CSS (`.ed-incident-done` keyframes),
+  // which also short-circuits under `prefers-reduced-motion`.
   if (mutation.isSuccess) {
     const body = t('autoReply.body');
     const [heading, ...rest] = body.split('\n').filter(Boolean);
@@ -166,7 +224,7 @@ export function FeedbackForm() {
           <div className="ed-incident-done-ring">
             <CheckCircle2 size={34} aria-hidden="true" />
           </div>
-          <div aria-live="polite" className="flex flex-col gap-3">
+          <div aria-live="polite" className="ed-incident-done-copy flex flex-col gap-3">
             <h1 className="ed-incident-done-title">{heading}</h1>
             {rest.map((line, i) => (
               <p key={i} className="ed-incident-done-body">
@@ -175,11 +233,18 @@ export function FeedbackForm() {
             ))}
           </div>
           {reference && (
-            <div className="ed-incident-done-ref">
-              <span className="ed-incident-done-ref-label">{t('referenceLabel')}</span>
-              <span className="text-ltr ed-incident-done-ref-value">{reference}</span>
-            </div>
+            <ReferenceChip
+              reference={reference}
+              label={t('referenceLabel')}
+              hint={t('referenceHint')}
+              copyLabel={t('copyReference')}
+              copiedLabel={t('copied')}
+            />
           )}
+          <p className="ed-incident-done-email">
+            <Mail size={14} aria-hidden="true" />
+            {t('emailSent')}
+          </p>
           <Link href={`/${locale}`} className="ed-incident-done-btn">
             {t('backHome')}
           </Link>
