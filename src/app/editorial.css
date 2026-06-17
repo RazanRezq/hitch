@@ -1604,13 +1604,15 @@ body {
   margin-block-end: -22px;
 }
 
-/* Resolved / success moment — echoes the band the passenger arrived through. */
+/* Resolved / success moment — echoes the band the passenger arrived through.
+   Top padding only clears the minimal (absolute) site header; the card then
+   centers in the remaining space so the whole moment fits without scrolling. */
 .ed-incident-done {
-  min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 148px 24px 80px;
+  padding: 84px 24px 32px;
   background: var(--background);
 }
 .ed-incident-done-inner {
@@ -1621,12 +1623,12 @@ body {
   background: oklch(0.06 0.005 240);
   color: white;
   border-radius: var(--radius-xl);
-  padding: 64px 40px;
+  padding: 44px 40px;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 .ed-incident-done-ring {
   display: flex;
@@ -1637,6 +1639,75 @@ body {
   border-radius: 999px;
   background: rgba(91, 233, 185, 0.14);
   color: var(--aurora-green);
+}
+
+/* ── Staged entrance ──────────────────────────────────────────────────────
+   The success screen rewards a stressful action, so it arrives deliberately:
+   aurora settles → ring springs in with a one-time glow → copy and the trailing
+   elements rise in sequence. The global `prefers-reduced-motion` reset in
+   globals.css zeroes these durations, so each element lands instantly in its
+   final state (animations use `both` fill mode). */
+.ed-incident-done-inner > * {
+  animation: edDoneRise 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.ed-incident-aurora {
+  animation: edDoneAurora 700ms ease-out both;
+}
+.ed-incident-done-ring {
+  animation:
+    edDoneRing 620ms cubic-bezier(0.34, 1.56, 0.64, 1) 120ms both,
+    edDoneGlow 1400ms ease-out 360ms both;
+}
+.ed-incident-done-copy {
+  animation-delay: 260ms;
+}
+.ed-incident-done-ref {
+  animation-delay: 380ms;
+}
+.ed-incident-done-email {
+  animation-delay: 460ms;
+}
+.ed-incident-done-btn {
+  animation-delay: 540ms;
+}
+@keyframes edDoneRise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes edDoneAurora {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes edDoneRing {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes edDoneGlow {
+  0% {
+    box-shadow: 0 0 0 0 rgba(91, 233, 185, 0);
+  }
+  35% {
+    box-shadow: 0 0 0 12px rgba(91, 233, 185, 0.18);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(91, 233, 185, 0);
+  }
 }
 .ed-incident-done-title {
   margin: 0;
@@ -1688,12 +1759,58 @@ body {
   text-transform: uppercase;
   color: rgba(255, 255, 255, 0.55);
 }
+.ed-incident-done-ref-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
 .ed-incident-done-ref-value {
   font-family: var(--font-mono);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: 0.02em;
   color: white;
+}
+.ed-incident-done-ref-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 200ms, border-color 200ms, background 200ms;
+}
+.ed-incident-done-ref-copy:hover {
+  color: white;
+  border-color: rgba(91, 233, 185, 0.5);
+  background: rgba(91, 233, 185, 0.1);
+}
+.ed-incident-done-ref-copy:focus-visible {
+  outline: 2px solid var(--aurora-green);
+  outline-offset: 2px;
+}
+.ed-incident-done-ref-hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.5);
+}
+/* Email-sent reassurance — quiet line confirming the auto-reply landed. */
+.ed-incident-done-email {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.6);
+}
+.ed-incident-done-email svg {
+  flex-shrink: 0;
+  color: var(--aurora-green);
 }
 
 @media (max-width: 720px) {
@@ -1703,7 +1820,8 @@ body {
     padding: 24px 20px;
     border-radius: var(--radius-lg);
   }
-  .ed-incident-done-inner { padding: 52px 24px; border-radius: var(--radius-lg); }
+  .ed-incident-done { padding: 76px 20px 24px; }
+  .ed-incident-done-inner { padding: 36px 22px; border-radius: var(--radius-lg); }
 }
 
 /* ────────── Final CTA + Footer ────────── */
