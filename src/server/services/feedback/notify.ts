@@ -42,6 +42,8 @@ const COPY: Record<
     fields: FieldLabels;
     referenceLabel: string;
     attachmentsLabel: string;
+    help: string;
+    reassure: string;
   }
 > = {
   is: {
@@ -49,14 +51,41 @@ const COPY: Record<
     fields: isMessages.feedback.fields,
     referenceLabel: isMessages.feedback.referenceLabel,
     attachmentsLabel: isMessages.feedback.attachmentsLabel,
+    help: isMessages.feedback.help,
+    reassure: isMessages.feedback.reassure,
   },
   en: {
     autoReply: enMessages.feedback.autoReply,
     fields: enMessages.feedback.fields,
     referenceLabel: enMessages.feedback.referenceLabel,
     attachmentsLabel: enMessages.feedback.attachmentsLabel,
+    help: enMessages.feedback.help,
+    reassure: enMessages.feedback.reassure,
   },
 };
+
+// Help phone is a single source (same number for both locales).
+const HELP_PHONE = enMessages.landing.header.phone;
+
+// Email-safe brand palette. Inline hex only — email clients don't understand
+// our OKLCH design tokens, and gradients degrade to the solid `bandBg` in
+// Outlook (which ignores background-image). Greens/violets echo the aurora band.
+const BRAND = {
+  pageBg: '#f1f1ec',
+  bandBg: '#0a0c10',
+  bandGradient: 'linear-gradient(135deg, #0a0c10 0%, #11241e 45%, #181130 100%)',
+  green: '#5be9b9',
+  cardBg: '#ffffff',
+  text: '#121212',
+  muted: '#6b7280',
+  border: '#ececec',
+  panelBg: '#f6f7f4',
+  // Amber accent for action items (refund / authorities) so they read as
+  // something the team must act on, not just another data row.
+  accent: '#b5730a',
+  accentBg: '#fdf4e3',
+  accentBorder: '#f0d8aa',
+} as const;
 
 /** True only when a real Resend key is present (not the `re_placeholder` fallback). */
 function isEmailConfigured(): boolean {
@@ -76,19 +105,11 @@ function nl2br(value: string): string {
   return escapeHtml(value).replace(/\n/g, '<br />');
 }
 
-function row(label: string, value: string | boolean | null | undefined): string {
+function row(label: string, value: string | null | undefined): string {
   if (value === null || value === undefined || value === '') return '';
-  const display = typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value;
   return `<tr><td style="padding:4px 12px 4px 0;color:#666;vertical-align:top">${escapeHtml(
     label,
-  )}</td><td style="padding:4px 0">${escapeHtml(String(display))}</td></tr>`;
-}
-
-// A boolean flag rendered only when true, as a localized statement (avoids
-// emitting an English "Yes"/"No" inside a localized customer email).
-function flagRow(label: string, value: boolean): string {
-  if (!value) return '';
-  return `<tr><td colspan="2" style="padding:4px 0;color:#111">✓ ${escapeHtml(label)}</td></tr>`;
+  )}</td><td style="padding:4px 0">${escapeHtml(value)}</td></tr>`;
 }
 
 function whenLabel(f: Feedback): string {
@@ -111,9 +132,18 @@ function attachmentsHtml(links: AttachmentLink[]): string {
   `;
 }
 
-function businessHtml(f: Feedback, attachmentLinks: AttachmentLink[]): string {
+// Exported for local preview (see scripts/preview-feedback-email.ts). Pure — the
+// caller resolves the signed attachment links (IO) before passing them in.
+export function businessHtml(f: Feedback, attachmentLinks: AttachmentLink[]): string {
+  const requests = actionCallouts(
+    [
+      f.requestRefund ? 'Refund requested' : null,
+      f.notifyAuthorities ? 'Authorities notification requested' : null,
+    ].filter((x): x is string => Boolean(x)),
+  );
   return `
     <h2 style="font-family:sans-serif">New incident / complaint report</h2>
+    ${requests}
     <table style="font-family:sans-serif;font-size:14px;border-collapse:collapse">
       ${row('Reference', f.reference)}
       ${row('Name', f.name)}
@@ -126,8 +156,6 @@ function businessHtml(f: Feedback, attachmentLinks: AttachmentLink[]): string {
       ${row('Pickup', f.pickupLocation)}
       ${row('Drop-off', f.dropoffLocation)}
       ${row('Incident date/time', whenLabel(f))}
-      ${row('Request refund', f.requestRefund)}
-      ${row('Notify authorities', f.notifyAuthorities)}
       ${row('Locale', f.locale)}
       ${row('Report ID', f.id)}
     </table>
@@ -140,34 +168,137 @@ function businessHtml(f: Feedback, attachmentLinks: AttachmentLink[]): string {
 }
 
 // Customer-facing copy of what they submitted, with localized field labels.
+// Rendered inside the white card, below the message — a quiet receipt.
 function customerReportHtml(f: Feedback, locale: Locale): string {
-  const { fields, referenceLabel, attachmentsLabel, autoReply } = COPY[locale];
+  const { fields, attachmentsLabel, autoReply } = COPY[locale];
+  const cellLabel =
+    'padding:6px 14px 6px 0;color:#6b7280;font-size:13px;vertical-align:top;white-space:nowrap';
+  const cellValue = `padding:6px 0;color:${BRAND.text};font-size:13px`;
+  const r = (label: string, value: string | null | undefined): string => {
+    if (value === null || value === undefined || value === '') return '';
+    return `<tr><td style="${cellLabel}">${escapeHtml(label)}</td><td style="${cellValue}">${escapeHtml(
+      value,
+    )}</td></tr>`;
+  };
   return `
-    <h3 style="font-family:sans-serif;font-size:15px;margin:24px 0 8px">${escapeHtml(
-      autoReply.copyHeading,
-    )}</h3>
-    <table style="font-family:sans-serif;font-size:14px;border-collapse:collapse">
-      ${row(referenceLabel, f.reference)}
-      ${row(fields.email, f.email)}
-      ${row(fields.phone, f.phone)}
-      ${row(fields.bookingReference, f.bookingReference)}
-      ${row(fields.carNumber, f.carNumber)}
-      ${row(fields.driverName, f.driverName)}
-      ${row(fields.incidentDateTime, whenLabel(f))}
-      ${row(fields.incidentLocation, f.incidentLocation)}
-      ${row(fields.pickupLocation, f.pickupLocation)}
-      ${row(fields.dropoffLocation, f.dropoffLocation)}
-      ${flagRow(fields.requestRefund, f.requestRefund)}
-      ${flagRow(fields.notifyAuthorities, f.notifyAuthorities)}
-      ${row(attachmentsLabel, f.attachments.length > 0 ? String(f.attachments.length) : '')}
-    </table>
-    <h3 style="font-family:sans-serif;font-size:15px;margin:16px 0 8px">${escapeHtml(
-      fields.description,
-    )}</h3>
-    <p style="font-family:sans-serif;font-size:14px;white-space:pre-wrap">${nl2br(
-      f.description,
-    )}</p>
+    <div style="margin-top:28px;padding-top:24px;border-top:1px solid ${BRAND.border}">
+      <p style="margin:0 0 12px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.muted}">${escapeHtml(
+        autoReply.copyHeading,
+      )}</p>
+      <table role="presentation" cellpadding="0" cellspacing="0" style="font-family:'DM Sans',Helvetica,Arial,sans-serif;border-collapse:collapse;width:100%">
+        ${r(fields.email, f.email)}
+        ${r(fields.phone, f.phone)}
+        ${r(fields.bookingReference, f.bookingReference)}
+        ${r(fields.carNumber, f.carNumber)}
+        ${r(fields.driverName, f.driverName)}
+        ${r(fields.incidentDateTime, whenLabel(f))}
+        ${r(fields.incidentLocation, f.incidentLocation)}
+        ${r(fields.pickupLocation, f.pickupLocation)}
+        ${r(fields.dropoffLocation, f.dropoffLocation)}
+        ${r(attachmentsLabel, f.attachments.length > 0 ? String(f.attachments.length) : '')}
+      </table>
+      <p style="margin:18px 0 6px;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${BRAND.muted}">${escapeHtml(
+        fields.description,
+      )}</p>
+      <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;line-height:1.6;color:${BRAND.text};white-space:pre-wrap">${nl2br(
+        f.description,
+      )}</p>
+    </div>
   `;
+}
+
+// Active action items (refund request / notify authorities) as prominent amber
+// callout cards — these are the things the team must act on, so they get visual
+// weight instead of hiding as plain rows in the data table. Shared by both the
+// customer auto-reply and the internal business email. Empty when no labels.
+function actionCallouts(labels: string[]): string {
+  if (labels.length === 0) return '';
+  const cards = labels
+    .map(
+      (label) => `
+      <tr><td style="padding:0 0 8px">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.accentBg};border:1px solid ${BRAND.accentBorder};border-radius:12px">
+          <tr>
+            <td width="46" align="center" valign="middle" style="font-size:18px;color:${BRAND.accent};padding:14px 0">&#10003;</td>
+            <td valign="middle" style="padding:14px 16px 14px 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:14px;font-weight:600;color:${BRAND.text};text-align:left">${escapeHtml(
+              label,
+            )}</td>
+          </tr>
+        </table>
+      </td></tr>`,
+    )
+    .join('');
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0 0">${cards}</table>`;
+}
+
+// Customer-facing action items, using localized field labels.
+function requestsHtml(f: Feedback, locale: Locale): string {
+  const { fields } = COPY[locale];
+  return actionCallouts(
+    [
+      f.requestRefund ? fields.requestRefund : null,
+      f.notifyAuthorities ? fields.notifyAuthorities : null,
+    ].filter((x): x is string => Boolean(x)),
+  );
+}
+
+// Reference shown as a centered mono "pill" — the one value a passenger may
+// need to quote later.
+function referencePill(reference: string, label: string): string {
+  return `
+    <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto 0">
+      <tr><td style="background:${BRAND.panelBg};border:1px solid ${BRAND.border};border-radius:14px;padding:14px 22px;text-align:center">
+        <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${BRAND.muted}">${escapeHtml(
+          label,
+        )}</div>
+        <div style="margin-top:4px;font-family:'Space Mono',Menlo,Consolas,monospace;font-size:18px;font-weight:700;letter-spacing:0.02em;color:${BRAND.text};direction:ltr;unicode-bidi:isolate">${escapeHtml(
+          reference,
+        )}</div>
+      </td></tr>
+    </table>
+  `;
+}
+
+/**
+ * Branded email shell — table-based, inline-styled, Outlook-safe. A dark aurora
+ * header band with the wordmark + a ✓ badge, a white content card, and a
+ * localized footer. Content (`inner`) is injected into the card.
+ */
+function emailShell(locale: Locale, inner: string): string {
+  const { reassure, help } = COPY[locale];
+  const tel = HELP_PHONE.replace(/\s+/g, '');
+  return `<!DOCTYPE html>
+<html lang="${locale}">
+  <body style="margin:0;padding:0;background:${BRAND.pageBg};-webkit-text-size-adjust:100%">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BRAND.pageBg}">
+      <tr><td align="center" style="padding:28px 12px">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%">
+          <!-- Header band -->
+          <tr><td style="background-color:${BRAND.bandBg};background-image:${BRAND.bandGradient};border-radius:20px 20px 0 0;padding:40px 40px 34px;text-align:center">
+            <div style="font-family:'DM Sans',Helvetica,Arial,sans-serif;font-weight:600;font-size:30px;letter-spacing:-0.04em;color:#ffffff">hitch</div>
+            <table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:24px auto 0">
+              <tr><td width="56" height="56" align="center" valign="middle" style="width:56px;height:56px;background:rgba(91,233,185,0.16);border-radius:999px;font-size:26px;line-height:56px;color:${BRAND.green}">&#10003;</td></tr>
+            </table>
+          </td></tr>
+          <!-- Content card -->
+          <tr><td style="background:${BRAND.cardBg};padding:40px 40px 8px;text-align:center">${inner}</td></tr>
+          <!-- Footer -->
+          <tr><td style="background:${BRAND.cardBg};border-radius:0 0 20px 20px;padding:24px 40px 34px;text-align:center;border-top:1px solid ${BRAND.border}">
+            <p style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:13px;color:${BRAND.muted}">${escapeHtml(
+              help,
+            )} <a href="tel:${escapeHtml(tel)}" style="color:${BRAND.text};text-decoration:none;font-weight:600">${escapeHtml(
+              HELP_PHONE,
+            )}</a></p>
+            <p style="margin:10px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:12px;line-height:1.5;color:${BRAND.muted}">${escapeHtml(
+              reassure,
+            )}</p>
+            <p style="margin:14px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:11px;color:#9ca3af">Hitch &middot; Keflavík &harr; Reykjavík</p>
+          </td></tr>
+        </table>
+      </td></tr>
+    </table>
+  </body>
+</html>`;
 }
 
 // The Resend SDK resolves with { data, error } instead of throwing on API
@@ -204,25 +335,48 @@ async function sendBusinessNotification(f: Feedback): Promise<string> {
   });
 }
 
-async function sendCustomerAutoReply(f: Feedback, locale: Locale): Promise<string> {
+/**
+ * Build the customer auto-reply payload (subject + text + branded HTML).
+ * Pure — no IO — so it can be previewed/tested without sending.
+ */
+export function buildCustomerAutoReply(
+  f: Feedback,
+  locale: Locale,
+): { subject: string; text: string; html: string } {
   const { autoReply, referenceLabel } = COPY[locale];
+
+  // Plain-text fallback (clients that don't render HTML).
   const text = f.reference
     ? `${autoReply.body}\n\n${referenceLabel}: ${f.reference}`
     : autoReply.body;
-  const referenceHtml = f.reference
-    ? `<p style="font-family:sans-serif;font-size:15px;margin:16px 0 0">${escapeHtml(
-        referenceLabel,
-      )}: <strong style="font-family:monospace">${escapeHtml(f.reference)}</strong></p>`
-    : '';
-  return send('customer-auto-reply', {
-    from: FROM,
-    to: f.email,
-    subject: autoReply.subject,
-    text,
-    html: `<div style="font-family:sans-serif;font-size:15px;line-height:1.6">${nl2br(
-      autoReply.body,
-    )}${referenceHtml}${customerReportHtml(f, locale)}</div>`,
-  });
+
+  // Body: first line is the heading (matching the on-screen success state),
+  // the rest are paragraphs.
+  const [heading, ...rest] = autoReply.body.split('\n').filter(Boolean);
+  const headingHtml = `<h1 style="margin:0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:24px;font-weight:700;letter-spacing:-0.02em;color:${BRAND.text}">${escapeHtml(
+    heading ?? '',
+  )}</h1>`;
+  const paragraphsHtml = rest
+    .map(
+      (line) =>
+        `<p style="margin:14px 0 0;font-family:'DM Sans',Helvetica,Arial,sans-serif;font-size:15px;line-height:1.6;color:${BRAND.muted}">${escapeHtml(
+          line,
+        )}</p>`,
+    )
+    .join('');
+  const referenceHtml = f.reference ? referencePill(f.reference, referenceLabel) : '';
+
+  const inner = `${headingHtml}${paragraphsHtml}${referenceHtml}${requestsHtml(
+    f,
+    locale,
+  )}${customerReportHtml(f, locale)}`;
+
+  return { subject: autoReply.subject, text, html: emailShell(locale, inner) };
+}
+
+async function sendCustomerAutoReply(f: Feedback, locale: Locale): Promise<string> {
+  const { subject, text, html } = buildCustomerAutoReply(f, locale);
+  return send('customer-auto-reply', { from: FROM, to: f.email, subject, text, html });
 }
 
 export async function notifyFeedback(feedback: Feedback): Promise<void> {
