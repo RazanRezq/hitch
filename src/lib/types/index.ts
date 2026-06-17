@@ -13,8 +13,6 @@ export type {
   ExchangeRate,
   BookingEvent,
   TripLocationHistory,
-  Session,
-  Account,
 } from '@/lib/db';
 
 export * from './constants';

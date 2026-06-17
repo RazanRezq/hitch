@@ -7,6 +7,7 @@ import { dispatchWorker } from './dispatch.worker.js';
 import { webhookWorker } from './webhook.worker.js';
 import { exchangeRateWorker } from './exchange-rate.worker.js';
 import { payoutWorker } from './payout.worker.js';
+import { registerExchangeRateSchedule } from '../queues/exchange-rate.js';
 
 const workers = [
   { name: 'dispatch', worker: dispatchWorker },
@@ -16,6 +17,12 @@ const workers = [
 ];
 
 console.log('[workers] booted:', workers.map((w) => w.name).join(', '));
+
+// Register repeatable schedules (idempotent). The daily 06:00 UTC rate fetch
+// lives here so it's installed whenever the workers process starts.
+void registerExchangeRateSchedule()
+  .then(() => console.log('[workers] exchange-rate schedule registered (daily 06:00 UTC)'))
+  .catch((err) => console.error('[workers] failed to register exchange-rate schedule', err));
 
 async function shutdown(signal: string) {
   console.log(`[workers] received ${signal}, closing...`);
