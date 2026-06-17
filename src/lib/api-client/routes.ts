@@ -10,15 +10,6 @@ export const API_ROUTES = {
     cancel: (id: string) => `/api/bookings/${id}/cancel`,
     assign: (id: string) => `/api/bookings/${id}/assign`,
   },
-  drivers: {
-    list: '/api/drivers',
-    create: '/api/drivers',
-    byId: (id: string) => `/api/drivers/${id}`,
-    documents: (id: string) => `/api/drivers/${id}/documents`,
-  },
-  payments: {
-    intent: '/api/payments/intent',
-  },
   quotes: {
     create: '/api/quotes',
   },

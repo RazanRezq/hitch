@@ -1,6 +1,12 @@
 # HITCH — Master Project Plan
 > Ride-booking platform for KEF ↔ Reykjavík airport transfers
 > Last updated: April 2026
+>
+> ⚠️ **PARTIALLY SUPERSEDED — historical planning doc.** Some choices here have
+> since changed. The authoritative current state lives in **CLAUDE.md** and
+> **PROJECT_OVERVIEW.md**. Notably: the app is **bilingual `is`/`en`** — Arabic
+> (`ar`, RTL) was removed June 2026 (RTL plumbing retained; no RTL locale ships),
+> and **auth is Clerk** (account auth) + HMAC guest tokens, **not Better Auth**.
 
 ---
 
@@ -11,7 +17,7 @@ Hitch is a streamlined ride-booking platform built for **Iceland** — specifica
 **Core Principles:**
 - One-tap booking as the primary UX goal
 - Clean, minimalist "Soft Pop" design aesthetic
-- Icelandic-first, trilingual (is/en/ar) from Phase 1
+- Icelandic-first, bilingual (is/en) from Phase 1
 - Single Next.js app serving both web surfaces (passenger + admin) with Hono mounted inside it
 - Vendor-independent, production-grade stack
 - TypeScript end-to-end
@@ -30,7 +36,6 @@ Hitch is a streamlined ride-booking platform built for **Iceland** — specifica
 |---|---|---|---|
 | Icelandic | `is` | LTR | **Default** |
 | English | `en` | LTR | Secondary |
-| Arabic | `ar` | **RTL** | Secondary |
 
 ### Currency
 | Currency | Code | Default? |
@@ -52,16 +57,13 @@ Exchange rates fetched daily from a rate API (e.g. exchangerate.host). Always qu
 
 **English (en-IS):** English language, Icelandic conventions where it makes sense (24h time, dd.MM.yyyy)
 
-**Arabic (ar):**
-- Western digits only (0-9), never Arabic-Indic (٠-٩)
-- Use `numberingSystem: 'latn'` in all `Intl.NumberFormat` calls
-- Currency shown as code (`12,500 ISK`) rather than symbol, for clarity
-- Date format: `dd/MM/yyyy`
-- RTL layout — logical properties only
+> Western digits only (0-9) everywhere — force `numberingSystem: 'latn'` in all
+> `Intl.NumberFormat` calls. (This rule predates the Arabic removal and still
+> applies regardless of locale.)
 
 ### Phone Numbers
 - Default country code: `+354` (Iceland)
-- Support: `+354`, `+1`, `+44`, `+49`, regional MENA codes for Arabic users
+- Support: `+354`, `+1`, `+44`, `+49`
 - Use `libphonenumber-js` for validation
 
 ### Airport Codes
@@ -82,7 +84,7 @@ Exchange rates fetched daily from a rate API (e.g. exchangerate.host). Always qu
 ### Surface Responsibilities
 
 **Passenger Web (Next.js)**
-- Landing page + search widget (trilingual from day one)
+- Landing page + search widget (bilingual from day one)
 - Preset trip cards: KEF → Reykjavík, Reykjavík → KEF, optionally KEF → Blue Lagoon
 - Quote / pricing results (ISK default, EUR/USD toggle)
 - Booking confirmation + payment
@@ -124,7 +126,6 @@ Three one-tap cards on the landing page:
 **Labels by locale:**
 - `is`: "Flugvöllur → Reykjavík"
 - `en`: "Airport → Reykjavík"
-- `ar`: "المطار → ريكيافيك"
 
 ---
 
@@ -152,7 +153,7 @@ Three one-tap cards on the landing page:
 | Validation | Zod + `@hono/zod-validator` |
 | ORM | Prisma |
 | Database | PostgreSQL (Railway managed) |
-| Auth | Better Auth |
+| Auth | Clerk |
 | Realtime | Native WebSockets via `@hono/node-ws` + `@hono/node-server` + Redis pub/sub. Runs as a **separate process** (`npm run ws`, entry `src/server/index.ts`) because Next.js route handlers can't host long-lived WS connections. Same Hono `app`, different transport. |
 | Jobs/Queue | BullMQ + Redis (Railway managed). Runs as a **separate process** (`npm run workers`). |
 | Payments | Stripe (manual capture, multi-currency) |
@@ -201,13 +202,12 @@ Three one-tap cards on the landing page:
 |---|---|---|
 | Icelandic (is) | **DM Sans** | 400, 500, 600, 700 |
 | English (en) | **DM Sans** | 400, 500, 600, 700 |
-| Arabic (ar) | **Cairo** | 400, 500, 600, 700 |
 | Monospace (all) | **Space Mono** | 400, 700 |
 
 DM Sans supports all Icelandic glyphs (ð, þ, æ, ö, á, í, ó, ú, ý) — verified.
 
 **Usage:**
-- DM Sans / Cairo: all functional UI — body text, headings, buttons, forms
+- DM Sans: all functional UI — body text, headings, buttons, forms
 - Space Mono: technical/tabular data — booking IDs, receipt numbers, GPS coords, fare breakdowns
 
 Load via `next/font/google` in the root layout.
@@ -228,7 +228,7 @@ Load via `next/font/google` in the root layout.
 | Driver | Assigned jobs, personal earnings, navigation |
 | Passenger | Personal bookings, payment methods, live trip tracking |
 
-Authorization enforced in Hono API via Better Auth session + role middleware.
+Authorization enforced in Hono API via Clerk session + role middleware.
 
 ---
 
@@ -241,7 +241,7 @@ Authorization enforced in Hono API via Better Auth session + role middleware.
 id, email, phone, role, name, avatarUrl,
 stripeCustomerId, stripeConnectAccountId,
 phoneVerifiedAt, emailVerifiedAt,
-preferredLocale (is|en|ar), preferredCurrency (ISK|EUR|USD),
+preferredLocale (is|en), preferredCurrency (ISK|EUR|USD),
 createdAt, updatedAt
 ```
 
@@ -329,7 +329,7 @@ id, bookingId, raterId, rateeId, score, comment, createdAt
 
 **PricingZone**
 ```
-id, name (localized: { is, en, ar }),
+id, name (localized: { is, en }),
 polygon (GeoJSON), baseFareISK, perKmRateISK,
 airportSurchargeISK, isActive
 ```
@@ -421,7 +421,7 @@ hitch/
 ├── package.json                # plain npm, no workspaces
 ├── tsconfig.json  next.config.ts  postcss.config.mjs  eslint.config.mjs
 ├── prisma/                     # schema.prisma, seed.ts, migrations
-├── messages/                   # is.json, en.json, ar.json (next-intl)
+├── messages/                   # is.json, en.json (next-intl)
 ├── public/
 ├── .env.example
 └── src/
@@ -442,7 +442,7 @@ hitch/
     │   ├── ui/         # Shared Shadcn (RTL-aware)
     │   ├── types/      # TS types + Zod schemas
     │   ├── db/         # Prisma client wrapper
-    │   ├── auth/       # Better Auth config
+    │   ├── auth/       # Clerk config
     │   ├── utils/      # Geo, format, dates, currency
     │   ├── i18n-shared/# Locale + currency constants
     │   ├── api-client/ # TanStack Query hooks + WS client
@@ -484,7 +484,7 @@ src/server/
 ├── app.ts                      # bare Hono app — mounted by both /api route AND WS runner
 ├── index.ts                    # standalone server bootstrap for WS (npm run ws)
 ├── routes/
-│   ├── auth.ts                 # Better Auth handler
+│   ├── auth.ts                 # Clerk handler
 │   ├── bookings.ts
 │   ├── drivers.ts
 │   ├── payments.ts
@@ -590,7 +590,7 @@ src/app/[locale]/admin/
 All Hono routes are exposed under `/api/...` via the catch-all `src/app/api/[[...route]]/route.ts`. The WebSocket endpoint lives on a separate process (`npm run ws`) and is NOT served by Next.js.
 
 ```
-POST   /api/auth/*              # Better Auth
+POST   /api/auth/*              # Clerk
 GET    /api/bookings
 POST   /api/bookings
 GET    /api/bookings/:id
@@ -616,7 +616,7 @@ Client (Next.js) connects to WSS /ws
   ↓
 Hono upgrades connection via hono/ws
   ↓
-Better Auth session validates user
+Clerk session validates user
   ↓
 Client sends: { action: "subscribe", channel: "booking:abc123" }
   ↓
@@ -683,9 +683,9 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 ### Sprint 1: Foundation (Week 1–2)
 1. Next.js app scaffold (single app, plain npm)
 2. Prisma schema + migrations (Iceland-localized)
-3. Better Auth setup (email/password + phone OTP)
+3. Clerk setup (email/password + phone OTP)
 4. Hono mounted at `src/app/api/[[...route]]/route.ts` + middleware
-5. next-intl setup + initial translations (is/en/ar)
+5. next-intl setup + initial translations (is/en)
 6. Railway deployment pipeline (three services: `web`, `ws`, `workers`)
 
 ### Sprint 2: Passenger Web Core (Week 3–4)
@@ -711,7 +711,7 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 ### Sprint 5: Polish (Week 9–10)
 1. Promo codes
 2. Reports & analytics
-3. Email/SMS notifications (trilingual templates)
+3. Email/SMS notifications (bilingual templates)
 4. RTL audit for entire app
 5. Testing + bug bash
 
@@ -723,11 +723,11 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 |---|---|---|
 | Target market | Iceland (KEF ↔ Reykjavík) | Clear demand, underserved market |
 | Default locale | Icelandic (is) | Primary market |
-| Phase 1 languages | is, en, ar | Tourist diversity + founder's Arabic market knowledge |
+| Phase 1 languages | is, en | Icelandic-first, English for tourists (Arabic removed June 2026) |
 | Default currency | ISK | Native market currency |
 | Multi-currency | ISK/EUR/USD selectable | Tourist-friendly |
 | Database | PostgreSQL | Relational, ACID for payments |
-| Auth | Better Auth | Hono + Prisma compatible |
+| Auth | Clerk | Account auth; identity synced to Postgres via webhook |
 | ORM | Prisma | Best TypeScript DX |
 | Backend framework | Hono | Modern, TS-first, runtime-agnostic |
 | Realtime | Native WebSockets | Simpler, lighter than Socket.io |
@@ -756,5 +756,5 @@ DO_SPACES_CDN_URL=https://hitch-production.fra1.cdn.digitaloceanspaces.com
 10. **Presigned uploads** — files never pass through API server
 11. **WebSocket auth on every subscription** — verify user has access to requested channel
 12. **Redis pub/sub for horizontal scaling** — never rely on in-memory state alone
-13. **RTL tested on every component** — Arabic is a first-class locale, not an afterthought
-14. **Western digits in Arabic UI** — never use Arabic-Indic digits (٠-٩)
+13. **RTL plumbing retained** — no RTL locale ships today (Arabic removed June 2026); keep logical properties so one can be re-added cleanly
+14. **Western digits always** — force `numberingSystem: 'latn'` in every `Intl.NumberFormat`
