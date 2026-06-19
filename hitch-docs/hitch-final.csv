@@ -1,0 +1,8 @@
+المكون,التقنية المقترحة,الوصف
+Frontend (Web App),React / Next.js,واجهة المستخدم للحجز وعرض الخريطة
+Backend API,Node.js / Python (Django),منطق الأعمال، API، إدارة المستخدمين
+Driver App,React Native / Flutter,تطبيق السائقين مع إمكانية التتبع والإشعارات
+Database,PostgreSQL + PostGIS,تخزين البيانات مع دعم الإحداثيات الجغرافية
+Real-time Communication,WebSockets / PubNub,تحديث مواقع السائقين والرحلات لحظيًا
+Maps & Geocoding,Google Maps API / Mapbox,خرائط، بحث عن الأماكن، تحديد المواقع، حساب المسافات والأسعار
+Tracking API,مقدم الخدمة (API خاص),تتبع المركبات وقراءة بيانات العداد
