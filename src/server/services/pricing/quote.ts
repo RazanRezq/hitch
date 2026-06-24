@@ -3,7 +3,7 @@ import { CURRENCY_DECIMALS, DEFAULT_CURRENCY } from '@/lib/types';
 import type { GeoCoord } from '@/lib/utils';
 import { isNearKEF } from '@/lib/utils';
 import { getLatestRate } from '../currency';
-import { quoteISK } from './index';
+import { quoteISK, type DistanceSource } from './index';
 import type { FareBreakdownISK, RateType } from './fare';
 
 export interface GetQuoteInput {
@@ -18,6 +18,7 @@ export interface GetQuoteInput {
 export interface QuoteResult {
   basePriceISK: number;
   distanceKm: number;
+  distanceSource: DistanceSource;
   isAirportTrip: boolean;
   pricingMode: 'meter' | 'fixed';
   rateType: RateType | 'fixed';
@@ -58,6 +59,7 @@ export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
   return {
     basePriceISK: pricing.basePriceISK,
     distanceKm: Math.round(pricing.distanceKm * 100) / 100,
+    distanceSource: pricing.distanceSource,
     isAirportTrip,
     pricingMode: pricing.pricingMode,
     rateType: pricing.rateType,

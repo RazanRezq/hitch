@@ -14,6 +14,7 @@ export type QuoteRequestInput = z.infer<typeof quoteRequestSchema>;
 export const quoteResponseSchema = z.object({
   basePriceISK: z.number().int().nonnegative(),
   distanceKm: z.number().nonnegative(),
+  distanceSource: z.enum(['road', 'straight-line']),
   isAirportTrip: z.boolean(),
   pricingMode: z.enum(['meter', 'fixed']),
   rateType: z.enum(['day', 'night', 'holiday', 'fixed']),
