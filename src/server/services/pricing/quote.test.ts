@@ -11,24 +11,31 @@ const RVK = { lat: LANDMARKS.reykjavik.lat, lng: LANDMARKS.reykjavik.lng };
 const HVERAGERDI = { lat: 64.0, lng: -21.19 };
 const WEEKDAY_NOON = new Date('2026-06-24T12:00:00Z');
 
-describe('getQuote — fixed fares use explicit per-currency prices (no auto-conversion)', () => {
-  it('quotes the KEF → Reykjavík fixed fare in ISK', async () => {
+describe('getQuote — fixed fares use explicit per-currency prices (+490 on KEF origin)', () => {
+  it('quotes Airport → Reykjavík in ISK with the gate fee stacked', async () => {
     const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'ISK', geocodeFn: async () => 101 });
     expect(q.pricingMode).toBe('fixed');
-    expect(q.basePriceISK).toBe(22500);
-    expect(q.displayPrice).toBe(22500); // ISK has no minor unit
+    expect(q.basePriceISK).toBe(22990); // 22500 transfer + 490 gate fee
+    expect(q.displayPrice).toBe(22990);
     expect(q.exchangeRate).toBe(1);
   });
 
-  it('quotes the explicit EUR price (150 → 15000 cents), not a converted one', async () => {
+  it('quotes the explicit EUR transfer price + converted gate fee (150 + 490/150)', async () => {
     const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'EUR', geocodeFn: async () => 101 });
-    expect(q.displayPrice).toBe(15000); // 150.00 EUR
-    expect(q.exchangeRate).toBeCloseTo(150 / 22500, 8);
+    expect(q.displayPrice).toBe(15327); // round((150 + 490/150) * 100)
+    expect(q.exchangeRate).toBeCloseTo(1 / 150, 8);
   });
 
-  it('quotes the explicit USD price (170 → 17000 cents)', async () => {
+  it('quotes the explicit USD transfer price + converted gate fee (170 + 490/130)', async () => {
     const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'USD', geocodeFn: async () => 101 });
-    expect(q.displayPrice).toBe(17000);
+    expect(q.displayPrice).toBe(17377); // round((170 + 490/130) * 100)
+  });
+
+  it('does NOT add the gate fee on Reykjavík → KEF (originates in the city)', async () => {
+    const q = await getQuote({ pickup: RVK, dropoff: KEF, passengerCount: 2, displayCurrency: 'ISK', geocodeFn: async () => 101 });
+    expect(q.pricingMode).toBe('fixed');
+    expect(q.basePriceISK).toBe(22500);
+    expect(q.displayPrice).toBe(22500);
   });
 });
 

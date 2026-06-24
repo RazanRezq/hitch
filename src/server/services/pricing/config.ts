@@ -39,12 +39,16 @@ export const FIRST_TIER_KM = 4;
 export const AIRPORT_FEE_ISK = 490;
 
 /**
- * Whether the airport gate fee stacks on top of a FIXED pre-agreed fare when it
- * originates at KEF. ASSUMPTION: false — the fixed transfer prices read as
- * all-in (matching the reference calculator, which never added it to fixed
- * routes). Flip to true if the client confirms the 490 is additive on fixed.
+ * Whether the airport gate fee stacks on top of a FIXED pre-agreed fare. Client
+ * confirmed TRUE — it is additive, keyed strictly on trip ORIGIN = KEF. So
+ * Airport→Reykjavík and the combo get +490; Reykjavík→KEF (ends at KEF) does
+ * NOT, per the literal "originates at KEF" rule.
+ *
+ * NOTE for the client: this is asymmetric — the return leg still drives into the
+ * airport but isn't charged the gate fee. Flip the call site to symmetric
+ * (touches KEF either end) if that's preferred.
  */
-export const AIRPORT_FEE_APPLIES_TO_FIXED = false;
+export const AIRPORT_FEE_APPLIES_TO_FIXED = true;
 
 /**
  * Customer-facing FX for METER fares: ISK per 1 unit of currency.

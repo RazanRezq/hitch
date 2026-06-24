@@ -165,4 +165,16 @@ describe('computeFixedFareISK', () => {
     expect(fare.breakdownISK.fixedFare).toBe(22500);
     expect(fare.breakdownISK.startFee).toBe(0);
   });
+
+  it('stacks the 490 gate fee on a fixed fare originating at KEF, keeping prices transfer-only', () => {
+    const withFee = computeFixedFareISK('reykjavik', 1, { includeAirportFee: true });
+    expect(withFee.totalISK).toBe(22990); // 22500 + 490
+    expect(withFee.breakdownISK.airportFee).toBe(490);
+    expect(withFee.breakdownISK.fixedFare).toBe(22500);
+    expect(withFee.fixedPricesMajor).toEqual({ ISK: 22500, EUR: 150, USD: 170 }); // unchanged
+
+    const noFee = computeFixedFareISK('reykjavik', 1, { includeAirportFee: false });
+    expect(noFee.totalISK).toBe(22500);
+    expect(noFee.breakdownISK.airportFee).toBe(0);
+  });
 });

@@ -10,6 +10,7 @@
 
 import type { Currency } from '@/lib/types';
 import {
+  AIRPORT_FEE_APPLIES_TO_FIXED,
   AIRPORT_FEE_ISK,
   DAY_END_MINUTES,
   DAY_START_MINUTES,
@@ -166,16 +167,26 @@ export function computeMeterFareISK(input: MeterFareInput): FareResult {
 
 /**
  * Compute a pre-agreed FIXED transfer fare. Returns the ISK total plus the
- * explicit per-currency prices (the client hand-rounds these — never converted).
+ * explicit per-currency TRANSFER prices (the client hand-rounds these — never
+ * converted). The 490 ISK gate fee stacks on top when the trip ORIGINATES at
+ * KEF (client-confirmed); it's reported separately in `breakdownISK.airportFee`
+ * so the display layer converts it at the fixed FX, leaving the transfer prices
+ * untouched.
  */
-export function computeFixedFareISK(route: FixedRouteId, passengerCount: number): FareResult {
+export function computeFixedFareISK(
+  route: FixedRouteId,
+  passengerCount: number,
+  options: { includeAirportFee?: boolean } = {},
+): FareResult {
   const tier = getPaxTier(passengerCount);
   const prices = FIXED_FARES[route][tier];
+  const airportFee =
+    options.includeAirportFee && AIRPORT_FEE_APPLIES_TO_FIXED ? AIRPORT_FEE_ISK : 0;
   return {
-    totalISK: prices.ISK,
+    totalISK: prices.ISK + airportFee,
     pricingMode: 'fixed',
     rateType: 'fixed',
-    breakdownISK: { ...ZERO_BREAKDOWN, fixedFare: prices.ISK },
+    breakdownISK: { ...ZERO_BREAKDOWN, fixedFare: prices.ISK, airportFee },
     fixedPricesMajor: prices,
   };
 }

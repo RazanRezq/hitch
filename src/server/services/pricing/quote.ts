@@ -63,7 +63,12 @@ export interface QuoteResult {
 function resolveDisplayMajor(pricing: PricingQuote, currency: Currency): number {
   if (currency === 'ISK') return pricing.basePriceISK;
   const explicit = pricing.fixedPricesMajor?.[currency];
-  if (explicit !== undefined) return explicit;
+  if (explicit !== undefined) {
+    // fixedPricesMajor is the transfer-only price; add the KEF gate fee (if any)
+    // converted at the fixed FX so the displayed total matches basePriceISK.
+    const feeMajor = pricing.breakdownISK.airportFee / METER_FX_ISK_PER_UNIT[currency];
+    return explicit + feeMajor;
+  }
   return pricing.basePriceISK / METER_FX_ISK_PER_UNIT[currency];
 }
 

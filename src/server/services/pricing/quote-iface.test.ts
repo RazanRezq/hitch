@@ -42,19 +42,39 @@ describe('detectFixedRoute', () => {
 });
 
 describe('quoteISK', () => {
-  it('uses the fixed fare for the KEF → Reykjavík corridor without calling routing', async () => {
+  it('uses the fixed fare (+490 KEF-origin) for the corridor without calling routing', async () => {
     const roadDistanceFn = roadKm(50);
     const quote = await quoteISK(KEF, RVK, {
       passengerCount: 2,
       at: WEEKDAY_NOON,
+      originatesAtKef: true,
       zones: { dropoffPostal: 101 },
       roadDistanceFn,
     });
     expect(quote.pricingMode).toBe('fixed');
-    expect(quote.basePriceISK).toBe(22500);
-    expect(quote.fixedPricesMajor).toEqual({ ISK: 22500, EUR: 150, USD: 170 });
+    expect(quote.basePriceISK).toBe(22990); // 22500 + 490 gate fee
+    expect(quote.breakdownISK.airportFee).toBe(490);
+    expect(quote.fixedPricesMajor).toEqual({ ISK: 22500, EUR: 150, USD: 170 }); // transfer-only
     expect(quote.distanceSource).toBe('straight-line');
     expect(roadDistanceFn).not.toHaveBeenCalled(); // fixed fares ignore distance
+  });
+
+  it('stacks +490 on Airport→Reykjavík but NOT on Reykjavík→Airport (literal origin rule)', async () => {
+    const toCity = await quoteISK(KEF, RVK, {
+      passengerCount: 1,
+      originatesAtKef: true,
+      zones: { dropoffPostal: 101 },
+    });
+    expect(toCity.basePriceISK).toBe(22990);
+    expect(toCity.breakdownISK.airportFee).toBe(490);
+
+    const toAirport = await quoteISK(RVK, KEF, {
+      passengerCount: 1,
+      originatesAtKef: false,
+      zones: { pickupPostal: 101 },
+    });
+    expect(toAirport.basePriceISK).toBe(22500);
+    expect(toAirport.breakdownISK.airportFee).toBe(0);
   });
 
   it('uses the 9-16 fixed fare for minibus groups', async () => {

@@ -127,7 +127,10 @@ export async function quoteISK(
   const fixedRoute = detectFixedRoute(pickup, dropoff, options.zones);
 
   if (fixedRoute) {
-    const fare = computeFixedFareISK(fixedRoute, passengerCount);
+    // 490 gate fee stacks on fixed fares only when the trip ORIGINATES at KEF.
+    const fare = computeFixedFareISK(fixedRoute, passengerCount, {
+      includeAirportFee: options.originatesAtKef,
+    });
     return {
       basePriceISK: fare.totalISK,
       distanceKm: calculateDistance(pickup, dropoff),
