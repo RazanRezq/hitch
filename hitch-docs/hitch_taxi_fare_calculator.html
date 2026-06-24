@@ -1,0 +1,246 @@
+<h2 class="sr-only">Hitch Taxi fare calculator for Reykjavík — enter trip details to estimate your fare</h2>
+
+<style>
+* { box-sizing: border-box; }
+body { margin: 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.wrap { max-width: 560px; margin: 0 auto; padding: 1.5rem 1rem 2rem; }
+.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+.brand-icon { font-size: 32px; }
+.brand-name { font-size: 22px; font-weight: 500; color: var(--color-text-primary); letter-spacing: -0.5px; }
+.brand-phone { font-size: 12px; color: var(--color-text-secondary); letter-spacing: 2px; }
+.section { background: var(--color-background-primary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+.section-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+.field-label { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.field-label i { font-size: 14px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pax-grid { display: flex; gap: 6px; flex-wrap: wrap; }
+.pax-btn { width: 38px; height: 38px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+.pax-btn.active { background: #EF9F27; border-color: #EF9F27; color: #412402; }
+.pax-note { font-size: 11px; color: var(--color-text-tertiary); margin-top: 6px; }
+.route-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+.route-btn { padding: 8px 6px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 12px; font-weight: 500; cursor: pointer; text-align: center; line-height: 1.3; transition: all 0.15s; }
+.route-btn.active { background: #EF9F27; border-color: #EF9F27; color: #412402; }
+.airport-btn { width: 100%; padding: 8px 12px; border-radius: 8px; border: 0.5px solid var(--color-border-secondary); background: var(--color-background-secondary); color: var(--color-text-secondary); font-size: 13px; font-weight: 500; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 8px; margin-top: 10px; transition: all 0.15s; }
+.airport-btn.active { background: #EF9F27; border-color: #EF9F27; color: #412402; }
+.alert { font-size: 12px; padding: 8px 10px; border-radius: 8px; margin-top: 8px; }
+.alert-holiday { background: var(--color-background-danger); color: var(--color-text-danger); }
+.alert-night { background: var(--color-background-info); color: var(--color-text-info); }
+.result-section { border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-lg); padding: 1rem 1.25rem; margin-bottom: 12px; }
+.result-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; padding: 5px 0; }
+.result-row .lbl { color: var(--color-text-secondary); }
+.result-row .val { color: var(--color-text-primary); font-weight: 500; }
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 8px 0; }
+.total-row { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; }
+.total-lbl { font-size: 14px; color: var(--color-text-secondary); font-weight: 500; }
+.total-val { font-size: 32px; font-weight: 500; color: #BA7517; }
+.rate-badge { font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 20px; }
+.badge-day { background: var(--color-background-warning); color: var(--color-text-warning); }
+.badge-night { background: var(--color-background-info); color: var(--color-text-info); }
+.badge-holiday { background: var(--color-background-danger); color: var(--color-text-danger); }
+.badge-fixed { background: var(--color-background-success); color: var(--color-text-success); }
+.result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.info-box { font-size: 12px; color: var(--color-text-tertiary); line-height: 1.6; background: var(--color-background-secondary); border-radius: 8px; padding: 10px 12px; }
+.info-box p { margin: 2px 0; }
+</style>
+
+<div class="wrap">
+  <div class="brand">
+    <div class="brand-icon">🚕</div>
+    <div>
+      <div class="brand-name">Hitch Taxi</div>
+      <div class="brand-phone">5 33 55 22</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-label">KEF airport fixed fares</div>
+    <div class="route-grid">
+      <button class="route-btn active" onclick="setRoute('none')">Use meter</button>
+      <button class="route-btn" onclick="setRoute('reykjavik')">Reykjavík ↔ KEF</button>
+      <button class="route-btn" onclick="setRoute('blueLagoon')">Blue Lagoon ↔ KEF</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="field-label"><i class="ti ti-users" aria-hidden="true"></i> Passengers</div>
+    <div class="pax-grid" id="pax-grid">
+      <button class="pax-btn active" onclick="setPax(1)">1</button>
+      <button class="pax-btn" onclick="setPax(2)">2</button>
+      <button class="pax-btn" onclick="setPax(3)">3</button>
+      <button class="pax-btn" onclick="setPax(4)">4</button>
+      <button class="pax-btn" onclick="setPax(5)">5</button>
+      <button class="pax-btn" onclick="setPax(6)">6</button>
+      <button class="pax-btn" onclick="setPax(7)">7</button>
+      <button class="pax-btn" onclick="setPax(8)">8</button>
+    </div>
+    <div class="pax-note" id="pax-note">1–4 passenger rate applies</div>
+  </div>
+
+  <div id="meter-inputs">
+    <div class="section">
+      <div class="section-label">Trip details</div>
+
+      <div>
+        <div class="field-label"><i class="ti ti-map-pin" aria-hidden="true"></i> Distance (km)</div>
+        <input type="number" id="distance" min="0" step="0.1" value="0" oninput="calc()" style="width:100%">
+      </div>
+
+      <div style="margin-top:12px;">
+        <div class="field-label"><i class="ti ti-clock" aria-hidden="true"></i> Waiting time (minutes)</div>
+        <input type="number" id="waiting" min="0" value="0" oninput="calc()" style="width:100%">
+      </div>
+
+      <div class="row2" style="margin-top:12px;">
+        <div>
+          <div class="field-label"><i class="ti ti-calendar" aria-hidden="true"></i> Date</div>
+          <input type="date" id="date" oninput="calc()" style="width:100%">
+        </div>
+        <div>
+          <div class="field-label"><i class="ti ti-clock" aria-hidden="true"></i> Start time</div>
+          <input type="time" id="time" value="12:00" oninput="calc()" style="width:100%">
+        </div>
+      </div>
+
+      <div id="rate-alert"></div>
+
+      <button class="airport-btn" id="airport-btn" onclick="toggleAirport()">
+        <i class="ti ti-plane-departure" aria-hidden="true"></i> Add 500 kr KEF airport parking fee
+      </button>
+    </div>
+  </div>
+
+  <div class="result-section" id="result-box">
+    <div class="result-header">
+      <span style="font-size:11px;font-weight:500;color:var(--color-text-secondary);text-transform:uppercase;letter-spacing:1px;">Fare estimate</span>
+      <span class="rate-badge badge-day" id="rate-badge">Day rate</span>
+    </div>
+    <div id="breakdown"></div>
+    <hr class="divider">
+    <div class="total-row">
+      <span class="total-lbl">Total</span>
+      <span class="total-val" id="total-val">850 kr</span>
+    </div>
+    <div style="font-size:11px;color:var(--color-text-tertiary);text-align:right;margin-top:4px;">Rounded to nearest 50 kr</div>
+  </div>
+
+  <div class="info-box">
+    <p>☀️ <strong>Day:</strong> 08:00–17:00 weekdays</p>
+    <p>🌙 <strong>Night/Weekend:</strong> 17:00–08:00 weekdays + all day Sat/Sun</p>
+    <p>🎉 <strong>Holiday:</strong> +35% surcharge, full day</p>
+    <p>✈️ <strong>KEF fixed:</strong> Reykjavík 22,500/29,500 kr · Blue Lagoon 12,500/16,500 kr (1–4 / 5–8 pax)</p>
+  </div>
+</div>
+
+<script>
+const holidays = ['2025-01-01','2025-04-17','2025-04-18','2025-04-21','2025-04-24','2025-05-01','2025-05-29','2025-06-09','2025-06-17','2025-08-04','2025-12-24','2025-12-25','2025-12-26','2025-12-31','2026-01-01','2026-04-02','2026-04-03','2026-04-06','2026-04-23','2026-05-01','2026-05-14','2026-05-25','2026-06-17','2026-08-03','2026-12-24','2026-12-25','2026-12-26','2026-12-31'];
+
+const RATES = {
+  '1-4': {
+    day:     { start:850,  wait:13680, f4:545, a4:388 },
+    night:   { start:850,  wait:14340, f4:582, a4:437 },
+    holiday: { start:1150, wait:19200, f4:802, a4:615 }
+  },
+  '5-8': {
+    day:     { start:1050, wait:17760, f4:709, a4:505 },
+    night:   { start:1050, wait:18660, f4:756, a4:568 },
+    holiday: { start:1450, wait:24960, f4:1042,a4:800 }
+  }
+};
+
+const KEF = {
+  reykjavik:  {'1-4':22500,'5-8':29500},
+  blueLagoon: {'1-4':12500,'5-8':16500}
+};
+
+let state = { pax:1, route:'none', airport:false };
+
+function isk(n) {
+  return Math.round(n).toLocaleString('is-IS') + ' kr';
+}
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+document.getElementById('date').value = today();
+
+function setPax(n) {
+  state.pax = n;
+  document.querySelectorAll('.pax-btn').forEach((b,i) => b.classList.toggle('active', i+1===n));
+  document.getElementById('pax-note').textContent = n <= 4 ? '1–4 passenger rate applies' : '5–8 passenger rate applies';
+  calc();
+}
+
+function setRoute(r) {
+  state.route = r;
+  document.querySelectorAll('.route-btn').forEach((b,i) => b.classList.toggle('active', ['none','reykjavik','blueLagoon'][i]===r));
+  document.getElementById('meter-inputs').style.display = r === 'none' ? '' : 'none';
+  calc();
+}
+
+function toggleAirport() {
+  state.airport = !state.airport;
+  document.getElementById('airport-btn').classList.toggle('active', state.airport);
+  calc();
+}
+
+function getRateType(date, time) {
+  if (holidays.includes(date)) return 'holiday';
+  const dow = new Date(date + 'T12:00:00').getDay();
+  if (dow === 0 || dow === 6) return 'night';
+  const [h,m] = time.split(':').map(Number);
+  const mins = h*60+m;
+  return (mins >= 480 && mins < 1020) ? 'day' : 'night';
+}
+
+function calc() {
+  const date = document.getElementById('date').value || today();
+  const time = document.getElementById('time').value || '12:00';
+  const cat = state.pax <= 4 ? '1-4' : '5-8';
+
+  if (state.route !== 'none') {
+    const fare = KEF[state.route][cat];
+    document.getElementById('rate-badge').textContent = 'Fixed fare';
+    document.getElementById('rate-badge').className = 'rate-badge badge-fixed';
+    document.getElementById('breakdown').innerHTML = `<div class="result-row"><span class="lbl">Pre-agreed route fare (${cat} pax)</span><span class="val">${isk(fare)}</span></div>`;
+    document.getElementById('total-val').textContent = isk(fare);
+    document.getElementById('rate-alert').innerHTML = '';
+    return;
+  }
+
+  const rateType = getRateType(date, time);
+  const rates = RATES[cat][rateType];
+
+  const dist = parseFloat(document.getElementById('distance').value) || 0;
+  const wait = parseFloat(document.getElementById('waiting').value) || 0;
+
+  let startFee = rates.start;
+  let distFee = dist <= 0 ? 0 : dist <= 4 ? dist * rates.f4 : 4*rates.f4 + (dist-4)*rates.a4;
+  let waitFee = (wait/60) * rates.wait;
+  let airFee = state.airport ? 500 : 0;
+  let total = Math.round((startFee + distFee + waitFee + airFee) / 50) * 50;
+
+  const badgeMap = { day:'badge-day', night:'badge-night', holiday:'badge-holiday' };
+  const labelMap = { day:'Day rate', night:'Night/weekend rate', holiday:'Holiday rate (+35%)' };
+  document.getElementById('rate-badge').className = 'rate-badge ' + badgeMap[rateType];
+  document.getElementById('rate-badge').textContent = labelMap[rateType];
+
+  let html = `<div class="result-row"><span class="lbl">Start fee</span><span class="val">${isk(startFee)}</span></div>`;
+  if (dist > 0) html += `<div class="result-row"><span class="lbl">Distance (${dist} km)</span><span class="val">${isk(distFee)}</span></div>`;
+  if (wait > 0) html += `<div class="result-row"><span class="lbl">Waiting (${wait} min)</span><span class="val">${isk(waitFee)}</span></div>`;
+  if (airFee) html += `<div class="result-row"><span class="lbl">Airport parking fee</span><span class="val">${isk(airFee)}</span></div>`;
+  document.getElementById('breakdown').innerHTML = html;
+  document.getElementById('total-val').textContent = isk(total);
+
+  const isHol = holidays.includes(date);
+  const dow = new Date(date+'T12:00:00').getDay();
+  const isWknd = dow===0||dow===6;
+  let alertHtml = '';
+  if (isHol) alertHtml = '<div class="alert alert-holiday"><i class="ti ti-confetti" aria-hidden="true"></i> Holiday rates apply</div>';
+  else if (isWknd) alertHtml = '<div class="alert alert-night"><i class="ti ti-moon" aria-hidden="true"></i> Weekend — night rates apply all day</div>';
+  document.getElementById('rate-alert').innerHTML = alertHtml;
+}
+
+calc();
+</script>

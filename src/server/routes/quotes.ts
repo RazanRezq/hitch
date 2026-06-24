@@ -16,6 +16,8 @@ export const quotesRoute = new Hono().post(
     const quote = await getQuote({
       pickup: { lat: body.pickup.lat, lng: body.pickup.lng },
       dropoff: { lat: body.dropoff.lat, lng: body.dropoff.lng },
+      passengerCount: body.passengerCount,
+      scheduledTime: body.scheduledTime,
       displayCurrency: body.displayCurrency,
     });
     return c.json(quote);

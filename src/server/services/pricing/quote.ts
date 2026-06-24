@@ -4,10 +4,14 @@ import type { GeoCoord } from '@/lib/utils';
 import { isNearKEF } from '@/lib/utils';
 import { getLatestRate } from '../currency';
 import { quoteISK } from './index';
+import type { FareBreakdownISK, RateType } from './fare';
 
 export interface GetQuoteInput {
   pickup: GeoCoord;
   dropoff: GeoCoord;
+  passengerCount?: number;
+  /** Trip start time — selects day/night/holiday rate. Defaults to now. */
+  scheduledTime?: Date;
   displayCurrency?: Currency;
 }
 
@@ -15,14 +19,12 @@ export interface QuoteResult {
   basePriceISK: number;
   distanceKm: number;
   isAirportTrip: boolean;
+  pricingMode: 'meter' | 'fixed';
+  rateType: RateType | 'fixed';
   displayCurrency: Currency;
   displayPrice: number;
   exchangeRate: number;
-  breakdownISK: {
-    baseFare: number;
-    perKm: number;
-    airportSurcharge: number;
-  };
+  breakdownISK: FareBreakdownISK;
 }
 
 /**
@@ -34,7 +36,9 @@ export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
   const isAirportTrip = isNearKEF(input.pickup) || isNearKEF(input.dropoff);
 
   const pricing = await quoteISK(input.pickup, input.dropoff, {
-    isAirportPickup: isAirportTrip,
+    passengerCount: input.passengerCount,
+    at: input.scheduledTime,
+    isAirportTrip,
   });
 
   const displayCurrency: Currency = input.displayCurrency ?? DEFAULT_CURRENCY;
@@ -55,6 +59,8 @@ export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
     basePriceISK: pricing.basePriceISK,
     distanceKm: Math.round(pricing.distanceKm * 100) / 100,
     isAirportTrip,
+    pricingMode: pricing.pricingMode,
+    rateType: pricing.rateType,
     displayCurrency,
     displayPrice,
     exchangeRate,

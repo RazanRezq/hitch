@@ -24,11 +24,20 @@ export function QuoteStep() {
         pickup: draft.pickup,
         dropoff: draft.dropoff,
         vehicleType: draft.vehicleTypeRequested,
+        passengerCount: draft.passengerCount,
+        scheduledTime: new Date(draft.scheduledTime),
         displayCurrency: draft.displayCurrency,
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft.pickup, draft.dropoff, draft.vehicleTypeRequested, draft.displayCurrency],
+    [
+      draft.pickup,
+      draft.dropoff,
+      draft.vehicleTypeRequested,
+      draft.passengerCount,
+      draft.scheduledTime,
+      draft.displayCurrency,
+    ],
   );
 
   useEffect(() => {

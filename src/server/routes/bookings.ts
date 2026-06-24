@@ -90,6 +90,8 @@ export const bookingsRoute = new Hono()
     const quote = await getQuote({
       pickup: body.pickup,
       dropoff: body.dropoff,
+      passengerCount: body.passengerCount,
+      scheduledTime: body.scheduledTime,
       displayCurrency: body.displayCurrency,
     });
 
