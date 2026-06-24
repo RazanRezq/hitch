@@ -1,14 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import {
-  AIRPORT_PARKING_FEE_ISK,
   computeFixedFareISK,
   computeMeterFareISK,
-  FIXED_FARES,
   getPaxTier,
   getRateType,
-  RATE_CARD,
+  ManualQuoteRequiredError,
   roundFareISK,
 } from './fare';
+import { AIRPORT_FEE_ISK, FIXED_FARES, RATE_CARD } from './config';
 
 // Fixed instants (Iceland is UTC+0, so the UTC wall-clock IS Iceland-local).
 const WED_NOON = new Date('2026-06-24T12:00:00Z'); // weekday, day window
@@ -42,44 +41,44 @@ describe('getRateType', () => {
 });
 
 describe('getPaxTier', () => {
-  it('maps 1–4 to the small tier and 5–8 to the large tier', () => {
+  it('maps passenger counts to 1-4 / 5-8 / 9-16', () => {
     expect(getPaxTier(1)).toBe('1-4');
     expect(getPaxTier(4)).toBe('1-4');
     expect(getPaxTier(5)).toBe('5-8');
     expect(getPaxTier(8)).toBe('5-8');
+    expect(getPaxTier(9)).toBe('9-16');
+    expect(getPaxTier(16)).toBe('9-16');
   });
 });
 
 describe('roundFareISK', () => {
-  it('rounds to the nearest 100 ISK (Stripe zero-decimal safety)', () => {
-    expect(roundFareISK(5358)).toBe(5400);
-    expect(roundFareISK(5349)).toBe(5300);
+  it('rounds metered totals to the nearest 50 ISK (the meter ticks every 50)', () => {
+    expect(roundFareISK(5358)).toBe(5350);
+    expect(roundFareISK(5375)).toBe(5400);
     expect(roundFareISK(12500)).toBe(12500);
   });
 });
 
 describe('computeMeterFareISK', () => {
-  it('bills the first 4 km at the high rate and the rest at the low rate (1–4, day)', () => {
-    // start 850 + 4*545 + 6*388 = 850 + 2180 + 2328 = 5358 → round100 = 5400
+  it('bills the first 4 km high and the rest low, rounded to 50 (1–4, day)', () => {
+    // 850 + 4*545 + 6*388 = 5358 → round50 = 5350
     const fare = computeMeterFareISK({ distanceKm: 10, passengerCount: 1, at: WED_NOON });
     expect(fare.pricingMode).toBe('meter');
     expect(fare.rateType).toBe('day');
     expect(fare.breakdownISK.startFee).toBe(850);
     expect(fare.breakdownISK.distanceFee).toBe(4508);
-    expect(fare.breakdownISK.airportFee).toBe(0);
-    expect(fare.totalISK).toBe(5400);
+    expect(fare.totalISK).toBe(5350);
   });
 
   it('charges only the high rate within the first 4 km', () => {
-    // start 850 + 3*545 = 2485 → round100 = 2500
-    const fare = computeMeterFareISK({ distanceKm: 3, passengerCount: 2, at: WED_NOON });
-    expect(fare.breakdownISK.distanceFee).toBe(1635);
-    expect(fare.totalISK).toBe(2500);
+    // 1050 + 3*709 = 3177 → round50 = 3200 (5–8 day)
+    const fare = computeMeterFareISK({ distanceKm: 3, passengerCount: 6, at: WED_NOON });
+    expect(fare.breakdownISK.distanceFee).toBe(2127);
+    expect(fare.totalISK).toBe(3200);
   });
 
   it('applies the 5–8 night rate card and waiting time', () => {
-    // 5–8 night: start 1050, wait 18660/hr, f4 756
-    // start 1050 + 4*756 + 0.5*18660 = 1050 + 3024 + 9330 = 13404 → round100 = 13400
+    // 1050 + 4*756 + 0.5*18660 = 13404 → round50 = 13400
     const fare = computeMeterFareISK({
       distanceKm: 4,
       waitingMinutes: 30,
@@ -87,21 +86,19 @@ describe('computeMeterFareISK', () => {
       at: WED_EVENING,
     });
     expect(fare.rateType).toBe('night');
-    expect(fare.breakdownISK.startFee).toBe(1050);
-    expect(fare.breakdownISK.distanceFee).toBe(3024);
     expect(fare.breakdownISK.waitingFee).toBe(9330);
     expect(fare.totalISK).toBe(13400);
   });
 
   it('applies the holiday +35% card', () => {
-    // 1–4 holiday: start 1150, f4 802 → start 1150 + 4*802 = 1150 + 3208 = 4358 → 4400
+    // 1150 + 4*802 = 4358 → round50 = 4350
     const fare = computeMeterFareISK({ distanceKm: 4, passengerCount: 1, at: XMAS });
     expect(fare.rateType).toBe('holiday');
-    expect(fare.breakdownISK.startFee).toBe(1150);
-    expect(fare.totalISK).toBe(4400);
+    expect(fare.totalISK).toBe(4350);
   });
 
-  it('adds the KEF gate fee only when includeAirportFee is set', () => {
+  it('adds the 490 ISK gate fee only when includeAirportFee is set', () => {
+    // base: 850 + 2*545 = 1940 → 1950; with fee: 1940 + 490 = 2430 → 2450
     const base = computeMeterFareISK({ distanceKm: 2, passengerCount: 1, at: WED_NOON });
     const withFee = computeMeterFareISK({
       distanceKm: 2,
@@ -109,8 +106,21 @@ describe('computeMeterFareISK', () => {
       at: WED_NOON,
       includeAirportFee: true,
     });
-    expect(withFee.breakdownISK.airportFee).toBe(AIRPORT_PARKING_FEE_ISK);
-    expect(withFee.totalISK).toBe(roundFareISK(base.totalISK + AIRPORT_PARKING_FEE_ISK));
+    expect(base.totalISK).toBe(1950);
+    expect(withFee.breakdownISK.airportFee).toBe(AIRPORT_FEE_ISK);
+    expect(withFee.breakdownISK.airportFee).toBe(490);
+    expect(withFee.totalISK).toBe(2450);
+  });
+
+  it('folds an off-list surcharge into the total', () => {
+    // 850 + 4*545 = 3030 + surcharge 18750 = 21780 → round50 = 21800
+    const fare = computeMeterFareISK({
+      distanceKm: 4,
+      passengerCount: 1,
+      at: WED_NOON,
+      surchargeISK: 18750,
+    });
+    expect(fare.totalISK).toBe(21800);
   });
 
   it('charges only the start fee for a zero-distance trip', () => {
@@ -118,18 +128,34 @@ describe('computeMeterFareISK', () => {
     expect(fare.breakdownISK.distanceFee).toBe(0);
     expect(fare.totalISK).toBe(roundFareISK(RATE_CARD['1-4'].day.startFeeISK));
   });
+
+  it('refuses to meter a 9–16 passenger trip (manual quote required)', () => {
+    expect(() => computeMeterFareISK({ distanceKm: 10, passengerCount: 12, at: WED_NOON })).toThrow(
+      ManualQuoteRequiredError,
+    );
+  });
 });
 
 describe('computeFixedFareISK', () => {
-  it('returns the pre-agreed Reykjavík fares by tier', () => {
-    expect(computeFixedFareISK('reykjavik', 1).totalISK).toBe(FIXED_FARES.reykjavik['1-4']);
+  it('returns the corrected per-tier Reykjavík ISK fares', () => {
     expect(computeFixedFareISK('reykjavik', 1).totalISK).toBe(22500);
-    expect(computeFixedFareISK('reykjavik', 6).totalISK).toBe(29500);
+    expect(computeFixedFareISK('reykjavik', 6).totalISK).toBe(29250); // corrected from 29500
+    expect(computeFixedFareISK('reykjavik', 12).totalISK).toBe(58500); // 9-16 tier
   });
 
-  it('returns the pre-agreed Blue Lagoon fares by tier', () => {
+  it('returns the Blue Lagoon ISK fares incl. the 9-16 tier', () => {
     expect(computeFixedFareISK('blueLagoon', 4).totalISK).toBe(12500);
     expect(computeFixedFareISK('blueLagoon', 8).totalISK).toBe(16500);
+    expect(computeFixedFareISK('blueLagoon', 16).totalISK).toBe(33000);
+  });
+
+  it('exposes explicit per-currency prices (no auto-conversion)', () => {
+    const rvk = computeFixedFareISK('reykjavik', 1);
+    expect(rvk.fixedPricesMajor).toEqual({ ISK: 22500, EUR: 150, USD: 170 });
+    expect(rvk.fixedPricesMajor).toEqual(FIXED_FARES.reykjavik['1-4']);
+
+    const bl = computeFixedFareISK('blueLagoon', 6);
+    expect(bl.fixedPricesMajor).toEqual({ ISK: 16500, EUR: 110, USD: 130 });
   });
 
   it('reports fixed mode and surfaces the fare in the breakdown', () => {

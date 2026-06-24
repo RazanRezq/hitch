@@ -26,7 +26,7 @@ export const createBookingSchema = z.object({
     .optional(),
   scheduledTime: z.coerce.date(),
   vehicleTypeRequested: vehicleTypeSchema,
-  passengerCount: z.number().int().min(1).max(8),
+  passengerCount: z.number().int().min(1).max(16),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
   promoCode: z.string().max(40).optional(),
   guest: guestDetailsSchema.optional(),

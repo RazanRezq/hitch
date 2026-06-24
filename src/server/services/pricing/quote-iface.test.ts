@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { detectFixedRoute, quoteISK } from './index';
+import { detectFixedRoute, quoteISK, ManualQuoteRequiredError } from './index';
 import type { RouteDistance } from '../routing';
 import { LANDMARKS } from '@/lib/types';
 
@@ -10,7 +10,7 @@ const roadKm = (km: number) =>
 const KEF = { lat: LANDMARKS.kef.lat, lng: LANDMARKS.kef.lng };
 const RVK = { lat: LANDMARKS.reykjavik.lat, lng: LANDMARKS.reykjavik.lng };
 const BLUE_LAGOON = { lat: LANDMARKS.blueLagoon.lat, lng: LANDMARKS.blueLagoon.lng };
-const HVERAGERDI = { lat: 64.0, lng: -21.19 }; // a town that is not part of a fixed corridor
+const HVERAGERDI = { lat: 64.0, lng: -21.19 }; // off-list town, not part of a fixed corridor
 
 const WEEKDAY_NOON = new Date('2026-06-24T12:00:00Z');
 
@@ -44,37 +44,60 @@ describe('quoteISK', () => {
     });
     expect(quote.pricingMode).toBe('fixed');
     expect(quote.basePriceISK).toBe(22500);
-    expect(quote.breakdownISK.fixedFare).toBe(22500);
+    expect(quote.fixedPricesMajor).toEqual({ ISK: 22500, EUR: 150, USD: 170 });
     expect(quote.distanceSource).toBe('straight-line');
     expect(roadDistanceFn).not.toHaveBeenCalled(); // fixed fares ignore distance
   });
 
-  it('uses the 5–8 fixed fare for larger groups', async () => {
+  it('uses the 9-16 fixed fare for minibus groups', async () => {
     const quote = await quoteISK(KEF, BLUE_LAGOON, {
-      passengerCount: 6,
+      passengerCount: 12,
       at: WEEKDAY_NOON,
       roadDistanceFn: roadKm(20),
     });
     expect(quote.pricingMode).toBe('fixed');
-    expect(quote.basePriceISK).toBe(16500);
+    expect(quote.basePriceISK).toBe(33000);
+    expect(quote.fixedPricesMajor?.EUR).toBe(220);
   });
 
-  it('drives the meter with real road distance and adds the gate fee at KEF', async () => {
+  it('drives the meter with road distance and adds the 490 fee on KEF-origin trips', async () => {
     const roadDistanceFn = roadKm(45);
     const quote = await quoteISK(KEF, HVERAGERDI, {
       passengerCount: 1,
       at: WEEKDAY_NOON,
-      isAirportTrip: true,
+      originatesAtKef: true,
       roadDistanceFn,
     });
-    // 1–4 day: 850 + (4*545 + 41*388) + 500 = 19438 → round100 = 19400
+    // 1–4 day: 850 + (4*545 + 41*388) + 490 = 19428 → round50 = 19450
     expect(quote.pricingMode).toBe('meter');
     expect(quote.rateType).toBe('day');
     expect(quote.distanceSource).toBe('road');
     expect(quote.distanceKm).toBe(45);
-    expect(quote.breakdownISK.airportFee).toBe(500);
-    expect(quote.basePriceISK).toBe(19400);
-    expect(roadDistanceFn).toHaveBeenCalledOnce();
+    expect(quote.breakdownISK.airportFee).toBe(490);
+    expect(quote.basePriceISK).toBe(19450);
+  });
+
+  it('applies the >100 km off-list surcharge: meter first 100 km + 375 ISK/km', async () => {
+    const quote = await quoteISK(RVK, HVERAGERDI, {
+      passengerCount: 1,
+      at: WEEKDAY_NOON,
+      roadDistanceFn: roadKm(150),
+    });
+    // meter(100km) 850 + 4*545 + 96*388 = 40278; surcharge 375*50 = 18750
+    // → 59028 → round50 = 59050
+    expect(quote.pricingMode).toBe('meter');
+    expect(quote.distanceKm).toBe(150);
+    expect(quote.basePriceISK).toBe(59050);
+  });
+
+  it('refuses to meter a 9–16 passenger off-list trip', async () => {
+    await expect(
+      quoteISK(RVK, HVERAGERDI, {
+        passengerCount: 12,
+        at: WEEKDAY_NOON,
+        roadDistanceFn: roadKm(45),
+      }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
   });
 
   it('falls back to straight-line distance when routing is unavailable', async () => {

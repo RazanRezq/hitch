@@ -2,8 +2,8 @@ import type { Currency } from '@/lib/types';
 import { CURRENCY_DECIMALS, DEFAULT_CURRENCY } from '@/lib/types';
 import type { GeoCoord } from '@/lib/utils';
 import { isNearKEF } from '@/lib/utils';
-import { getLatestRate } from '../currency';
-import { quoteISK, type DistanceSource } from './index';
+import { quoteISK, type DistanceSource, type PricingQuote, type QuoteISKOptions } from './index';
+import { METER_FX_ISK_PER_UNIT } from './config';
 import type { FareBreakdownISK, RateType } from './fare';
 
 export interface GetQuoteInput {
@@ -13,6 +13,8 @@ export interface GetQuoteInput {
   /** Trip start time — selects day/night/holiday rate. Defaults to now. */
   scheduledTime?: Date;
   displayCurrency?: Currency;
+  /** Injectable road-distance lookup (defaults to cached Directions). For tests. */
+  roadDistanceFn?: QuoteISKOptions['roadDistanceFn'];
 }
 
 export interface QuoteResult {
@@ -29,32 +31,43 @@ export interface QuoteResult {
 }
 
 /**
- * Combines pricing (ISK source of truth) + currency conversion into a single
- * quote. The exchange rate returned here is what the booking row will lock at
- * creation time — see CLAUDE.md "ISK is the source of truth".
+ * Display amount in MAJOR currency units. Customer-facing FX is fixed, never the
+ * live exchange-rate worker (which is now accounting/internal only):
+ *  - ISK   → 1:1 with the ISK source of truth.
+ *  - FIXED routes → the client's explicit hand-rounded per-currency price.
+ *  - METER → ISK divided by the fixed constant (EUR /150, USD /130).
+ */
+function resolveDisplayMajor(pricing: PricingQuote, currency: Currency): number {
+  if (currency === 'ISK') return pricing.basePriceISK;
+  const explicit = pricing.fixedPricesMajor?.[currency];
+  if (explicit !== undefined) return explicit;
+  return pricing.basePriceISK / METER_FX_ISK_PER_UNIT[currency];
+}
+
+/**
+ * Combines pricing (ISK source of truth) + fixed display FX into a single quote.
+ * The exchangeRate returned here is locked onto the booking at creation time —
+ * see CLAUDE.md "ISK is the source of truth".
  */
 export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
-  const isAirportTrip = isNearKEF(input.pickup) || isNearKEF(input.dropoff);
+  const originatesAtKef = isNearKEF(input.pickup);
+  const isAirportTrip = originatesAtKef || isNearKEF(input.dropoff);
 
   const pricing = await quoteISK(input.pickup, input.dropoff, {
     passengerCount: input.passengerCount,
     at: input.scheduledTime,
-    isAirportTrip,
+    originatesAtKef,
+    roadDistanceFn: input.roadDistanceFn,
   });
 
   const displayCurrency: Currency = input.displayCurrency ?? DEFAULT_CURRENCY;
-  const exchangeRate = await getLatestRate(displayCurrency);
-
-  if (exchangeRate <= 0) {
-    throw new Error(`No exchange rate available for ISK→${displayCurrency}`);
-  }
+  const displayMajor = resolveDisplayMajor(pricing, displayCurrency);
 
   // displayPrice is in the smallest currency unit (kr for ISK, cents for EUR/USD)
-  // to match Booking.displayPrice and Stripe's amount convention. Format at the
-  // UI layer by dividing by 10^CURRENCY_DECIMALS[currency].
-  const decimals = CURRENCY_DECIMALS[displayCurrency];
-  const factor = 10 ** decimals;
-  const displayPrice = Math.round(pricing.basePriceISK * exchangeRate * factor);
+  // to match Booking.displayPrice and Stripe's amount convention.
+  const factor = 10 ** CURRENCY_DECIMALS[displayCurrency];
+  const displayPrice = Math.round(displayMajor * factor);
+  const exchangeRate = pricing.basePriceISK > 0 ? displayMajor / pricing.basePriceISK : 1;
 
   return {
     basePriceISK: pricing.basePriceISK,

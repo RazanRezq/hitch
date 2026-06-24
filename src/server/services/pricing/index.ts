@@ -1,6 +1,6 @@
 import type { GeoCoord } from '@/lib/utils';
 import { calculateDistance, isNearKEF } from '@/lib/utils';
-import { LANDMARKS } from '@/lib/types';
+import { LANDMARKS, type Currency } from '@/lib/types';
 import { getDrivingDistanceCached, type RouteDistance } from '../routing';
 import {
   computeFixedFareISK,
@@ -9,6 +9,12 @@ import {
   type FixedRouteId,
   type RateType,
 } from './fare';
+import {
+  OFF_LIST_DISTANCE_THRESHOLD_KM,
+  OFF_LIST_SURCHARGE_ISK_PER_KM,
+} from './config';
+
+export { ManualQuoteRequiredError } from './fare';
 
 export type DistanceSource = 'road' | 'straight-line';
 
@@ -20,14 +26,16 @@ export interface PricingQuote {
   pricingMode: 'meter' | 'fixed';
   rateType: RateType | 'fixed';
   breakdownISK: FareBreakdownISK;
+  /** Explicit per-currency price (major units). Present only for fixed fares. */
+  fixedPricesMajor?: Record<Currency, number>;
 }
 
 export interface QuoteISKOptions {
   passengerCount?: number;
   /** Trip start time — selects day/night/holiday rate. Defaults to now. */
   at?: Date;
-  /** Whether the trip touches KEF (pickup or dropoff). */
-  isAirportTrip?: boolean;
+  /** Whether the trip ORIGINATES at KEF — drives the 490 ISK gate fee (meter only). */
+  originatesAtKef?: boolean;
   /** Injectable road-distance lookup (defaults to the cached Directions API). */
   roadDistanceFn?: (origin: GeoCoord, destination: GeoCoord) => Promise<RouteDistance>;
 }
@@ -110,6 +118,7 @@ export async function quoteISK(
       pricingMode: fare.pricingMode,
       rateType: fare.rateType,
       breakdownISK: fare.breakdownISK,
+      fixedPricesMajor: fare.fixedPricesMajor,
     };
   }
 
@@ -118,12 +127,20 @@ export async function quoteISK(
     dropoff,
     roadDistanceFn,
   );
+
+  // Off-list >100 km: meter the first 100 km, then add the per-km surcharge.
+  // (Surcharge = 2.50 EUR/km expressed in ISK at 150; EUR-vs-ISK billing PENDING.)
+  const overThreshold = Math.max(0, distanceKm - OFF_LIST_DISTANCE_THRESHOLD_KM);
+  const meterDistanceKm = overThreshold > 0 ? OFF_LIST_DISTANCE_THRESHOLD_KM : distanceKm;
+  const surchargeISK = overThreshold * OFF_LIST_SURCHARGE_ISK_PER_KM;
+
   const fare = computeMeterFareISK({
-    distanceKm,
+    distanceKm: meterDistanceKm,
     passengerCount,
     at,
-    // Airport gate fee applies to metered KEF trips; fixed fares bake it in.
-    includeAirportFee: options.isAirportTrip,
+    // 490 ISK gate fee only when the trip ORIGINATES at KEF.
+    includeAirportFee: options.originatesAtKef,
+    surchargeISK,
   });
 
   return {

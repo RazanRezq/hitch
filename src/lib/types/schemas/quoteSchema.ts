@@ -5,7 +5,7 @@ export const quoteRequestSchema = z.object({
   pickup: geoPointSchema,
   dropoff: geoPointSchema,
   vehicleType: vehicleTypeSchema.optional(),
-  passengerCount: z.number().int().min(1).max(8).optional(),
+  passengerCount: z.number().int().min(1).max(16).optional(),
   scheduledTime: z.coerce.date().optional(),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
 });
