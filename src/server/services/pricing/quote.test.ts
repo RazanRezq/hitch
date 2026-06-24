@@ -13,7 +13,7 @@ const WEEKDAY_NOON = new Date('2026-06-24T12:00:00Z');
 
 describe('getQuote — fixed fares use explicit per-currency prices (no auto-conversion)', () => {
   it('quotes the KEF → Reykjavík fixed fare in ISK', async () => {
-    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'ISK' });
+    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'ISK', geocodeFn: async () => 101 });
     expect(q.pricingMode).toBe('fixed');
     expect(q.basePriceISK).toBe(22500);
     expect(q.displayPrice).toBe(22500); // ISK has no minor unit
@@ -21,13 +21,13 @@ describe('getQuote — fixed fares use explicit per-currency prices (no auto-con
   });
 
   it('quotes the explicit EUR price (150 → 15000 cents), not a converted one', async () => {
-    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'EUR' });
+    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'EUR', geocodeFn: async () => 101 });
     expect(q.displayPrice).toBe(15000); // 150.00 EUR
     expect(q.exchangeRate).toBeCloseTo(150 / 22500, 8);
   });
 
   it('quotes the explicit USD price (170 → 17000 cents)', async () => {
-    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'USD' });
+    const q = await getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'USD', geocodeFn: async () => 101 });
     expect(q.displayPrice).toBe(17000);
   });
 });

@@ -2,9 +2,12 @@ import type { Currency } from '@/lib/types';
 import { CURRENCY_DECIMALS, DEFAULT_CURRENCY } from '@/lib/types';
 import type { GeoCoord } from '@/lib/utils';
 import { isNearKEF } from '@/lib/utils';
-import { quoteISK, type DistanceSource, type PricingQuote, type QuoteISKOptions } from './index';
+import { quoteISK, type DistanceSource, type PricingQuote, type QuoteISKOptions, type ZoneEndpoints } from './index';
 import { METER_FX_ISK_PER_UNIT } from './config';
+import { reverseGeocodePostalCodeCached } from '../geocoding';
 import type { FareBreakdownISK, RateType } from './fare';
+
+type GeocodeFn = (coord: GeoCoord) => Promise<number | null>;
 
 export interface GetQuoteInput {
   pickup: GeoCoord;
@@ -15,6 +18,26 @@ export interface GetQuoteInput {
   displayCurrency?: Currency;
   /** Injectable road-distance lookup (defaults to cached Directions). For tests. */
   roadDistanceFn?: QuoteISKOptions['roadDistanceFn'];
+  /** Injectable reverse-geocoder (defaults to cached Geocoding API). For tests. */
+  geocodeFn?: GeocodeFn;
+}
+
+/**
+ * Resolve endpoint postal codes needed for the 101–109 Reykjavík flat fare.
+ * Only the non-KEF endpoint of a KEF transfer needs geocoding — everything else
+ * meters regardless, so we skip the call (and its cost) entirely.
+ */
+async function resolveZones(
+  pickup: GeoCoord,
+  dropoff: GeoCoord,
+  geocode: GeocodeFn,
+): Promise<ZoneEndpoints> {
+  const pickupAtKef = isNearKEF(pickup);
+  const dropoffAtKef = isNearKEF(dropoff);
+  if (pickupAtKef === dropoffAtKef) return {}; // not a KEF transfer → meter anyway
+
+  if (pickupAtKef) return { dropoffPostal: await geocode(dropoff) };
+  return { pickupPostal: await geocode(pickup) };
 }
 
 export interface QuoteResult {
@@ -53,10 +76,14 @@ export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
   const originatesAtKef = isNearKEF(input.pickup);
   const isAirportTrip = originatesAtKef || isNearKEF(input.dropoff);
 
+  const geocode = input.geocodeFn ?? reverseGeocodePostalCodeCached;
+  const zones = await resolveZones(input.pickup, input.dropoff, geocode);
+
   const pricing = await quoteISK(input.pickup, input.dropoff, {
     passengerCount: input.passengerCount,
     at: input.scheduledTime,
     originatesAtKef,
+    zones,
     roadDistanceFn: input.roadDistanceFn,
   });
 

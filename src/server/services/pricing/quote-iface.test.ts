@@ -15,22 +15,29 @@ const HVERAGERDI = { lat: 64.0, lng: -21.19 }; // off-list town, not part of a f
 const WEEKDAY_NOON = new Date('2026-06-24T12:00:00Z');
 
 describe('detectFixedRoute', () => {
-  it('recognises KEF ↔ Reykjavík in both directions', () => {
-    expect(detectFixedRoute(KEF, RVK)).toBe('reykjavik');
-    expect(detectFixedRoute(RVK, KEF)).toBe('reykjavik');
+  it('recognises KEF ↔ Reykjavík (postal 101–109) in both directions', () => {
+    expect(detectFixedRoute(KEF, RVK, { dropoffPostal: 101 })).toBe('reykjavik');
+    expect(detectFixedRoute(RVK, KEF, { pickupPostal: 105 })).toBe('reykjavik');
   });
 
-  it('recognises KEF ↔ Blue Lagoon in both directions', () => {
+  it('does NOT apply the Reykjavík flat fare to greater-Reykjavík postal codes', () => {
+    expect(detectFixedRoute(KEF, RVK, { dropoffPostal: 200 })).toBeNull(); // Kópavogur
+    expect(detectFixedRoute(KEF, RVK, { dropoffPostal: 170 })).toBeNull(); // Seltjarnarnes
+    expect(detectFixedRoute(KEF, RVK, { dropoffPostal: 112 })).toBeNull(); // Grafarholt
+    expect(detectFixedRoute(KEF, RVK, {})).toBeNull(); // no postal → meter
+  });
+
+  it('recognises KEF ↔ Blue Lagoon by location (no postal needed)', () => {
     expect(detectFixedRoute(KEF, BLUE_LAGOON)).toBe('blueLagoon');
     expect(detectFixedRoute(BLUE_LAGOON, KEF)).toBe('blueLagoon');
   });
 
   it('returns null when neither endpoint is KEF', () => {
-    expect(detectFixedRoute(RVK, BLUE_LAGOON)).toBeNull();
+    expect(detectFixedRoute(RVK, BLUE_LAGOON, { pickupPostal: 101 })).toBeNull();
   });
 
   it('returns null for a KEF trip to an unlisted destination', () => {
-    expect(detectFixedRoute(KEF, HVERAGERDI)).toBeNull();
+    expect(detectFixedRoute(KEF, HVERAGERDI, { dropoffPostal: 810 })).toBeNull();
   });
 });
 
@@ -40,6 +47,7 @@ describe('quoteISK', () => {
     const quote = await quoteISK(KEF, RVK, {
       passengerCount: 2,
       at: WEEKDAY_NOON,
+      zones: { dropoffPostal: 101 },
       roadDistanceFn,
     });
     expect(quote.pricingMode).toBe('fixed');

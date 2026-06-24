@@ -12,6 +12,7 @@ import {
 import {
   OFF_LIST_DISTANCE_THRESHOLD_KM,
   OFF_LIST_SURCHARGE_ISK_PER_KM,
+  REYKJAVIK_FLAT_FARE_POSTAL_CODES,
 } from './config';
 
 export { ManualQuoteRequiredError } from './fare';
@@ -30,24 +31,26 @@ export interface PricingQuote {
   fixedPricesMajor?: Record<Currency, number>;
 }
 
+/** Postal codes of the trip endpoints (from reverse geocoding). */
+export interface ZoneEndpoints {
+  pickupPostal?: number | null;
+  dropoffPostal?: number | null;
+}
+
 export interface QuoteISKOptions {
   passengerCount?: number;
   /** Trip start time — selects day/night/holiday rate. Defaults to now. */
   at?: Date;
   /** Whether the trip ORIGINATES at KEF — drives the 490 ISK gate fee (meter only). */
   originatesAtKef?: boolean;
+  /** Endpoint postal codes — required to recognise the 101–109 Reykjavík fare. */
+  zones?: ZoneEndpoints;
   /** Injectable road-distance lookup (defaults to the cached Directions API). */
   roadDistanceFn?: (origin: GeoCoord, destination: GeoCoord) => Promise<RouteDistance>;
 }
 
-/**
- * Radii (km) used to recognise the pre-agreed KEF transfer corridors. KEF reuses
- * the shared 5 km `isNearKEF`. Blue Lagoon is a single spot (tight radius);
- * Reykjavík covers the capital region. These never overlap (RVK↔KEF ≈ 38 km,
- * BlueLagoon↔KEF ≈ 14 km, RVK↔BlueLagoon ≈ 38 km), so detection is unambiguous.
- */
+/** Blue Lagoon is a single facility — point-detected (postal 240 over-captures Grindavík). */
 const BLUE_LAGOON_RADIUS_KM = 6;
-const REYKJAVIK_RADIUS_KM = 18;
 
 function isNear(point: GeoCoord, landmark: GeoCoord, radiusKm: number): boolean {
   return calculateDistance(point, landmark) <= radiusKm;
@@ -55,17 +58,31 @@ function isNear(point: GeoCoord, landmark: GeoCoord, radiusKm: number): boolean 
 
 /**
  * Detect a pre-agreed fixed-fare route. A fixed fare applies only to a genuine
- * KEF transfer: exactly one endpoint at KEF and the other at Reykjavík or the
- * Blue Lagoon. Anything else (including KEF→KEF or city→city) falls to the meter.
+ * KEF transfer: exactly one endpoint at KEF and the other at the Blue Lagoon or
+ * Reykjavík proper.
+ *
+ * KEF and Blue Lagoon are point facilities (coordinate-detected). "Reykjavík"
+ * is the FLAT-FARE zone = postal codes 101–109 ONLY, resolved by geocoding —
+ * greater-Reykjavík (110/112/170/200…) is NOT the flat fare and falls to the
+ * meter. Without a postal code for the non-KEF endpoint, Reykjavík cannot be
+ * confirmed and the trip meters.
  */
-export function detectFixedRoute(pickup: GeoCoord, dropoff: GeoCoord): FixedRouteId | null {
+export function detectFixedRoute(
+  pickup: GeoCoord,
+  dropoff: GeoCoord,
+  zones: ZoneEndpoints = {},
+): FixedRouteId | null {
   const pickupAtKef = isNearKEF(pickup);
   const dropoffAtKef = isNearKEF(dropoff);
   if (pickupAtKef === dropoffAtKef) return null; // both or neither at KEF
 
   const other = pickupAtKef ? dropoff : pickup;
+  const otherPostal = pickupAtKef ? zones.dropoffPostal : zones.pickupPostal;
+
   if (isNear(other, LANDMARKS.blueLagoon, BLUE_LAGOON_RADIUS_KM)) return 'blueLagoon';
-  if (isNear(other, LANDMARKS.reykjavik, REYKJAVIK_RADIUS_KM)) return 'reykjavik';
+  if (otherPostal != null && REYKJAVIK_FLAT_FARE_POSTAL_CODES.includes(otherPostal)) {
+    return 'reykjavik';
+  }
   return null;
 }
 
@@ -107,7 +124,7 @@ export async function quoteISK(
   const at = options.at ?? new Date();
   const roadDistanceFn = options.roadDistanceFn ?? getDrivingDistanceCached;
 
-  const fixedRoute = detectFixedRoute(pickup, dropoff);
+  const fixedRoute = detectFixedRoute(pickup, dropoff, options.zones);
 
   if (fixedRoute) {
     const fare = computeFixedFareISK(fixedRoute, passengerCount);
