@@ -13,6 +13,7 @@ import { getSessionUserId, authorizeBookingAccess } from '@/server/lib/booking-a
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
 import { createPaymentIntent } from '@/server/services/payments';
 import { getQuote } from '@/server/services/pricing/quote';
+import { ManualQuoteRequiredError } from '@/server/services/pricing';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
 
 const cancelInputSchema = z
@@ -87,11 +88,26 @@ export const bookingsRoute = new Hono()
     }
 
     // Re-quote server-side — never trust client price
-    const quote = await getQuote({
-      pickup: body.pickup,
-      dropoff: body.dropoff,
-      displayCurrency: body.displayCurrency,
-    });
+    let quote;
+    try {
+      quote = await getQuote({
+        pickup: body.pickup,
+        dropoff: body.dropoff,
+        passengerCount: body.passengerCount,
+        scheduledTime: body.scheduledTime,
+        displayCurrency: body.displayCurrency,
+      });
+    } catch (err) {
+      // Trips that can't be auto-priced (e.g. metered 9–16 pax) need a manual
+      // quote — surface 422 rather than creating an unpriced booking.
+      if (err instanceof ManualQuoteRequiredError) {
+        return c.json(
+          { error: err.message, code: err.code, manualQuoteRequired: true },
+          422,
+        );
+      }
+      throw err;
+    }
 
     // 1. Create booking in DRAFT (cheap to clean up if Stripe fails)
     const booking = await prisma.booking.create({

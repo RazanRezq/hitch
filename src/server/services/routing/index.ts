@@ -86,3 +86,52 @@ export async function getDrivingDistance(
     durationSeconds: leg.duration.value,
   };
 }
+
+// Road geometry between two fixed points is effectively static, so memoise it.
+// This keeps the public, unauthenticated quote endpoint from hitting the
+// Directions API on every re-quote — currency/passenger/time toggles reuse the
+// same route. In-memory (single Next.js process on Railway); a cache miss only
+// costs one extra Directions call, so this never needs Redis-level durability.
+const DISTANCE_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+const DISTANCE_CACHE_MAX = 500;
+const COORD_CACHE_PRECISION = 4; // ~11 m — finer than this never changes the route
+
+interface DistanceCacheEntry {
+  value: RouteDistance;
+  expiresAt: number;
+}
+const distanceCache = new Map<string, DistanceCacheEntry>();
+
+function distanceCacheKey(origin: GeoCoord, destination: GeoCoord): string {
+  const r = (n: number) => n.toFixed(COORD_CACHE_PRECISION);
+  return `${r(origin.lat)},${r(origin.lng)}>${r(destination.lat)},${r(destination.lng)}`;
+}
+
+/**
+ * Cached wrapper around {@link getDrivingDistance}. Memoises by rounded
+ * coordinates with a 1h TTL and a bounded size (oldest evicted first).
+ */
+export async function getDrivingDistanceCached(
+  origin: GeoCoord,
+  destination: GeoCoord,
+  options: GetDrivingDistanceOptions = {},
+): Promise<RouteDistance> {
+  const key = distanceCacheKey(origin, destination);
+  const now = Date.now();
+  const cached = distanceCache.get(key);
+  if (cached && cached.expiresAt > now) return cached.value;
+
+  const value = await getDrivingDistance(origin, destination, options);
+
+  if (distanceCache.size >= DISTANCE_CACHE_MAX) {
+    const oldest = distanceCache.keys().next().value;
+    if (oldest !== undefined) distanceCache.delete(oldest);
+  }
+  distanceCache.set(key, { value, expiresAt: now + DISTANCE_CACHE_TTL_MS });
+  return value;
+}
+
+/** Clear the in-memory distance cache. Test-only. */
+export function __clearDistanceCache(): void {
+  distanceCache.clear();
+}

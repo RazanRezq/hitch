@@ -1,6 +1,11 @@
 import { describe, it, expect, vi } from 'vitest';
 import type { GeoCoord } from '@/lib/utils';
-import { getDrivingDistance, RoutingError } from './index';
+import {
+  __clearDistanceCache,
+  getDrivingDistance,
+  getDrivingDistanceCached,
+  RoutingError,
+} from './index';
 
 const KEF: GeoCoord = { lat: 63.985, lng: -22.605 };
 const RVK: GeoCoord = { lat: 64.1466, lng: -21.9426 };
@@ -64,5 +69,33 @@ describe('getDrivingDistance', () => {
     await expect(
       getDrivingDistance(KEF, RVK, { apiKey: 'k', fetchImpl }),
     ).rejects.toThrow('no usable route');
+  });
+});
+
+describe('getDrivingDistanceCached', () => {
+  const okFetch = (meters: number) =>
+    vi.fn(async () =>
+      jsonResponse({
+        status: 'OK',
+        routes: [{ legs: [{ distance: { value: meters }, duration: { value: 1800 } }] }],
+      }),
+    );
+
+  it('memoises by coordinates so repeat lookups skip the Directions API', async () => {
+    __clearDistanceCache();
+    const fetchImpl = okFetch(50000);
+    const first = await getDrivingDistanceCached(KEF, RVK, { apiKey: 'k', fetchImpl });
+    const second = await getDrivingDistanceCached(KEF, RVK, { apiKey: 'k', fetchImpl });
+    expect(first).toEqual(second);
+    expect(first.distanceMeters).toBe(50000);
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+  });
+
+  it('treats different coordinate pairs as separate entries', async () => {
+    __clearDistanceCache();
+    const fetchImpl = okFetch(1000);
+    await getDrivingDistanceCached(KEF, RVK, { apiKey: 'k', fetchImpl });
+    await getDrivingDistanceCached(RVK, KEF, { apiKey: 'k', fetchImpl });
+    expect(fetchImpl).toHaveBeenCalledTimes(2);
   });
 });
