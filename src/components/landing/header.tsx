@@ -125,6 +125,9 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
             <a href="#top" className="ed-nav-link is-active">
               <span>{t('fly')}</span>
             </a>
+            <Link href={`/${locale}/tours`} className="ed-nav-link">
+              <span>{t('tours')}</span>
+            </Link>
             <a href="#fleet" className="ed-nav-link">
               <span>{t('fleet')}</span>
             </a>
