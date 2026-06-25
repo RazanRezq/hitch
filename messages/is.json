@@ -407,7 +407,8 @@
       "signin": "Skrá inn",
       "book": "Bóka núna",
       "language": "Tungumál",
-      "currencyLabel": "Gjaldmiðill"
+      "currencyLabel": "Gjaldmiðill",
+      "tours": "Ferðir"
     },
     "hero": {
       "verbA": "Lentu.",
@@ -458,10 +459,22 @@
       "tag": "BEINT FRÁ REYKJAVÍK",
       "time": "14:32:08",
       "items": [
-        { "k": "VEÐUR", "v": "−2°C · Snjókoma" },
-        { "k": "UMFERÐ", "v": "Hreint · Leið 41" },
-        { "k": "NÆSTA FLUG", "v": "FI 614 · 14:55" },
-        { "k": "BIÐTÍMI", "v": "4 mín" }
+        {
+          "k": "VEÐUR",
+          "v": "−2°C · Snjókoma"
+        },
+        {
+          "k": "UMFERÐ",
+          "v": "Hreint · Leið 41"
+        },
+        {
+          "k": "NÆSTA FLUG",
+          "v": "FI 614 · 14:55"
+        },
+        {
+          "k": "BIÐTÍMI",
+          "v": "4 mín"
+        }
       ]
     },
     "trips": {
@@ -473,9 +486,18 @@
       "from": "FRÁ",
       "badge": "MEST BÓKAÐ",
       "cards": [
-        { "code": "HTCH-01 · KEF↦RVK", "kmTime": "49.2 km · 45 mín" },
-        { "code": "HTCH-02 · RVK↦KEF", "kmTime": "49.2 km · 50 mín" },
-        { "code": "HTCH-03 · KEF↦BLU", "kmTime": "24.6 km · 20 mín" }
+        {
+          "code": "HTCH-01 · KEF↦RVK",
+          "kmTime": "49.2 km · 45 mín"
+        },
+        {
+          "code": "HTCH-02 · RVK↦KEF",
+          "kmTime": "49.2 km · 50 mín"
+        },
+        {
+          "code": "HTCH-03 · KEF↦BLU",
+          "kmTime": "24.6 km · 20 mín"
+        }
       ]
     },
     "manifesto": {
@@ -484,10 +506,30 @@
       "titleA": "Fjórar reglur.",
       "titleB": "Engar undantekningar.",
       "items": [
-        { "n": "01", "k": "VERÐ", "t": "Læst, alltaf.", "body": "Verðið sem þú sérð er verðið sem þú borgar. Engin álagsverð, ekki á jólum, ekki klukkan þrjú að nóttu." },
-        { "n": "02", "k": "BÍLSTJÓRI", "t": "Eitt nafn.", "body": "Sami bílstjóri allan ferðatímann. Þú færð nafn, mynd og bíl áður en þú lendir." },
-        { "n": "03", "k": "TÍMI", "t": "Engin bið.", "body": "Bílstjóri lætur þig vita 12 mín fyrir lendingu. Bíllinn er við hliðið um leið og þú gengur út." },
-        { "n": "04", "k": "TUNGUMÁL", "t": "Þitt mál.", "body": "IS, EN, AR — bókun, kvittun og spjall á því tungumáli sem þér líður best með." }
+        {
+          "n": "01",
+          "k": "VERÐ",
+          "t": "Læst, alltaf.",
+          "body": "Verðið sem þú sérð er verðið sem þú borgar. Engin álagsverð, ekki á jólum, ekki klukkan þrjú að nóttu."
+        },
+        {
+          "n": "02",
+          "k": "BÍLSTJÓRI",
+          "t": "Eitt nafn.",
+          "body": "Sami bílstjóri allan ferðatímann. Þú færð nafn, mynd og bíl áður en þú lendir."
+        },
+        {
+          "n": "03",
+          "k": "TÍMI",
+          "t": "Engin bið.",
+          "body": "Bílstjóri lætur þig vita 12 mín fyrir lendingu. Bíllinn er við hliðið um leið og þú gengur út."
+        },
+        {
+          "n": "04",
+          "k": "TUNGUMÁL",
+          "t": "Þitt mál.",
+          "body": "IS, EN, AR — bókun, kvittun og spjall á því tungumáli sem þér líður best með."
+        }
       ]
     },
     "fleet": {
@@ -498,10 +540,26 @@
       "classLabel": "FLOKKUR",
       "from": "FRÁ",
       "items": [
-        { "name": "Fólksbíll", "cap": "1–4", "bag": "3" },
-        { "name": "SUV", "cap": "1–6", "bag": "5" },
-        { "name": "Van", "cap": "1–8", "bag": "8" },
-        { "name": "Lúxus", "cap": "1–3", "bag": "3" }
+        {
+          "name": "Fólksbíll",
+          "cap": "1–4",
+          "bag": "3"
+        },
+        {
+          "name": "SUV",
+          "cap": "1–6",
+          "bag": "5"
+        },
+        {
+          "name": "Van",
+          "cap": "1–8",
+          "bag": "8"
+        },
+        {
+          "name": "Lúxus",
+          "cap": "1–3",
+          "bag": "3"
+        }
       ]
     },
     "quote": {
@@ -518,10 +576,26 @@
       "titleB": "Allan sólarhringinn.",
       "coords": "64.13°N · 21.94°W",
       "stops": [
-        { "code": "KEF", "label": "Keflavíkur flugvöllur", "meta": "24/7" },
-        { "code": "RVK", "label": "Reykjavík 101–113", "meta": "24/7" },
-        { "code": "BLU", "label": "Bláa Lónið", "meta": "06:00 → 23:00" },
-        { "code": "SEL", "label": "Selfoss & Hveragerði", "meta": "07:00 → 22:00" }
+        {
+          "code": "KEF",
+          "label": "Keflavíkur flugvöllur",
+          "meta": "24/7"
+        },
+        {
+          "code": "RVK",
+          "label": "Reykjavík 101–113",
+          "meta": "24/7"
+        },
+        {
+          "code": "BLU",
+          "label": "Bláa Lónið",
+          "meta": "06:00 → 23:00"
+        },
+        {
+          "code": "SEL",
+          "label": "Selfoss & Hveragerði",
+          "meta": "07:00 → 22:00"
+        }
       ]
     },
     "faq": {
@@ -530,11 +604,26 @@
       "titleA": "Áður en þú",
       "titleB": "tekur á loft.",
       "items": [
-        { "q": "Hvað gerist ef flugið mitt seinkar?", "a": "Við fylgjumst með flugnúmerinu þínu. Bílstjórinn endurraðar tíma og þú borgar ekki fyrir biðina." },
-        { "q": "Get ég afpantað?", "a": "Já — frítt fram að klukkustund fyrir sækju. Eftir það 50% gjald." },
-        { "q": "Hvaða greiðslumáta tekið þið?", "a": "Visa, Mastercard, Amex, Apple Pay og Google Pay. Færslur teknar í ISK." },
-        { "q": "Eru barnasæti í boði?", "a": "Já — bætið við í bókuninni. 0 kr. fyrir farþega." },
-        { "q": "Talar bílstjórinn ensku?", "a": "Allir bílstjórar tala íslensku og ensku. Margir tala líka pólsku eða þýsku." }
+        {
+          "q": "Hvað gerist ef flugið mitt seinkar?",
+          "a": "Við fylgjumst með flugnúmerinu þínu. Bílstjórinn endurraðar tíma og þú borgar ekki fyrir biðina."
+        },
+        {
+          "q": "Get ég afpantað?",
+          "a": "Já — frítt fram að klukkustund fyrir sækju. Eftir það 50% gjald."
+        },
+        {
+          "q": "Hvaða greiðslumáta tekið þið?",
+          "a": "Visa, Mastercard, Amex, Apple Pay og Google Pay. Færslur teknar í ISK."
+        },
+        {
+          "q": "Eru barnasæti í boði?",
+          "a": "Já — bætið við í bókuninni. 0 kr. fyrir farþega."
+        },
+        {
+          "q": "Talar bílstjórinn ensku?",
+          "a": "Allir bílstjórar tala íslensku og ensku. Margir tala líka pólsku eða þýsku."
+        }
       ]
     },
     "finale": {
@@ -546,12 +635,102 @@
       "trustFees": "0 KR. FALIN GJÖLD",
       "tag": "Síðasti leggur ferðar þinnar — fullkomnaður.",
       "columns": [
-        { "title": "FERÐIR", "items": ["KEF → Reykjavík", "Reykjavík → KEF", "KEF → Bláa Lónið", "Á tímann"] },
-        { "title": "FYRIRTÆKI", "items": ["Um okkur", "Bílstjórar", "Fyrirtækjareikningar", "Hafa samband"] },
-        { "title": "AÐSTOÐ", "items": ["Algengar spurningar", "Afpöntun", "Týnt og fundið", "+354 555 0100"] }
+        {
+          "title": "FERÐIR",
+          "items": [
+            "KEF → Reykjavík",
+            "Reykjavík → KEF",
+            "KEF → Bláa Lónið",
+            "Á tímann"
+          ]
+        },
+        {
+          "title": "FYRIRTÆKI",
+          "items": [
+            "Um okkur",
+            "Bílstjórar",
+            "Fyrirtækjareikningar",
+            "Hafa samband"
+          ]
+        },
+        {
+          "title": "AÐSTOÐ",
+          "items": [
+            "Algengar spurningar",
+            "Afpöntun",
+            "Týnt og fundið",
+            "+354 555 0100"
+          ]
+        }
       ],
       "barLeft": "© 2026 HITCH EHF · REYKJAVÍK · ÍSLAND",
       "barRight": "v1.0.0 · BUILT IN 64.13°N"
+    }
+  },
+  "tours": {
+    "meta": {
+      "title": "Dagsferðir | Hitch",
+      "description": "Fast verð á bíl fyrir skoðunarferðir um Ísland — veldu ferð og við sækjum þig."
+    },
+    "hero": {
+      "eyebrow": "DAGSFERÐIR",
+      "titleA": "Ísland, einn bíll,",
+      "titleB": "þinn dagur.",
+      "subtitle": "Fast verð á bíl — veldu ferð og einkabílstjóri sækir þig."
+    },
+    "card": {
+      "paxUnit": "farþegar",
+      "perCar": "á bíl",
+      "duration": "≈ {hours} klst",
+      "cta": "Bóka í síma",
+      "ctaAria": "Bóka {tour} í síma"
+    },
+    "note": "Verð er á bíl, ekki á mann. Sumar ferðir krefjast bókunar fyrirfram.",
+    "states": {
+      "loading": "Sæki ferðir…",
+      "errorTitle": "Ekki tókst að sækja ferðir",
+      "errorBody": "Eitthvað fór úrskeiðis. Reyndu aftur.",
+      "retry": "Reyna aftur",
+      "emptyTitle": "Engar ferðir í boði",
+      "emptyBody": "Hafðu samband í síma fyrir sérferðir."
+    },
+    "items": {
+      "golden-circle": {
+        "name": "Gullni hringurinn",
+        "blurb": "Þingvellir, hverasvæðið við Geysi með Strokk og fossinn Gullfoss — vinsælasti dagur Íslands."
+      },
+      "south-coast": {
+        "name": "Suðurströndin",
+        "blurb": "Seljalandsfoss og Skógafoss, svarta fjaran í Reynisfjöru og þorpið Vík undir jökulhettum."
+      },
+      "silver-circle": {
+        "name": "Silfurhringurinn",
+        "blurb": "Norður um Hvalfjörð að Hraunfossum og Barnafossi og Deildartunguhver, aflmesta hver Evrópu."
+      },
+      "snaefellsnes": {
+        "name": "Snæfellsnes",
+        "blurb": "„Ísland í hnotskurn“ — stórbrotnar strendur, sjávarþorp og Kirkjufell, mest myndaða fjall landsins."
+      },
+      "reykjanes": {
+        "name": "Reykjanes",
+        "blurb": "Jarðhitasvæði, leirhverir, Brúin milli heimsálfa og eldfjallalandslag Reykjanesskaga. Háð lokunum vega."
+      },
+      "hvammsvik-return-4h": {
+        "name": "Hvammsvík — fram og til baka",
+        "blurb": "Fram og til baka í Hvammsvík við Hvalfjörð — baðið ykkur í jarðsjóböðum við fjörðinn. Bóka þarf fyrirfram."
+      },
+      "hvammsvik-one-way": {
+        "name": "Hvammsvík — aðra leið",
+        "blurb": "Akstur aðra leið í Hvammsvík við Hvalfjörð. Bóka þarf fyrirfram."
+      },
+      "reykjavik-sightseeing-2h": {
+        "name": "Reykjavíkurskoðun",
+        "blurb": "Tveggja tíma hringferð um helstu kennileiti borgarinnar — höfnina, Hallgrímskirkju og sjávarsýn."
+      },
+      "city-center": {
+        "name": "Miðborgin",
+        "blurb": "Stutt ferð í hjarta Reykjavíkur."
+      }
     }
   }
 }
