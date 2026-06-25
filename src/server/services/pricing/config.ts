@@ -15,7 +15,9 @@
  * the live exchange-rate worker (that worker is now internal/accounting only).
  */
 
-import type { Currency } from '@/lib/types';
+import type { Currency, TourId } from '@/lib/types';
+
+export type { TourId };
 
 export type MeterPaxTier = '1-4' | '5-8';
 export type FixedPaxTier = '1-4' | '5-8' | '9-16';
@@ -147,17 +149,6 @@ export const PORT_FARES: Record<
 // auto-dispatched. The tours sheet's airport/Blue-Lagoon EUR entries are
 // SUPERSEDED by the FIXED_FARES above — not duplicated here.
 // ─────────────────────────────────────────────────────────────────────────────
-
-export type TourId =
-  | 'golden-circle'
-  | 'south-coast'
-  | 'silver-circle'
-  | 'snaefellsnes'
-  | 'reykjanes'
-  | 'reykjavik-sightseeing-2h'
-  | 'city-center'
-  | 'hvammsvik-one-way'
-  | 'hvammsvik-return-4h';
 
 export const TOUR_FARES_EUR: Record<TourId, { '1-4': number; '5-8': number }> = {
   'golden-circle': { '1-4': 720, '5-8': 930 },

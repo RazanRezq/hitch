@@ -82,6 +82,25 @@ export const CURRENCY_DECIMALS: Record<Currency, number> = {
   USD: 2,
 };
 
+/**
+ * Sightseeing tour catalog IDs (see hitch-docs/Tours.pdf). Single source of
+ * truth shared by the pricing config (price table keys) and the API schema
+ * (request enum). Airport / Blue-Lagoon tour-sheet entries are intentionally
+ * absent — those transfers are priced by FIXED_FARES, not as tours.
+ */
+export const TOUR_IDS = [
+  'golden-circle',
+  'south-coast',
+  'silver-circle',
+  'snaefellsnes',
+  'reykjanes',
+  'reykjavik-sightseeing-2h',
+  'city-center',
+  'hvammsvik-one-way',
+  'hvammsvik-return-4h',
+] as const;
+export type TourId = (typeof TOUR_IDS)[number];
+
 export const PAYMENT_STATUSES = {
   REQUIRES_PAYMENT_METHOD: 'REQUIRES_PAYMENT_METHOD',
   REQUIRES_CONFIRMATION: 'REQUIRES_CONFIRMATION',

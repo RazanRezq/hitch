@@ -16,6 +16,17 @@ import {
 } from './config';
 
 export { ManualQuoteRequiredError } from './fare';
+export {
+  computeTourFareISK,
+  getTourQuote,
+  listTours,
+  type TourCatalogEntry,
+  type TourFareResult,
+  type TourId,
+  type TourPaxTier,
+  type TourQuoteInput,
+  type TourQuoteResult,
+} from './tours';
 
 export type DistanceSource = 'road' | 'straight-line';
 

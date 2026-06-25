@@ -3,6 +3,7 @@ import { logger } from 'hono/logger';
 
 import { bookingsRoute } from './routes/bookings';
 import { quotesRoute } from './routes/quotes';
+import { toursRoute } from './routes/tours';
 import { uploadsRoute } from './routes/uploads';
 import { exchangeRatesRoute } from './routes/exchange-rates';
 import { feedbackRoute } from './routes/feedback';
@@ -35,6 +36,7 @@ app.get('/api/health', (c) =>
 // Feature routes
 app.route('/api/bookings', bookingsRoute);
 app.route('/api/quotes', quotesRoute);
+app.route('/api/tours', toursRoute);
 app.route('/api/uploads', uploadsRoute);
 app.route('/api/exchange-rates', exchangeRatesRoute);
 app.route('/api/complaint', feedbackRoute);
