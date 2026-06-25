@@ -13,6 +13,10 @@ export const API_ROUTES = {
   quotes: {
     create: '/api/quotes',
   },
+  tours: {
+    list: '/api/tours',
+    quote: '/api/tours/quote',
+  },
   uploads: {
     presigned: '/api/uploads/presigned',
   },
