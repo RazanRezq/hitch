@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-06-26
-- **Current `main`:** `2ec396e` — _Merge pull request #43 from RazanRezq/feat/tours-catalog-ui_
+- **Current `main`:** `96b71da` — _docs: record tours-catalog-ui (#43) merged_ (last feature merge: #43, `2ec396e`; merged branch deleted)
 
 ---
 
