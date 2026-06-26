@@ -64,9 +64,14 @@
   color: var(--muted-foreground);
 }
 
+/* Clamp horizontal overflow without spawning a second scrollbar.
+   `overflow-x: hidden` would force the computed `overflow-y` to `auto` on BOTH
+   html and body, creating two vertical scroll containers (the double scrollbar).
+   `clip` suppresses horizontal scroll while leaving `overflow-y: visible`, so the
+   document keeps a single viewport scrollbar — and it doesn't break sticky. */
 html,
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* ---------- Header (legacy base — overridden by .ed-header) ---------- */
