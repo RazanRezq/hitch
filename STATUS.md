@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-06-26
-- **Current `main`:** `c9523f3` — _Merge pull request #42 from RazanRezq/feat/tours-wiring_
+- **Current `main`:** `3ee2862` — _docs: add STATUS.md_ (last feature merge: #42 tours wiring, `c9523f3`)
 
 ---
 
@@ -25,11 +25,10 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 | Branch | Open PR? | Notes |
 |---|---|---|
-| `feat/tours-catalog-ui` | **No** | 3 commits ahead of main (catalog page + cards + header nav, overflow fix). Consumes the merged tours API. Needs a PR. |
+| `feat/tours-catalog-ui` | **#43** (open) | 3 commits ahead of main (catalog page + cards + header nav, overflow fix). Consumes the merged tours API. Typecheck/lint/tests green. Awaiting review/merge. |
 
 ## ⏳ Pending / not started
 
-- **Tours catalog UI** — finish `feat/tours-catalog-ui` and open a PR.
 - **Driver payout worker** — still a stub; no Stripe Connect transfers.
 - **Auto-dispatch loop** — offer → 30s timeout → next driver; currently manual/dispatcher-only.
 - **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
