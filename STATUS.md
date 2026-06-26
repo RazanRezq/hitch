@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-06-26
-- **Current `main`:** `3ee2862` — _docs: add STATUS.md_ (last feature merge: #42 tours wiring, `c9523f3`)
+- **Current `main`:** `2ec396e` — _Merge pull request #43 from RazanRezq/feat/tours-catalog-ui_
 
 ---
 
@@ -16,6 +16,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 |---|---|---|
 | **Pricing engine** | Table-driven fares, real Google Directions road distance, per-currency fixed fares, postal-zone detection, KEF 490 gate fee | **#41** |
 | **Tours wiring / API** | Public tours catalog + per-currency quote API; EUR-native tour fares | **#42** |
+| **Tours catalog UI** | `/tours` page, TourCard grid, header nav link, ISK/EUR/USD toggle, is/en i18n; consumes `GET /api/tours` for live prices | **#43** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -23,12 +24,11 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-| Branch | Open PR? | Notes |
-|---|---|---|
-| `feat/tours-catalog-ui` | **#43** (open) | 3 commits ahead of main (catalog page + cards + header nav, overflow fix). Consumes the merged tours API. Typecheck/lint/tests green. Awaiting review/merge. |
+_None — no open PRs or unmerged feature branches._
 
 ## ⏳ Pending / not started
 
+- **Tour booking flow** — catalog UI (#43) is display-only; selecting + paying for a tour is a separate slice, not built.
 - **Driver payout worker** — still a stub; no Stripe Connect transfers.
 - **Auto-dispatch loop** — offer → 30s timeout → next driver; currently manual/dispatcher-only.
 - **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
