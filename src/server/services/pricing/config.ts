@@ -46,9 +46,10 @@ export const AIRPORT_FEE_ISK = 490;
  * Airport→Reykjavík and the combo get +490; Reykjavík→KEF (ends at KEF) does
  * NOT, per the literal "originates at KEF" rule.
  *
- * NOTE for the client: this is asymmetric — the return leg still drives into the
- * airport but isn't charged the gate fee. Flip the call site to symmetric
- * (touches KEF either end) if that's preferred.
+ * Direction CONFIRMED by client (2026-06-26): origin-only — +490 on any trip
+ * FROM the airport, never the reverse. The asymmetry is intentional (the return
+ * leg drives into KEF but isn't charged); symmetric billing is explicitly NOT
+ * wanted, so do not flip the call site.
  */
 export const AIRPORT_FEE_APPLIES_TO_FIXED = true;
 
@@ -69,9 +70,9 @@ export const OFF_LIST_DISTANCE_THRESHOLD_KM = 100;
 
 /**
  * Per-km surcharge above the off-list threshold: 2.50 EUR/km.
- * PENDING (flagged): whether this is billed in EUR or as an ISK equivalent
- * (≈ 375 kr at 150). Implemented as the ISK equivalent so basePriceISK stays
- * the source of truth — `OFF_LIST_SURCHARGE_ISK_PER_KM` below.
+ * CONFIRMED by client (2026-06-26): billed ISK-native at 375 kr/km — the fixed
+ * ISK equivalent of 2.50 EUR/km at the locked 150 rate, NOT live-FX euros. Keeps
+ * basePriceISK the source of truth — `OFF_LIST_SURCHARGE_ISK_PER_KM` below.
  */
 export const OFF_LIST_EUR_PER_KM_OVER_THRESHOLD = 2.5;
 export const OFF_LIST_SURCHARGE_ISK_PER_KM =

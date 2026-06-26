@@ -160,7 +160,8 @@ export async function quoteISK(
   );
 
   // Off-list >100 km: meter the first 100 km, then add the per-km surcharge.
-  // (Surcharge = 2.50 EUR/km expressed in ISK at 150; EUR-vs-ISK billing PENDING.)
+  // (Surcharge = 375 kr/km — the ISK-native equivalent of 2.50 EUR/km at the
+  //  locked 150 rate; client-confirmed ISK-native 2026-06-26, not live-FX euros.)
   const overThreshold = Math.max(0, distanceKm - OFF_LIST_DISTANCE_THRESHOLD_KM);
   const meterDistanceKm = overThreshold > 0 ? OFF_LIST_DISTANCE_THRESHOLD_KM : distanceKm;
   const surchargeISK = overThreshold * OFF_LIST_SURCHARGE_ISK_PER_KM;

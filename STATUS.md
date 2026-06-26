@@ -42,12 +42,12 @@ _None — no open PRs or unmerged feature branches._
 - **Passenger mobile app** (React Native + Expo).
 - **RTL / Arabic locale** — removed June 2026; plumbing retained dormant, no RTL locale ships.
 
-## ⛔ Blocked on client (decisions, not code)
+## ⛔ Blocked on client (data still owed — `null` placeholders, do NOT invent)
 
-- **490 fee direction** — origin-only (KEF departures) vs. both ways.
-- **>100 km surcharge currency** — EUR vs. ISK; need a worked example to confirm.
-- **Port / cruise prices** — not provided.
-- **Combo fares** — 5–8 and 9–16 passenger tier prices not provided.
+- **Port / cruise prices** — 18 values: Port↔Airport and Port↔Blue Lagoon × 1-4 / 5-8 / 9-16 × ISK/EUR/USD (`config.ts` `PORT_FARES`, all `null`).
+- **Combo 5-8 & 9-16** — 8 values: ISK/EUR/USD each (1-4 ISK 41,600 already in; `config.ts` `COMBO_FARES`).
+
+_Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (trips FROM KEF only); **>100 km surcharge** = 375 kr/km ISK-native (= 2.5 €/km at the locked 150)._
 
 ## 🧪 Test status
 
