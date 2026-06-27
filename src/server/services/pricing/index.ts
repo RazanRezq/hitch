@@ -3,6 +3,7 @@ import { calculateDistance, isNearKEF } from '@/lib/utils';
 import { LANDMARKS, type Currency } from '@/lib/types';
 import { getDrivingDistanceCached, type RouteDistance } from '../routing';
 import {
+  computeComboFareISK,
   computeFixedFareISK,
   computeMeterFareISK,
   type FareBreakdownISK,
@@ -38,8 +39,11 @@ export interface PricingQuote {
   pricingMode: 'meter' | 'fixed';
   rateType: RateType | 'fixed';
   breakdownISK: FareBreakdownISK;
-  /** Explicit per-currency price (major units). Present only for fixed fares. */
-  fixedPricesMajor?: Record<Currency, number>;
+  /**
+   * Explicit per-currency price (major units). Present only for fixed fares.
+   * Partial: the combo only has a confirmed ISK price (EUR/USD pending).
+   */
+  fixedPricesMajor?: Partial<Record<Currency, number>>;
 }
 
 /** Postal codes of the trip endpoints (from reverse geocoding). */
@@ -54,6 +58,12 @@ export interface QuoteISKOptions {
   at?: Date;
   /** Whether the trip ORIGINATES at KEF — drives the 490 ISK gate fee (meter only). */
   originatesAtKef?: boolean;
+  /**
+   * Price the pre-agreed Airport → Blue Lagoon → Reykjavík combo instead of the
+   * direct pickup→dropoff route. A 3-stop trip can't be inferred from two
+   * endpoints, so the caller flags it explicitly.
+   */
+  combo?: boolean;
   /** Endpoint postal codes — required to recognise the 101–109 Reykjavík fare. */
   zones?: ZoneEndpoints;
   /** Injectable road-distance lookup (defaults to the cached Directions API). */
@@ -134,6 +144,23 @@ export async function quoteISK(
   const passengerCount = options.passengerCount ?? 1;
   const at = options.at ?? new Date();
   const roadDistanceFn = options.roadDistanceFn ?? getDrivingDistanceCached;
+
+  // Combo is a pre-agreed multi-stop fixed fare — no route detection, no
+  // routing. The +490 gate fee stacks because it originates at KEF.
+  if (options.combo) {
+    const fare = computeComboFareISK(passengerCount, {
+      includeAirportFee: options.originatesAtKef,
+    });
+    return {
+      basePriceISK: fare.totalISK,
+      distanceKm: calculateDistance(pickup, dropoff),
+      distanceSource: 'straight-line',
+      pricingMode: fare.pricingMode,
+      rateType: fare.rateType,
+      breakdownISK: fare.breakdownISK,
+      fixedPricesMajor: fare.fixedPricesMajor,
+    };
+  }
 
   const fixedRoute = detectFixedRoute(pickup, dropoff, options.zones);
 

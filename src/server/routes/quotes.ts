@@ -21,6 +21,7 @@ export const quotesRoute = new Hono().post(
         passengerCount: body.passengerCount,
         scheduledTime: body.scheduledTime,
         displayCurrency: body.displayCurrency,
+        combo: body.combo,
       });
       return c.json(quote);
     } catch (err) {

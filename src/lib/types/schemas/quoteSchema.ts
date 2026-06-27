@@ -11,6 +11,8 @@ export const quoteRequestSchema = z.object({
   passengerCount: z.number().int().min(1).optional(),
   scheduledTime: z.coerce.date().optional(),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
+  /** Price the Airport → Blue Lagoon → Reykjavík combo (a 3-stop fixed fare). */
+  combo: z.boolean().optional(),
 });
 export type QuoteRequestInput = z.infer<typeof quoteRequestSchema>;
 
