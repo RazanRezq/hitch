@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getQuote } from './quote';
+import { ManualQuoteRequiredError } from './fare';
 import type { RouteDistance } from '../routing';
 import { LANDMARKS } from '@/lib/types';
 
@@ -76,5 +77,31 @@ describe('getQuote — metered fares convert at the fixed 150/130 constants (not
       roadDistanceFn: roadKm(45),
     });
     expect(usd.displayPrice).toBe(Math.round((18950 / 130) * 100)); // 14577 cents
+  });
+});
+
+describe('getQuote — groups over the top tier (>16) ask for a manual quote, not a 400', () => {
+  it('rejects a fixed-route (Airport → Reykjavík) quote for >16 passengers', async () => {
+    await expect(
+      getQuote({
+        pickup: KEF,
+        dropoff: RVK,
+        passengerCount: 20,
+        displayCurrency: 'ISK',
+        geocodeFn: async () => 101,
+      }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
+  });
+
+  it('rejects a metered (off-list) quote for >16 passengers', async () => {
+    await expect(
+      getQuote({
+        pickup: RVK,
+        dropoff: HVERAGERDI,
+        passengerCount: 20,
+        scheduledTime: WEEKDAY_NOON,
+        roadDistanceFn: roadKm(20),
+      }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
   });
 });

@@ -9,6 +9,7 @@
  */
 
 import type { Currency } from '@/lib/types';
+import { MAX_AUTO_PRICED_PASSENGERS } from '@/lib/types';
 import {
   AIRPORT_FEE_APPLIES_TO_FIXED,
   AIRPORT_FEE_ISK,
@@ -42,8 +43,20 @@ export class ManualQuoteRequiredError extends Error {
   }
 }
 
-/** Passenger count → fare tier. 1–4, 5–8, or 9–16. */
+/**
+ * Passenger count → fare tier (1–4, 5–8, or 9–16). Groups larger than the top
+ * tier ({@link MAX_AUTO_PRICED_PASSENGERS}) have no rate card or fixed price and
+ * throw {@link ManualQuoteRequiredError} — every pricing path runs through here,
+ * so fixed, metered, combo, and tour quotes all surface the manual-quote signal
+ * (a 422) for oversized groups instead of silently clamping them into 9–16.
+ */
 export function getPaxTier(passengerCount: number): FixedPaxTier {
+  if (passengerCount > MAX_AUTO_PRICED_PASSENGERS) {
+    throw new ManualQuoteRequiredError(
+      'PAX_LIMIT_EXCEEDED',
+      `Groups over ${MAX_AUTO_PRICED_PASSENGERS} passengers require a manual quote`,
+    );
+  }
   if (passengerCount <= 4) return '1-4';
   if (passengerCount <= 8) return '5-8';
   return '9-16';

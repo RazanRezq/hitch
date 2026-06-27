@@ -49,6 +49,16 @@ describe('getPaxTier', () => {
     expect(getPaxTier(9)).toBe('9-16');
     expect(getPaxTier(16)).toBe('9-16');
   });
+
+  it('requires a manual quote above the top tier (>16) instead of clamping to 9-16', () => {
+    expect(() => getPaxTier(17)).toThrow(ManualQuoteRequiredError);
+    expect(() => getPaxTier(50)).toThrow(ManualQuoteRequiredError);
+    try {
+      getPaxTier(17);
+    } catch (err) {
+      expect((err as ManualQuoteRequiredError).code).toBe('PAX_LIMIT_EXCEEDED');
+    }
+  });
 });
 
 describe('roundFareISK', () => {

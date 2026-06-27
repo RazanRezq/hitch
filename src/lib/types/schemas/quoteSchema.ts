@@ -5,7 +5,10 @@ export const quoteRequestSchema = z.object({
   pickup: geoPointSchema,
   dropoff: geoPointSchema,
   vehicleType: vehicleTypeSchema.optional(),
-  passengerCount: z.number().int().min(1).max(16).optional(),
+  // No upper cap: groups larger than the top fare tier are intentionally let
+  // through so the pricing engine can answer with the manual-quote signal (422
+  // { manualQuoteRequired: true }) instead of the schema rejecting them (400).
+  passengerCount: z.number().int().min(1).optional(),
   scheduledTime: z.coerce.date().optional(),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
 });
