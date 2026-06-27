@@ -5,7 +5,7 @@
 Single source of truth for where Hitch stands, generated from actual git/repo state so a
 fresh session or new device can get oriented without re-auditing the repo.
 
-- **Last updated:** 2026-06-26
+- **Last updated:** 2026-06-27
 - **Current `main`:** `96b71da` — _docs: record tours-catalog-ui (#43) merged_ (last feature merge: #43, `2ec396e`; merged branch deleted)
 
 ---
@@ -24,7 +24,9 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-_None — no open PRs or unmerged feature branches._
+- **Pricing engine fixes** — branch `fix/pricing-pax-limit-and-combo` (PR pending):
+  - **>16 pax** now returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400 — the engine no longer silently clamps oversized groups into the 9-16 tier.
+  - **Airport → Blue Lagoon → Reykjavík combo** wired end-to-end: 1-4 quotable at **42,090 ISK** (41,600 transfer + 490 origin fee). 5-8 / 9-16 and all combo EUR/USD still return manual-quote (pending client numbers).
 
 ## ⏳ Pending / not started
 
@@ -45,16 +47,18 @@ _None — no open PRs or unmerged feature branches._
 ## ⛔ Blocked on client (data still owed — `null` placeholders, do NOT invent)
 
 - **Port / cruise prices** — 18 values: Port↔Airport and Port↔Blue Lagoon × 1-4 / 5-8 / 9-16 × ISK/EUR/USD (`config.ts` `PORT_FARES`, all `null`).
-- **Combo 5-8 & 9-16** — 8 values: ISK/EUR/USD each (1-4 ISK 41,600 already in; `config.ts` `COMBO_FARES`).
+- **Combo 5-8 & 9-16 (+ all combo EUR/USD)** — 8 values still owed: 5-8 & 9-16 ISK/EUR/USD, plus 1-4 EUR/USD (`config.ts` `COMBO_FARES`). 1-4 ISK (41,600) is wired & quotable at 42,090 incl. the 490 origin fee; every pending tier/currency returns the manual-quote signal until the client confirms numbers.
 
 _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (trips FROM KEF only); **>100 km surcharge** = 375 kr/km ISK-native (= 2.5 €/km at the locked 150)._
 
 ## 🧪 Test status
 
-- `npm test` (`vitest run`): **101 tests passing, 14 files, 0 failures** (~2.6s).
+- `npm test` (`vitest run`): **112 tests passing, 14 files, 0 failures** (~2.6s).
 - Pricing and tours tests **assert real fare amounts** (not just shape) — money path is covered:
-  fares (19), tours pricing (12), quote interface (12), payments (6), Stripe webhook outbox (4),
-  idempotency (4), booking state machine (8), plus currency/geocoding/routing/RTL smoke.
+  fares (25), tours pricing (12), quote interface (12), quote display (11), payments (6),
+  Stripe webhook outbox (4), idempotency (4), booking state machine (8), plus
+  currency/geocoding/routing/RTL smoke. New coverage: >16-pax manual-quote (fixed + metered)
+  and the combo quote (ISK price, pending-currency, pending-tier).
 
 ---
 
