@@ -54,6 +54,16 @@ export const VEHICLE_TYPES = {
 } as const;
 export type VehicleType = (typeof VEHICLE_TYPES)[keyof typeof VEHICLE_TYPES];
 
+/**
+ * Largest group the fare tiers cover (top of the 9-16 minibus tier). A request
+ * for more than this has no single tier/vehicle that fits, so the pricing engine
+ * returns the manual-quote signal rather than a price — and the quote API lets it
+ * through (no schema cap) instead of rejecting it with a 400. Shared by the
+ * request schema (lib/types/schemas) and the engine (server pricing) so the
+ * boundary stays in one place.
+ */
+export const MAX_AUTO_PRICED_PASSENGERS = 16;
+
 export const LOCALES = ['is', 'en'] as const;
 export type Locale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: Locale = 'is';

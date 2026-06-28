@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { getQuote } from './quote';
+import { ManualQuoteRequiredError } from './fare';
 import type { RouteDistance } from '../routing';
 import { LANDMARKS } from '@/lib/types';
 
@@ -76,5 +77,62 @@ describe('getQuote — metered fares convert at the fixed 150/130 constants (not
       roadDistanceFn: roadKm(45),
     });
     expect(usd.displayPrice).toBe(Math.round((18950 / 130) * 100)); // 14577 cents
+  });
+});
+
+describe('getQuote — Airport → Blue Lagoon → Reykjavík combo', () => {
+  it('prices the 1-4 combo in ISK end-to-end with the +490 KEF-origin fee', async () => {
+    const q = await getQuote({
+      pickup: KEF,
+      dropoff: RVK,
+      passengerCount: 2,
+      displayCurrency: 'ISK',
+      combo: true,
+    });
+    expect(q.pricingMode).toBe('fixed');
+    expect(q.rateType).toBe('fixed');
+    expect(q.basePriceISK).toBe(42090); // 41600 combo + 490 gate fee
+    expect(q.displayPrice).toBe(42090);
+    expect(q.breakdownISK.fixedFare).toBe(41600);
+    expect(q.breakdownISK.airportFee).toBe(490);
+    expect(q.isAirportTrip).toBe(true);
+  });
+
+  it('asks for a manual quote when the combo is requested in a pending currency (EUR)', async () => {
+    await expect(
+      getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 2, displayCurrency: 'EUR', combo: true }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
+  });
+
+  it('asks for a manual quote for the still-pending 5-8 combo tier', async () => {
+    await expect(
+      getQuote({ pickup: KEF, dropoff: RVK, passengerCount: 6, displayCurrency: 'ISK', combo: true }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
+  });
+});
+
+describe('getQuote — groups over the top tier (>16) ask for a manual quote, not a 400', () => {
+  it('rejects a fixed-route (Airport → Reykjavík) quote for >16 passengers', async () => {
+    await expect(
+      getQuote({
+        pickup: KEF,
+        dropoff: RVK,
+        passengerCount: 20,
+        displayCurrency: 'ISK',
+        geocodeFn: async () => 101,
+      }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
+  });
+
+  it('rejects a metered (off-list) quote for >16 passengers', async () => {
+    await expect(
+      getQuote({
+        pickup: RVK,
+        dropoff: HVERAGERDI,
+        passengerCount: 20,
+        scheduledTime: WEEKDAY_NOON,
+        roadDistanceFn: roadKm(20),
+      }),
+    ).rejects.toBeInstanceOf(ManualQuoteRequiredError);
   });
 });

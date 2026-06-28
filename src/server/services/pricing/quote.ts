@@ -5,6 +5,7 @@ import { isNearKEF } from '@/lib/utils';
 import { quoteISK, type DistanceSource, type PricingQuote, type QuoteISKOptions, type ZoneEndpoints } from './index';
 import { METER_FX_ISK_PER_UNIT } from './config';
 import { reverseGeocodePostalCodeCached } from '../geocoding';
+import { ManualQuoteRequiredError } from './fare';
 import type { FareBreakdownISK, RateType } from './fare';
 
 type GeocodeFn = (coord: GeoCoord) => Promise<number | null>;
@@ -20,6 +21,8 @@ export interface GetQuoteInput {
   roadDistanceFn?: QuoteISKOptions['roadDistanceFn'];
   /** Injectable reverse-geocoder (defaults to cached Geocoding API). For tests. */
   geocodeFn?: GeocodeFn;
+  /** Price the Airport → Blue Lagoon → Reykjavík combo (a 3-stop fixed fare). */
+  combo?: boolean;
 }
 
 /**
@@ -69,6 +72,15 @@ function resolveDisplayMajor(pricing: PricingQuote, currency: Currency): number 
     const feeMajor = pricing.breakdownISK.airportFee / METER_FX_ISK_PER_UNIT[currency];
     return explicit + feeMajor;
   }
+  if (pricing.pricingMode === 'fixed') {
+    // A pre-agreed fare with no confirmed price in this currency (the combo's
+    // pending EUR/USD). Fixed prices are hand-set by the client, never derived,
+    // so ask for a manual quote rather than auto-converting from ISK.
+    throw new ManualQuoteRequiredError(
+      'CURRENCY_PRICE_PENDING',
+      `This fixed fare has no confirmed ${currency} price yet — manual quote required`,
+    );
+  }
   return pricing.basePriceISK / METER_FX_ISK_PER_UNIT[currency];
 }
 
@@ -82,12 +94,17 @@ export async function getQuote(input: GetQuoteInput): Promise<QuoteResult> {
   const isAirportTrip = originatesAtKef || isNearKEF(input.dropoff);
 
   const geocode = input.geocodeFn ?? reverseGeocodePostalCodeCached;
-  const zones = await resolveZones(input.pickup, input.dropoff, geocode);
+  // The combo is a pre-agreed fixed fare — skip the zone (postal) lookup it
+  // doesn't need.
+  const zones = input.combo
+    ? {}
+    : await resolveZones(input.pickup, input.dropoff, geocode);
 
   const pricing = await quoteISK(input.pickup, input.dropoff, {
     passengerCount: input.passengerCount,
     at: input.scheduledTime,
     originatesAtKef,
+    combo: input.combo,
     zones,
     roadDistanceFn: input.roadDistanceFn,
   });

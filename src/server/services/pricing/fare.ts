@@ -9,9 +9,11 @@
  */
 
 import type { Currency } from '@/lib/types';
+import { MAX_AUTO_PRICED_PASSENGERS } from '@/lib/types';
 import {
   AIRPORT_FEE_APPLIES_TO_FIXED,
   AIRPORT_FEE_ISK,
+  COMBO_FARES,
   DAY_END_MINUTES,
   DAY_START_MINUTES,
   FARE_ROUNDING_ISK,
@@ -42,8 +44,20 @@ export class ManualQuoteRequiredError extends Error {
   }
 }
 
-/** Passenger count → fare tier. 1–4, 5–8, or 9–16. */
+/**
+ * Passenger count → fare tier (1–4, 5–8, or 9–16). Groups larger than the top
+ * tier ({@link MAX_AUTO_PRICED_PASSENGERS}) have no rate card or fixed price and
+ * throw {@link ManualQuoteRequiredError} — every pricing path runs through here,
+ * so fixed, metered, combo, and tour quotes all surface the manual-quote signal
+ * (a 422) for oversized groups instead of silently clamping them into 9–16.
+ */
 export function getPaxTier(passengerCount: number): FixedPaxTier {
+  if (passengerCount > MAX_AUTO_PRICED_PASSENGERS) {
+    throw new ManualQuoteRequiredError(
+      'PAX_LIMIT_EXCEEDED',
+      `Groups over ${MAX_AUTO_PRICED_PASSENGERS} passengers require a manual quote`,
+    );
+  }
   if (passengerCount <= 4) return '1-4';
   if (passengerCount <= 8) return '5-8';
   return '9-16';
@@ -90,8 +104,12 @@ export interface FareResult {
   /** 'fixed' for pre-agreed fares; otherwise the meter rate type that applied. */
   rateType: RateType | 'fixed';
   breakdownISK: FareBreakdownISK;
-  /** Explicit per-currency price (major units). Present only for fixed fares. */
-  fixedPricesMajor?: Record<Currency, number>;
+  /**
+   * Explicit per-currency price (major units). Present only for fixed fares.
+   * Partial because some pre-agreed fares (the combo) only have a confirmed ISK
+   * price so far — EUR/USD are pending and must never be auto-invented.
+   */
+  fixedPricesMajor?: Partial<Record<Currency, number>>;
 }
 
 const ZERO_BREAKDOWN: FareBreakdownISK = {
@@ -188,5 +206,39 @@ export function computeFixedFareISK(
     rateType: 'fixed',
     breakdownISK: { ...ZERO_BREAKDOWN, fixedFare: prices.ISK, airportFee },
     fixedPricesMajor: prices,
+  };
+}
+
+/**
+ * Compute the pre-agreed Airport → Blue Lagoon → Reykjavík combo fare (~3h, a
+ * single fixed price covering the whole multi-stop trip — not three legs added
+ * up). Like the other fixed fares it stacks the 490 ISK gate fee when the trip
+ * ORIGINATES at KEF, which the combo always does.
+ *
+ * Only the 1-4 ISK price is confirmed today; 5-8 and 9-16 are null in
+ * {@link COMBO_FARES} and EUR/USD are pending even for 1-4. Anything not yet
+ * priced throws {@link ManualQuoteRequiredError} (the combo never invents a
+ * number) — so 5-8/9-16 here, and EUR/USD at the display layer.
+ */
+export function computeComboFareISK(
+  passengerCount: number,
+  options: { includeAirportFee?: boolean } = {},
+): FareResult {
+  const tier = getPaxTier(passengerCount); // throws for >16 (PAX_LIMIT_EXCEEDED)
+  const prices = COMBO_FARES[tier];
+  if (!prices || prices.ISK == null) {
+    throw new ManualQuoteRequiredError(
+      'COMBO_TIER_PENDING',
+      `The Airport → Blue Lagoon → Reykjavík combo has no ${tier} price yet — manual quote required`,
+    );
+  }
+  const airportFee =
+    options.includeAirportFee && AIRPORT_FEE_APPLIES_TO_FIXED ? AIRPORT_FEE_ISK : 0;
+  return {
+    totalISK: prices.ISK + airportFee,
+    pricingMode: 'fixed',
+    rateType: 'fixed',
+    breakdownISK: { ...ZERO_BREAKDOWN, fixedFare: prices.ISK, airportFee },
+    fixedPricesMajor: prices, // partial — only ISK is confirmed for the combo
   };
 }

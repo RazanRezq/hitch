@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  computeComboFareISK,
   computeFixedFareISK,
   computeMeterFareISK,
   getPaxTier,
@@ -7,7 +8,7 @@ import {
   ManualQuoteRequiredError,
   roundFareISK,
 } from './fare';
-import { AIRPORT_FEE_ISK, FIXED_FARES, RATE_CARD } from './config';
+import { AIRPORT_FEE_ISK, COMBO_FARES, FIXED_FARES, RATE_CARD } from './config';
 
 // Fixed instants (Iceland is UTC+0, so the UTC wall-clock IS Iceland-local).
 const WED_NOON = new Date('2026-06-24T12:00:00Z'); // weekday, day window
@@ -48,6 +49,16 @@ describe('getPaxTier', () => {
     expect(getPaxTier(8)).toBe('5-8');
     expect(getPaxTier(9)).toBe('9-16');
     expect(getPaxTier(16)).toBe('9-16');
+  });
+
+  it('requires a manual quote above the top tier (>16) instead of clamping to 9-16', () => {
+    expect(() => getPaxTier(17)).toThrow(ManualQuoteRequiredError);
+    expect(() => getPaxTier(50)).toThrow(ManualQuoteRequiredError);
+    try {
+      getPaxTier(17);
+    } catch (err) {
+      expect((err as ManualQuoteRequiredError).code).toBe('PAX_LIMIT_EXCEEDED');
+    }
   });
 });
 
@@ -176,5 +187,42 @@ describe('computeFixedFareISK', () => {
     const noFee = computeFixedFareISK('reykjavik', 1, { includeAirportFee: false });
     expect(noFee.totalISK).toBe(22500);
     expect(noFee.breakdownISK.airportFee).toBe(0);
+  });
+});
+
+describe('computeComboFareISK', () => {
+  it('prices the 1-4 combo from the confirmed ISK figure (no fee)', () => {
+    const fare = computeComboFareISK(2);
+    expect(fare.pricingMode).toBe('fixed');
+    expect(fare.rateType).toBe('fixed');
+    expect(fare.totalISK).toBe(41600);
+    expect(fare.totalISK).toBe(COMBO_FARES['1-4']?.ISK);
+    expect(fare.breakdownISK.fixedFare).toBe(41600);
+    expect(fare.breakdownISK.airportFee).toBe(0);
+  });
+
+  it('stacks the 490 KEF-origin gate fee, keeping the fare transfer-only', () => {
+    const fare = computeComboFareISK(4, { includeAirportFee: true });
+    expect(fare.totalISK).toBe(42090); // 41600 + 490
+    expect(fare.breakdownISK.airportFee).toBe(AIRPORT_FEE_ISK);
+    expect(fare.breakdownISK.fixedFare).toBe(41600);
+  });
+
+  it('exposes only the confirmed ISK price — never invents EUR/USD', () => {
+    expect(computeComboFareISK(1).fixedPricesMajor).toEqual({ ISK: 41600 });
+  });
+
+  it('requires a manual quote for the still-pending 5-8 and 9-16 tiers', () => {
+    expect(() => computeComboFareISK(6)).toThrow(ManualQuoteRequiredError);
+    expect(() => computeComboFareISK(12)).toThrow(ManualQuoteRequiredError);
+    try {
+      computeComboFareISK(6);
+    } catch (err) {
+      expect((err as ManualQuoteRequiredError).code).toBe('COMBO_TIER_PENDING');
+    }
+  });
+
+  it('requires a manual quote for groups over 16', () => {
+    expect(() => computeComboFareISK(20)).toThrow(ManualQuoteRequiredError);
   });
 });
