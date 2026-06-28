@@ -59,8 +59,3 @@ _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (tr
   Stripe webhook outbox (4), idempotency (4), booking state machine (8), plus
   currency/geocoding/routing/RTL smoke. New coverage: >16-pax manual-quote (fixed + metered)
   and the combo quote (ISK price, pending-currency, pending-tier).
-
----
-
-> **Note:** `PROJECT_OVERVIEW.md` is stale (~10 days, gitignored, generated on an older
-> branch) and lists several already-shipped items as gaps. Trust git history + this file instead.

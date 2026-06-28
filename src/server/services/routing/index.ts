@@ -7,8 +7,9 @@ import type { GeoCoord } from '@/lib/utils';
  * wherever a real travel distance/ETA matters.
  *
  * Deliberately a PURE service: it returns raw {distanceMeters, durationSeconds}
- * and is NOT wired into the pricing formula. How (or whether) distance feeds the
- * fare is a pricing-policy decision still pending — see PROJECT_OVERVIEW.md.
+ * and applies no pricing policy itself. The metered fare path consumes it
+ * (services/pricing defaults to `getDrivingDistanceCached` for metered distance);
+ * fixed corridor fares ignore distance by design.
  *
  * Auth uses the server-side, IP-restricted GOOGLE_MAPS_SERVER_KEY (never the
  * public NEXT_PUBLIC_GOOGLE_MAPS_KEY). The API key and fetch impl are injectable

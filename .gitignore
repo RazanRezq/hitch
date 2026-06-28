@@ -55,6 +55,3 @@ next-env.d.ts
 
 # Local email/render previews
 .preview/
-
-# Local-only project notes
-/PROJECT_OVERVIEW.md
