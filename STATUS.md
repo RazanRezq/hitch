@@ -5,8 +5,8 @@
 Single source of truth for where Hitch stands, generated from actual git/repo state so a
 fresh session or new device can get oriented without re-auditing the repo.
 
-- **Last updated:** 2026-06-27
-- **Current `main`:** `96b71da` — _docs: record tours-catalog-ui (#43) merged_ (last feature merge: #43, `2ec396e`; merged branch deleted)
+- **Last updated:** 2026-06-28
+- **Current `main`:** `74c54a5` — _Merge #45 (combo landing preset)_ (last feature merges: #44 pricing fixes `34dc5b6`, #45 combo landing `74c54a5`; both branches deleted)
 
 ---
 
@@ -17,6 +17,8 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Pricing engine** | Table-driven fares, real Google Directions road distance, per-currency fixed fares, postal-zone detection, KEF 490 gate fee | **#41** |
 | **Tours wiring / API** | Public tours catalog + per-currency quote API; EUR-native tour fares | **#42** |
 | **Tours catalog UI** | `/tours` page, TourCard grid, header nav link, ISK/EUR/USD toggle, is/en i18n; consumes `GET /api/tours` for live prices | **#43** |
+| **Pricing: >16 + combo** | >16 pax returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400; Airport→Blue Lagoon→Reykjavík combo wired end-to-end — 1-4 at **42,090 ISK** (41,600 + 490 origin fee), pending tiers/currencies return manual-quote | **#44** |
+| **Combo landing preset** | Combo as a 4th preset trip card (`kef-to-blue-lagoon-to-rvk`); booking draft carries `combo`/`via`, quote prices the combo, route card shows the Blue Lagoon stop; is/en strings | **#45** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -24,10 +26,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-- **Pricing engine fixes** — branch `fix/pricing-pax-limit-and-combo` (PR #44):
-  - **>16 pax** now returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400 — the engine no longer silently clamps oversized groups into the 9-16 tier.
-  - **Airport → Blue Lagoon → Reykjavík combo** wired end-to-end: 1-4 quotable at **42,090 ISK** (41,600 transfer + 490 origin fee). 5-8 / 9-16 and all combo EUR/USD still return manual-quote (pending client numbers).
-- **Combo landing preset** — branch `feat/combo-landing-preset` (stacked on #44, PR pending): combo is now a 4th preset trip card on the landing page (`kef-to-blue-lagoon-to-rvk`); selecting it carries `combo`/`via` through the booking draft so the quote prices the combo and the route card shows the Blue Lagoon stop. is/en strings added.
+_None — no open PRs or unmerged feature branches._
 
 ## ⏳ Pending / not started
 
@@ -48,7 +47,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 ## ⛔ Blocked on client (data still owed — `null` placeholders, do NOT invent)
 
 - **Port / cruise prices** — 18 values: Port↔Airport and Port↔Blue Lagoon × 1-4 / 5-8 / 9-16 × ISK/EUR/USD (`config.ts` `PORT_FARES`, all `null`).
-- **Combo 5-8 & 9-16 (+ all combo EUR/USD)** — 8 values still owed: 5-8 & 9-16 ISK/EUR/USD, plus 1-4 EUR/USD (`config.ts` `COMBO_FARES`). 1-4 ISK (41,600) is wired & quotable at 42,090 incl. the 490 origin fee; every pending tier/currency returns the manual-quote signal until the client confirms numbers.
+- **Combo 5-8 & 9-16 (+ all combo EUR/USD)** — 8 values still owed: 5-8 & 9-16 ISK/EUR/USD, plus 1-4 EUR/USD (`config.ts` `COMBO_FARES`). 1-4 ISK (41,600) is live on `main` — quotable at 42,090 incl. the 490 origin fee and selectable as a landing preset; every pending tier/currency returns the manual-quote signal until the client confirms numbers.
 
 _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (trips FROM KEF only); **>100 km surcharge** = 375 kr/km ISK-native (= 2.5 €/km at the locked 150)._
 
