@@ -196,10 +196,16 @@ export function EditorialTrips() {
     t('presets.airportToReykjavik'),
     t('presets.reykjavikToAirport'),
     t('presets.airportToBlueLagoon'),
+    t('presets.airportToBlueLagoonToReykjavik'),
   ];
-  const isk = [12500, 12500, 8900];
-  const terrains: TerrainVariant[] = ['reykjavik', 'kef', 'lagoon'];
-  const presetIds = ['kef-to-rvk', 'rvk-to-kef', 'kef-to-blue-lagoon'] as const;
+  const isk = [12500, 12500, 8900, 41600];
+  const terrains: TerrainVariant[] = ['reykjavik', 'kef', 'lagoon', 'lagoon'];
+  const presetIds = [
+    'kef-to-rvk',
+    'rvk-to-kef',
+    'kef-to-blue-lagoon',
+    'kef-to-blue-lagoon-to-rvk',
+  ] as const;
   const hrefFor = (i: number) => `/${locale}/book?preset=${presetIds[i]}`;
 
   return (
@@ -246,6 +252,17 @@ export function EditorialTrips() {
             terrain={terrains[2]}
             cta={t('trips.cta')}
             href={hrefFor(2)}
+          />
+          <TripCard
+            size="sm"
+            code={cards[3].code}
+            kmTime={cards[3].kmTime}
+            route={routes[3]}
+            price={price(isk[3])}
+            badge={t('trips.comboBadge')}
+            terrain={terrains[3]}
+            cta={t('trips.cta')}
+            href={hrefFor(3)}
           />
         </div>
       </div>

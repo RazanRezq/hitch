@@ -35,7 +35,11 @@ export function BookingWizard({ initialSearch }: { initialSearch: BookingSearchP
 
     const route = parseRoute(initialSearch);
     if (route) {
-      draft.setRoute(route.pickup, route.dropoff, route.pickupAirportCode);
+      draft.setRoute(route.pickup, route.dropoff, {
+        pickupAirportCode: route.pickupAirportCode,
+        via: route.via,
+        combo: route.combo,
+      });
     }
 
     const pax = parsePax(initialSearch.pax);
@@ -71,7 +75,9 @@ export function BookingWizard({ initialSearch }: { initialSearch: BookingSearchP
 interface ParsedRoute {
   pickup: DraftPoint;
   dropoff: DraftPoint;
+  via?: DraftPoint;
   pickupAirportCode?: string;
+  combo?: boolean;
 }
 
 function parseRoute(s: BookingSearchParams): ParsedRoute | null {
@@ -80,7 +86,9 @@ function parseRoute(s: BookingSearchParams): ParsedRoute | null {
     return {
       pickup: { ...preset.pickup },
       dropoff: { ...preset.dropoff },
+      via: preset.via ? { ...preset.via } : undefined,
       pickupAirportCode: preset.pickupAirportCode,
+      combo: preset.combo,
     };
   }
   const pickup = parseDraftPoint(s.pickupLat, s.pickupLng, s.pickupAddress);

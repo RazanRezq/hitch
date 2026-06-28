@@ -989,7 +989,7 @@ body {
   gap: 16px;
   align-items: stretch;
 }
-.ed-trips-stack { display: grid; grid-template-rows: 1fr 1fr; gap: 16px; }
+.ed-trips-stack { display: grid; grid-auto-rows: 1fr; gap: 16px; }
 @media (max-width: 1024px) {
   .ed-trips { padding: 0 24px; }
   .ed-trips-grid { grid-template-columns: 1fr; }

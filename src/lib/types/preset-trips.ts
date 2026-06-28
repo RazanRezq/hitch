@@ -8,7 +8,12 @@
  * - Blue Lagoon: Bláa Lónið spa
  */
 
-export const PRESET_TRIP_IDS = ['kef-to-rvk', 'rvk-to-kef', 'kef-to-blue-lagoon'] as const;
+export const PRESET_TRIP_IDS = [
+  'kef-to-rvk',
+  'rvk-to-kef',
+  'kef-to-blue-lagoon',
+  'kef-to-blue-lagoon-to-rvk',
+] as const;
 export type PresetTripId = (typeof PRESET_TRIP_IDS)[number];
 
 export interface GeoLandmark {
@@ -32,7 +37,15 @@ interface PresetTrip {
   id: PresetTripId;
   pickup: GeoLandmark;
   dropoff: GeoLandmark;
+  /** Intermediate stop for multi-leg presets (the combo's Blue Lagoon). Display-only. */
+  via?: GeoLandmark;
   pickupAirportCode?: string;
+  /**
+   * Price as the pre-agreed Airport → Blue Lagoon → Reykjavík combo — the
+   * booking flow forwards this as `combo: true` on the quote request so the
+   * engine uses COMBO_FARES instead of the direct pickup→dropoff fare.
+   */
+  combo?: boolean;
 }
 
 export const PRESET_TRIPS: Record<PresetTripId, PresetTrip> = {
@@ -52,6 +65,14 @@ export const PRESET_TRIPS: Record<PresetTripId, PresetTrip> = {
     pickup: LANDMARKS.kef,
     dropoff: LANDMARKS.blueLagoon,
     pickupAirportCode: 'KEF',
+  },
+  'kef-to-blue-lagoon-to-rvk': {
+    id: 'kef-to-blue-lagoon-to-rvk',
+    pickup: LANDMARKS.kef,
+    via: LANDMARKS.blueLagoon,
+    dropoff: LANDMARKS.reykjavik,
+    pickupAirportCode: 'KEF',
+    combo: true,
   },
 };
 

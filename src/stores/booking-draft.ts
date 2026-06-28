@@ -16,7 +16,11 @@ interface BookingDraftState {
   step: BookingStep;
   pickup: DraftPoint | null;
   dropoff: DraftPoint | null;
+  /** Intermediate stop, display-only (the combo's Blue Lagoon). */
+  via?: DraftPoint;
   pickupAirportCode?: string;
+  /** Price this trip as the pre-agreed combo (forwarded to the quote request). */
+  combo: boolean;
   vehicleTypeRequested: VehicleType;
   passengerCount: number;
   scheduledTime: string; // ISO string — react-friendly
@@ -25,7 +29,11 @@ interface BookingDraftState {
   guest?: GuestDetailsInput;
 
   setStep(step: BookingStep): void;
-  setRoute(pickup: DraftPoint, dropoff: DraftPoint, pickupAirportCode?: string): void;
+  setRoute(
+    pickup: DraftPoint,
+    dropoff: DraftPoint,
+    opts?: { pickupAirportCode?: string; via?: DraftPoint; combo?: boolean },
+  ): void;
   setVehicleType(v: VehicleType): void;
   setPassengerCount(n: number): void;
   setScheduledTime(iso: string): void;
@@ -39,7 +47,9 @@ const initial = {
   step: 'quote' as BookingStep,
   pickup: null,
   dropoff: null,
+  via: undefined,
   pickupAirportCode: undefined,
+  combo: false,
   vehicleTypeRequested: 'SEDAN' as VehicleType,
   passengerCount: 1,
   scheduledTime: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
@@ -57,8 +67,14 @@ const initial = {
 export const useBookingDraft = create<BookingDraftState>((set) => ({
   ...initial,
   setStep: (step) => set({ step }),
-  setRoute: (pickup, dropoff, pickupAirportCode) =>
-    set({ pickup, dropoff, pickupAirportCode }),
+  setRoute: (pickup, dropoff, opts) =>
+    set({
+      pickup,
+      dropoff,
+      via: opts?.via,
+      pickupAirportCode: opts?.pickupAirportCode,
+      combo: opts?.combo ?? false,
+    }),
   setVehicleType: (vehicleTypeRequested) => set({ vehicleTypeRequested }),
   setPassengerCount: (passengerCount) => set({ passengerCount }),
   setScheduledTime: (scheduledTime) => set({ scheduledTime }),
