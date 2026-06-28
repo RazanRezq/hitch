@@ -27,6 +27,7 @@ export function QuoteStep() {
         passengerCount: draft.passengerCount,
         scheduledTime: new Date(draft.scheduledTime),
         displayCurrency: draft.displayCurrency,
+        combo: draft.combo,
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -37,6 +38,7 @@ export function QuoteStep() {
       draft.passengerCount,
       draft.scheduledTime,
       draft.displayCurrency,
+      draft.combo,
     ],
   );
 
@@ -58,7 +60,11 @@ export function QuoteStep() {
         <h2 className="text-2xl font-semibold tracking-tight">{t('title')}</h2>
       </header>
 
-      <RouteCard pickup={draft.pickup.address} dropoff={draft.dropoff.address} />
+      <RouteCard
+        pickup={draft.pickup.address}
+        via={draft.via?.address}
+        dropoff={draft.dropoff.address}
+      />
 
       <FieldGrid>
         <Field label={t('when')}>
@@ -167,14 +173,20 @@ export function QuoteStep() {
   );
 }
 
-function RouteCard({ pickup, dropoff }: { pickup: string; dropoff: string }) {
+function RouteCard({ pickup, via, dropoff }: { pickup: string; via?: string; dropoff: string }) {
   return (
     <div className="rounded-2xl border bg-card p-4">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs uppercase tracking-wider">From</span>
           <span className="text-sm font-medium">{pickup}</span>
         </div>
+        {via && (
+          <>
+            <MoveRight className="text-muted-foreground shrink-0" size={16} aria-hidden="true" />
+            <span className="text-sm font-medium">{via}</span>
+          </>
+        )}
         <MoveRight className="text-muted-foreground mx-2 shrink-0" size={16} aria-hidden="true" />
         <div className="flex flex-col gap-1">
           <span className="text-muted-foreground text-xs uppercase tracking-wider">To</span>

@@ -391,7 +391,8 @@
     "presets": {
       "airportToReykjavik": "Airport → Reykjavík",
       "reykjavikToAirport": "Reykjavík → Airport",
-      "airportToBlueLagoon": "Airport → Blue Lagoon"
+      "airportToBlueLagoon": "Airport → Blue Lagoon",
+      "airportToBlueLagoonToReykjavik": "Airport → Blue Lagoon → Reykjavík"
     },
     "header": {
       "logoHome": "Hitch — back to home",
@@ -485,6 +486,7 @@
       "cta": "Choose",
       "from": "FROM",
       "badge": "MOST BOOKED",
+      "comboBadge": "3 STOPS",
       "cards": [
         {
           "code": "HTCH-01 · KEF↦RVK",
@@ -497,6 +499,10 @@
         {
           "code": "HTCH-03 · KEF↦BLU",
           "kmTime": "24.6 km · 20 min"
+        },
+        {
+          "code": "HTCH-04 · KEF↦BLU↦RVK",
+          "kmTime": "~74 km · ~3 hrs"
         }
       ]
     },

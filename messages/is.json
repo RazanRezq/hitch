@@ -391,7 +391,8 @@
     "presets": {
       "airportToReykjavik": "Flugvöllur → Reykjavík",
       "reykjavikToAirport": "Reykjavík → Flugvöllur",
-      "airportToBlueLagoon": "Flugvöllur → Bláa Lónið"
+      "airportToBlueLagoon": "Flugvöllur → Bláa Lónið",
+      "airportToBlueLagoonToReykjavik": "Flugvöllur → Bláa Lónið → Reykjavík"
     },
     "header": {
       "logoHome": "Hitch — aftur á forsíðu",
@@ -485,6 +486,7 @@
       "cta": "Velja",
       "from": "FRÁ",
       "badge": "MEST BÓKAÐ",
+      "comboBadge": "3 STOPP",
       "cards": [
         {
           "code": "HTCH-01 · KEF↦RVK",
@@ -497,6 +499,10 @@
         {
           "code": "HTCH-03 · KEF↦BLU",
           "kmTime": "24.6 km · 20 mín"
+        },
+        {
+          "code": "HTCH-04 · KEF↦BLU↦RVK",
+          "kmTime": "~74 km · ~3 klst"
         }
       ]
     },

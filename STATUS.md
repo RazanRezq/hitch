@@ -24,9 +24,10 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-- **Pricing engine fixes** — branch `fix/pricing-pax-limit-and-combo` (PR pending):
+- **Pricing engine fixes** — branch `fix/pricing-pax-limit-and-combo` (PR #44):
   - **>16 pax** now returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400 — the engine no longer silently clamps oversized groups into the 9-16 tier.
   - **Airport → Blue Lagoon → Reykjavík combo** wired end-to-end: 1-4 quotable at **42,090 ISK** (41,600 transfer + 490 origin fee). 5-8 / 9-16 and all combo EUR/USD still return manual-quote (pending client numbers).
+- **Combo landing preset** — branch `feat/combo-landing-preset` (stacked on #44, PR pending): combo is now a 4th preset trip card on the landing page (`kef-to-blue-lagoon-to-rvk`); selecting it carries `combo`/`via` through the booking draft so the quote prices the combo and the route card shows the Blue Lagoon stop. is/en strings added.
 
 ## ⏳ Pending / not started
 
