@@ -96,6 +96,7 @@ export const bookingsRoute = new Hono()
         passengerCount: body.passengerCount,
         scheduledTime: body.scheduledTime,
         displayCurrency: body.displayCurrency,
+        combo: body.combo,
       });
     } catch (err) {
       // Trips that can't be auto-priced (e.g. metered 9–16 pax) need a manual

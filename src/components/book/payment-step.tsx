@@ -40,6 +40,7 @@ export function PaymentStep() {
       vehicleTypeRequested: draft.vehicleTypeRequested,
       passengerCount: draft.passengerCount,
       displayCurrency: draft.displayCurrency,
+      combo: draft.combo,
       guest: draft.guest,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
