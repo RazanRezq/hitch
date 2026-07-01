@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useLocale, useTranslations } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Loader2, Lock } from 'lucide-react';
 import { PaymentElement, useElements, useStripe } from '@stripe/react-stripe-js';
 import { formatCurrencyMinor, type Locale } from '@/lib/i18n-shared';
-import { useCreateBooking } from '@/lib/api-client/hooks/useCreateBooking';
+import { useBookingIntent } from '@/lib/api-client/hooks/useCreateBooking';
 import type { CreateBookingResponse } from '@/lib/api-client/hooks/useCreateBooking';
+import type { CreateBookingInput } from '@/lib/types';
 import { StripeProvider } from '@/components/providers/stripe-provider';
 import { useBookingDraft } from '@/stores/booking-draft';
 import { cn } from '@/lib/ui';
@@ -22,16 +23,11 @@ export function PaymentStep() {
   const t = useTranslations('book.payment');
   const locale = useLocale() as Locale;
   const draft = useBookingDraft();
-  const create = useCreateBooking();
-  const startedRef = useRef(false);
-
-  useEffect(() => {
-    // Ref guard: StrictMode's double-invocation in dev would otherwise create
-    // two bookings + two PaymentIntents with different idempotency keys.
-    if (startedRef.current) return;
-    if (!draft.pickup || !draft.dropoff || !draft.guest) return;
-    startedRef.current = true;
-    create.mutate({
+  // Build the create-booking input once the draft is complete. Memoized so the
+  // query key stays stable across renders and StrictMode remounts.
+  const input = useMemo<CreateBookingInput | null>(() => {
+    if (!draft.pickup || !draft.dropoff || !draft.guest) return null;
+    return {
       pickup: draft.pickup,
       dropoff: draft.dropoff,
       pickupAirportCode: draft.pickupAirportCode,
@@ -42,9 +38,21 @@ export function PaymentStep() {
       displayCurrency: draft.displayCurrency,
       combo: draft.combo,
       guest: draft.guest,
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    };
+  }, [
+    draft.pickup,
+    draft.dropoff,
+    draft.pickupAirportCode,
+    draft.flightNumber,
+    draft.scheduledTime,
+    draft.vehicleTypeRequested,
+    draft.passengerCount,
+    draft.displayCurrency,
+    draft.combo,
+    draft.guest,
+  ]);
+
+  const create = useBookingIntent(input);
 
   if (create.isError) {
     return (
