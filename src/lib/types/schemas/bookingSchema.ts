@@ -28,6 +28,9 @@ export const createBookingSchema = z.object({
   vehicleTypeRequested: vehicleTypeSchema,
   passengerCount: z.number().int().min(1).max(16),
   displayCurrency: z.enum(['ISK', 'EUR', 'USD']).optional(),
+  // Price as the Airport → Blue Lagoon → Reykjavík combo. Must be forwarded to
+  // the server re-quote or the booking re-prices as a plain KEF→RVK trip.
+  combo: z.boolean().optional(),
   promoCode: z.string().max(40).optional(),
   guest: guestDetailsSchema.optional(),
 });
