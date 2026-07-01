@@ -5,8 +5,8 @@
 Single source of truth for where Hitch stands, generated from actual git/repo state so a
 fresh session or new device can get oriented without re-auditing the repo.
 
-- **Last updated:** 2026-06-28
-- **Current `main`:** `74c54a5` — _Merge #45 (combo landing preset)_ (last feature merges: #44 pricing fixes `34dc5b6`, #45 combo landing `74c54a5`; both branches deleted)
+- **Last updated:** 2026-07-01
+- **Current `main`:** `a4401fd` — _Merge #46 (combo booking-price fix)_ (recent merges: #44 `34dc5b6`, #45 `74c54a5`, #46 `a4401fd`; all branches deleted)
 
 ---
 
@@ -19,6 +19,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Tours catalog UI** | `/tours` page, TourCard grid, header nav link, ISK/EUR/USD toggle, is/en i18n; consumes `GET /api/tours` for live prices | **#43** |
 | **Pricing: >16 + combo** | >16 pax returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400; Airport→Blue Lagoon→Reykjavík combo wired end-to-end — 1-4 at **42,090 ISK** (41,600 + 490 origin fee), pending tiers/currencies return manual-quote | **#44** |
 | **Combo landing preset** | Combo as a 4th preset trip card (`kef-to-blue-lagoon-to-rvk`); booking draft carries `combo`/`via`, quote prices the combo, route card shows the Blue Lagoon stop; is/en strings | **#45** |
+| **Combo booking-price fix** | The combo quoted 42,090 ISK but the booking dropped the `combo` flag and re-priced as a plain KEF→RVK trip; forwarded `combo` through `createBookingSchema` → payment step → the server re-quote so the Booking + PaymentIntent price the combo. Verified end-to-end (booking persists 42,090; pending EUR/5-8 still 422) | **#46** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -37,6 +38,7 @@ _None — no open PRs or unmerged feature branches._
 - **Promo-code checkout** — tables exist; no redemption flow/UI.
 - **Passenger accounts / history** — booking works as guest; no logged-in trip history.
 - **Admin Pricing / Payments / Reports pages** — nav links exist; pages don't.
+- **Payment step hangs on "Preparing…" in dev** — surfaced verifying #46: the create-booking mutation is fired from a `useEffect`, and React StrictMode's dev double-invoke resets the TanStack Query mutation observer, so the booking + PaymentIntent are created (200, valid `clientSecret`) but `create.data` never populates → the Stripe element never mounts. Dev-only (StrictMode doesn't double-invoke in prod builds), affects all bookings, not combo-specific. Fix = don't fire the mutation from an effect (or guard against the observer reset).
 
 ## 🔭 Out of scope (Phase 2)
 
