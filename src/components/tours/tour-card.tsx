@@ -18,7 +18,7 @@ interface Props {
   entry: TourEntry;
   currency: Currency;
   locale: Locale;
-  /** Dispatch phone in dialable form (e.g. +3545335522). */
+  /** Dispatch phone in dialable form (e.g. +3545551234). */
   phone: string;
 }
 
