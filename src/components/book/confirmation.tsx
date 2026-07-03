@@ -63,7 +63,12 @@ export function Confirmation({
         <h1 className="text-3xl font-semibold tracking-tight">
           {isConfirmed ? t('title') : t('pending')}
         </h1>
-        <BookingIdChip bookingId={bookingId} label={t('bookingIdLabel')} />
+        {/* Prefer the human-friendly HTCH-XXXX-XXXX code; fall back to the raw
+            id only for legacy bookings created before codes existed. */}
+        <BookingIdChip
+          code={data ? (data.code ?? bookingId) : undefined}
+          label={t('bookingIdLabel')}
+        />
         <LiveIndicator
           status={wsStatus}
           liveLabel={t('live')}
@@ -155,12 +160,13 @@ function SummaryRow({ term, value }: { term: string; value: string }) {
   );
 }
 
-function BookingIdChip({ bookingId, label }: { bookingId: string; label: string }) {
+function BookingIdChip({ code, label }: { code?: string; label: string }) {
   const [copied, setCopied] = useState(false);
 
   async function copy() {
+    if (!code) return;
     try {
-      await navigator.clipboard.writeText(bookingId);
+      await navigator.clipboard.writeText(code);
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -171,16 +177,25 @@ function BookingIdChip({ bookingId, label }: { bookingId: string; label: string 
   return (
     <div className="bg-card inline-flex items-center gap-2 rounded-full border px-3 py-1.5">
       <span className="text-muted-foreground text-xs">{label}</span>
-      <span className="text-ltr font-mono text-sm">{bookingId}</span>
-      <button
-        type="button"
-        onClick={copy}
-        className="text-muted-foreground hover:text-foreground"
-        aria-label="Copy booking ID"
-      >
-        <Copy size={14} aria-hidden="true" />
-      </button>
-      {copied && <span className="text-primary text-xs">✓</span>}
+      {code ? (
+        <>
+          <span className="text-ltr font-mono text-sm">{code}</span>
+          <button
+            type="button"
+            onClick={copy}
+            className="text-muted-foreground hover:text-foreground"
+            aria-label="Copy booking ID"
+          >
+            <Copy size={14} aria-hidden="true" />
+          </button>
+          {copied && <span className="text-primary text-xs">✓</span>}
+        </>
+      ) : (
+        <span
+          className="bg-muted h-4 w-28 rounded motion-safe:animate-pulse"
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

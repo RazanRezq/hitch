@@ -6,6 +6,7 @@ import { API_ROUTES } from '../routes';
 
 export interface CreateBookingResponse {
   bookingId: string;
+  code: string | null;
   clientSecret: string;
   displayPrice: number;
   displayCurrency: Currency;

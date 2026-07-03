@@ -7,6 +7,7 @@ import { API_ROUTES } from '../routes';
 
 export interface BookingDetailResponse {
   id: string;
+  code: string | null;
   status: BookingStatus;
   scheduledTime: string;
   pickup: { lat: number; lng: number; address: string };
