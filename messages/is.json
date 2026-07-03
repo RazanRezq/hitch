@@ -459,7 +459,7 @@
       "logoHome": "Hitch — aftur á forsíðu",
       "coords": "REYKJAVÍK · 64.13°N 21.94°W",
       "local": "STAÐARTÍMI",
-      "cars": "37 BÍLAR Á VAKT",
+      "cars": "{count, plural, one {# BÍLL Á VAKT} other {# BÍLAR Á VAKT}}",
       "channel": "RÁS 02 · KOMUR",
       "phone": "+354 533 5522",
       "fly": "Fljúga",
