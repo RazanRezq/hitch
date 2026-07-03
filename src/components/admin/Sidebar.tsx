@@ -11,6 +11,7 @@ import {
   ClipboardList,
   Users,
   Car,
+  Receipt,
   Menu,
   X,
   type LucideIcon,
@@ -31,6 +32,7 @@ const NAV_ITEMS: readonly NavItem[] = [
   { key: 'overview', href: 'overview', icon: LayoutDashboard },
   { key: 'dispatch', href: 'dispatch', icon: Radio },
   { key: 'bookings', href: 'bookings', icon: ClipboardList },
+  { key: 'receipts', href: 'receipts', icon: Receipt },
   { key: 'drivers', href: 'drivers', icon: Users },
   { key: 'fleet', href: 'fleet', icon: Car },
 ];

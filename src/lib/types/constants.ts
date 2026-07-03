@@ -135,3 +135,36 @@ export const WS_CHANNELS = {
   driverLocations: 'driver-locations',
   userNotifications: (userId: string) => `user:${userId}:notifications`,
 } as const;
+
+/** How a receipt was created — mirrors the Prisma ReceiptSource enum. */
+export const RECEIPT_SOURCES = {
+  BOOKING: 'BOOKING',
+  MANUAL: 'MANUAL',
+} as const;
+export type ReceiptSource = (typeof RECEIPT_SOURCES)[keyof typeof RECEIPT_SOURCES];
+
+/**
+ * Company details printed on every receipt. Centralized (CLAUDE.md "No inline
+ * hardcoded values") — the branded receipt view is the only consumer today, but
+ * an emailed/PDF receipt will reuse it. Address confirmed by the client
+ * 2026-07-02: Þarabakki 3, 109 Reykjavík (the myPOS slip's Alfabakki address is
+ * the card-terminal record, not the registered business address).
+ */
+export const HITCH_COMPANY = {
+  name: 'Hitch',
+  legalName: 'HITCH EHF',
+  kennitala: '5803252380',
+  address: 'Þarabakki 3, 109 Reykjavík',
+  phones: ['+354 5 33 55 22', '+354 883 5100'],
+  email: 'hitch@hitch.is',
+  web: 'www.hitch.is',
+} as const;
+
+/**
+ * Render a receipt's sequential counter as its display number (R00001). The
+ * counter is display-only and gap-tolerant — NOT a legal gapless invoice number
+ * (the client confirmed a display number is enough).
+ */
+export function formatReceiptNumber(n: number): string {
+  return `R${String(n).padStart(5, '0')}`;
+}
