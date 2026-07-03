@@ -4,6 +4,7 @@ import { adminBookingsRoute } from './bookings';
 import { adminDriversRoute } from './drivers';
 import { adminVehiclesRoute } from './vehicles';
 import { adminStatsRoute } from './stats';
+import { adminReceiptsRoute } from './receipts';
 
 /**
  * Admin / dispatcher API surface. Guarded at the group level by
@@ -19,3 +20,4 @@ adminRoute.route('/bookings', adminBookingsRoute);
 adminRoute.route('/drivers', adminDriversRoute);
 adminRoute.route('/vehicles', adminVehiclesRoute);
 adminRoute.route('/stats', adminStatsRoute);
+adminRoute.route('/receipts', adminReceiptsRoute);

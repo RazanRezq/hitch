@@ -87,6 +87,13 @@ enum DiscountType {
   FIXED
 }
 
+// A receipt is issued either from an existing (paid) booking or typed in by
+// hand for an in-car / cash ride. See the Receipt model.
+enum ReceiptSource {
+  BOOKING
+  MANUAL
+}
+
 enum BookingEventType {
   CREATED
   STATUS_CHANGED
@@ -208,6 +215,7 @@ model Booking {
   vehicle          Vehicle?              @relation(fields: [vehicleId], references: [id])
   events           BookingEvent[]
   payments         Payment[]
+  receipts         Receipt[]
   locationHistory  TripLocationHistory[]
   ratings          Rating[]
   promoRedemptions PromoRedemption[]
@@ -250,6 +258,47 @@ model Payment {
 
   @@index([bookingId])
   @@index([status])
+}
+
+/**
+ * An issued fare receipt (kvittun) — NOT a legal Icelandic invoice (see the
+ * client brief: these are receipts, legal invoicing is handled elsewhere).
+ *
+ * A receipt is an immutable snapshot: fields are copied in at issue time so
+ * later edits to the booking/driver never change an already-printed receipt.
+ * `number` is a gap-tolerant sequential counter (display only) rendered as
+ * R00001 via formatReceiptNumber(). Sourced from a paid Booking (bookingId set)
+ * or typed in by hand for an in-car / cash ride (bookingId null).
+ */
+model Receipt {
+  id        String        @id @default(cuid())
+  number    Int           @unique @default(autoincrement())
+  source    ReceiptSource
+  bookingId String? // set for BOOKING receipts; null for MANUAL
+  issuedById String? // staff user who issued it (scalar snapshot, no FK)
+
+  // Immutable trip snapshot (copied at issue time)
+  issuedFor      DateTime // the trip date/time shown on the receipt
+  pickupAddress  String
+  dropoffAddress String
+  driverName     String?
+  vehiclePlate   String? // the "cab" plate, e.g. FSY44
+  cabNumber      String? // optional internal cab id, e.g. 101
+
+  // Amounts — display currency + ISK for the record (ISK is source of truth)
+  fareAmount  Int // in displayCurrency smallest unit
+  tipAmount   Int? // in displayCurrency smallest unit
+  totalAmount Int // fare + (tip ?? 0), displayCurrency smallest unit
+  currency    Currency @default(ISK)
+  amountISK   Int // total in ISK, always stored for the record
+
+  notes     String?
+  createdAt DateTime @default(now())
+
+  booking Booking? @relation(fields: [bookingId], references: [id])
+
+  @@index([bookingId])
+  @@index([createdAt])
 }
 
 model DriverPayout {

@@ -2,14 +2,14 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useLocale, useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plane } from 'lucide-react';
-import type { Locale } from '@/lib/types';
-import { ACTIVE_BOOKING_STATUSES, BOOKING_STATUSES, WS_CHANNELS } from '@/lib/types';
+import type { BookingStatus, Locale } from '@/lib/types';
+import { ACTIVE_BOOKING_STATUSES, BOOKING_STATUSES, RECEIPT_SOURCES, WS_CHANNELS } from '@/lib/types';
 import { HitchWsClient } from '@/lib/api-client';
-import { useAdminBooking, useUpdateBookingStatus } from '@/lib/api-client/hooks/admin';
+import { useAdminBooking, useIssueReceipt, useUpdateBookingStatus } from '@/lib/api-client/hooks/admin';
 import { formatCurrencyMinor, formatDateTime } from '@/lib/i18n-shared';
 import { cn } from '@/lib/ui';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,20 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { AssignDriverDialog } from '@/components/admin/AssignDriverDialog';
+
+/**
+ * The single legal "advance" step a dispatcher can drive from each active status.
+ * With no driver app in Phase 1, the dispatcher walks the trip forward manually;
+ * each click hits POST /:id/status, which the state machine validates and audits.
+ * Terminal and pre-assignment statuses have no entry — Assign handles
+ * CONFIRMED/SEARCHING, and DRIVER_ARRIVED keeps its separate No-Show action.
+ */
+const ADVANCE_NEXT = {
+  [BOOKING_STATUSES.ACCEPTED]: { to: BOOKING_STATUSES.DRIVER_ARRIVING, labelKey: 'markArriving' },
+  [BOOKING_STATUSES.DRIVER_ARRIVING]: { to: BOOKING_STATUSES.DRIVER_ARRIVED, labelKey: 'markArrived' },
+  [BOOKING_STATUSES.DRIVER_ARRIVED]: { to: BOOKING_STATUSES.IN_TRANSIT, labelKey: 'startTrip' },
+  [BOOKING_STATUSES.IN_TRANSIT]: { to: BOOKING_STATUSES.COMPLETED, labelKey: 'completeTrip' },
+} as const satisfies Partial<Record<BookingStatus, { to: BookingStatus; labelKey: string }>>;
 
 function InfoRow({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -36,9 +50,23 @@ export default function BookingDetailPage() {
   const tAdmin = useTranslations('admin');
   const qc = useQueryClient();
 
+  const router = useRouter();
   const query = useAdminBooking(id);
   const updateStatus = useUpdateBookingStatus(id);
+  const issueReceipt = useIssueReceipt();
   const [assignOpen, setAssignOpen] = useState(false);
+
+  async function onIssueReceipt() {
+    try {
+      const receipt = await issueReceipt.mutateAsync({
+        source: RECEIPT_SOURCES.BOOKING,
+        bookingId: id,
+      });
+      router.push(`/${locale}/admin/receipts/${receipt.id}`);
+    } catch {
+      /* surfaced via issueReceipt.isError */
+    }
+  }
 
   // Realtime nudge: refetch this booking when its channel emits a status change.
   useEffect(() => {
@@ -86,6 +114,10 @@ export default function BookingDetailPage() {
     b.status === BOOKING_STATUSES.CONFIRMED || b.status === BOOKING_STATUSES.SEARCHING;
   const canNoShow = b.status === BOOKING_STATUSES.DRIVER_ARRIVED;
   const canCancel = (ACTIVE_BOOKING_STATUSES as readonly string[]).includes(b.status);
+  const advance = ADVANCE_NEXT[b.status as keyof typeof ADVANCE_NEXT] as
+    | { to: BookingStatus; labelKey: string }
+    | undefined;
+  const canReceipt = b.status === BOOKING_STATUSES.COMPLETED;
   const latestPayment = b.payments[0];
 
   return (
@@ -106,6 +138,14 @@ export default function BookingDetailPage() {
 
         <div className="ms-auto flex flex-wrap gap-2">
           {canAssign && <Button onClick={() => setAssignOpen(true)}>{t('assign')}</Button>}
+          {advance && (
+            <Button
+              disabled={updateStatus.isPending}
+              onClick={() => updateStatus.mutate({ to: advance.to })}
+            >
+              {t(advance.labelKey)}
+            </Button>
+          )}
           {canNoShow && (
             <Button
               variant="outline"
@@ -113,6 +153,15 @@ export default function BookingDetailPage() {
               onClick={() => updateStatus.mutate({ to: BOOKING_STATUSES.NO_SHOW })}
             >
               {t('markNoShow')}
+            </Button>
+          )}
+          {canReceipt && (
+            <Button
+              variant="outline"
+              disabled={issueReceipt.isPending}
+              onClick={onIssueReceipt}
+            >
+              {t('issueReceipt')}
             </Button>
           )}
           {canCancel && (
@@ -129,6 +178,9 @@ export default function BookingDetailPage() {
 
       {updateStatus.isError && (
         <p className="text-sm text-destructive">{t('statusError')}</p>
+      )}
+      {issueReceipt.isError && (
+        <p className="text-sm text-destructive">{t('receiptError')}</p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-3">

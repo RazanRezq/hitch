@@ -10,7 +10,12 @@
  */
 import { prisma } from '@/lib/db';
 import { stripe } from '@/server/lib/stripe';
-import { BOOKING_STATUSES, PAYMENT_STATUSES, type BookingStatus } from '@/lib/types';
+import {
+  BOOKING_STATUSES,
+  PAYMENT_STATUSES,
+  RECEIPT_SOURCES,
+  type BookingStatus,
+} from '@/lib/types';
 
 type SeededUser = Awaited<ReturnType<typeof prisma.user.upsert>>;
 
@@ -56,6 +61,74 @@ async function createCapturableIntent(amountISK: number): Promise<string | null>
     console.warn('[seed] Stripe intent failed (set STRIPE_SECRET_KEY for assignable demo):', (e as Error).message);
     return null;
   }
+}
+
+/**
+ * A few issued receipts so the receipts log isn't empty in a demo: two
+ * snapshotted from completed bookings that actually captured payment (mirrors
+ * the POST /admin/receipts booking path), plus one MANUAL in-car / cash ride
+ * matching the client's paper template. Idempotent — skips if any receipt
+ * exists. Numbers are DB-assigned (SERIAL) → R00001, R00002, …
+ */
+async function seedReceipts(): Promise<void> {
+  if ((await prisma.receipt.count()) > 0) {
+    console.log('[seed] receipts already present — skipping');
+    return;
+  }
+
+  const completed = await prisma.booking.findMany({
+    where: { status: BOOKING_STATUSES.COMPLETED },
+    orderBy: { createdAt: 'desc' },
+    take: 6,
+    include: {
+      driver: { select: { name: true } },
+      vehicle: { select: { licensePlate: true } },
+      payments: { orderBy: { createdAt: 'desc' } },
+    },
+  });
+
+  let fromBookings = 0;
+  for (const b of completed) {
+    if (fromBookings >= 2) break;
+    const paid = b.payments.find((p) => p.status === PAYMENT_STATUSES.SUCCEEDED);
+    if (!paid) continue;
+    await prisma.receipt.create({
+      data: {
+        source: RECEIPT_SOURCES.BOOKING,
+        bookingId: b.id,
+        issuedFor: b.actualDropoffAt ?? b.actualPickupAt ?? b.scheduledTime,
+        pickupAddress: b.pickupAddress,
+        dropoffAddress: b.dropoffAddress,
+        driverName: b.driver?.name ?? null,
+        vehiclePlate: b.vehicle?.licensePlate ?? null,
+        fareAmount: paid.amount,
+        totalAmount: paid.amount,
+        currency: paid.currency,
+        amountISK: paid.amountISK,
+      },
+    });
+    fromBookings++;
+  }
+
+  // Manual in-car receipt — the client's sample: 7.000 kr, cab 101 / FSY44.
+  await prisma.receipt.create({
+    data: {
+      source: RECEIPT_SOURCES.MANUAL,
+      issuedFor: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
+      pickupAddress: 'Brautholt 10, 105 Reykjavík',
+      dropoffAddress: 'Austurhraun 7, 210 Garðabær',
+      driverName: 'Yousef',
+      vehiclePlate: 'FSY44',
+      cabNumber: '101',
+      fareAmount: 7000,
+      totalAmount: 7000,
+      currency: 'ISK',
+      amountISK: 7000,
+      notes: 'Paid',
+    },
+  });
+
+  console.log(`[seed] issued ${fromBookings + 1} receipts (${fromBookings} from bookings + 1 manual)`);
 }
 
 async function main() {
@@ -189,10 +262,11 @@ async function main() {
   // SEED_RESET=1 wipes existing mock bookings so the set can be regenerated
   // (e.g. after fixing the Stripe key, to mint real capturable intents).
   if (process.env.SEED_RESET) {
+    await prisma.receipt.deleteMany({}); // FK to Booking is SetNull — clear first
     await prisma.rating.deleteMany({});
     await prisma.payment.deleteMany({});
     await prisma.booking.deleteMany({}); // cascades BookingEvent + TripLocationHistory
-    console.log('[seed] SEED_RESET — cleared existing bookings, payments, ratings');
+    console.log('[seed] SEED_RESET — cleared existing bookings, payments, ratings, receipts');
   }
   const existingBookings = await prisma.booking.count();
   if (existingBookings === 0) {
@@ -318,6 +392,10 @@ async function main() {
     }
     console.log('[seed] created 31 bookings (+ ratings) across the lifecycle');
   }
+
+  // Receipts snapshot completed bookings, so seed them after the bookings exist
+  // (runs whether the bookings were just created or already present).
+  await seedReceipts();
 
   const adminEmail = process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is';
   console.log(

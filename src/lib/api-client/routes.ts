@@ -10,6 +10,9 @@ export const API_ROUTES = {
     cancel: (id: string) => `/api/bookings/${id}/cancel`,
     assign: (id: string) => `/api/bookings/${id}/assign`,
   },
+  receipts: {
+    byId: (id: string) => `/api/receipts/${id}`,
+  },
   quotes: {
     create: '/api/quotes',
   },
@@ -54,6 +57,11 @@ export const API_ROUTES = {
     },
     stats: {
       overview: '/api/admin/stats/overview',
+    },
+    receipts: {
+      list: '/api/admin/receipts',
+      create: '/api/admin/receipts',
+      byId: (id: string) => `/api/admin/receipts/${id}`,
     },
   },
   health: '/api/health',

@@ -4,3 +4,4 @@ export * from './drivers';
 export * from './vehicles';
 export * from './stats';
 export * from './realtime';
+export * from './receipts';

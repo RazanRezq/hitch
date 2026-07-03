@@ -3,6 +3,7 @@ export type {
   Booking,
   Vehicle,
   Payment,
+  Receipt,
   DriverPayout,
   DriverLocation,
   DriverDocument,

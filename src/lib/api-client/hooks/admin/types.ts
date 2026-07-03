@@ -1,4 +1,4 @@
-import type { BookingStatus, VehicleType, Currency, UserRole } from '@/lib/types';
+import type { BookingStatus, VehicleType, Currency, UserRole, ReceiptSource } from '@/lib/types';
 
 /** Mirror of the server-side ListEnvelope (src/server/lib/list.ts). */
 export interface ListEnvelope<T> {
@@ -167,6 +167,29 @@ export interface AdminVehicleListItem {
   capacity: number;
   isActive: boolean;
   driver: { id: string; name: string | null };
+}
+
+export interface AdminReceiptListItem {
+  id: string;
+  number: string;
+  source: ReceiptSource;
+  bookingId: string | null;
+  issuedFor: string;
+  pickupAddress: string;
+  dropoffAddress: string;
+  driverName: string | null;
+  totalAmount: number;
+  currency: Currency;
+  amountISK: number;
+  createdAt: string;
+}
+
+export interface AdminReceiptDetail extends AdminReceiptListItem {
+  vehiclePlate: string | null;
+  cabNumber: string | null;
+  fareAmount: number;
+  tipAmount: number | null;
+  notes: string | null;
 }
 
 export interface AdminStats {
