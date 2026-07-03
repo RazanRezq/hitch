@@ -744,6 +744,24 @@ body {
 .ed-field-compact .ed-field-icon { width: 30px; height: 30px; border-radius: 8px; }
 .ed-field-compact .ed-field-value { font-size: 14px; }
 
+/* Google Places widget (PlaceAutocompleteElement) blended into a hero field.
+   The widget renders its own <input> inside shadow DOM: inherited typography
+   (color / font-*, carried in via the .ed-field-value class on the host) pierces
+   the shadow boundary, so here we only neutralise the host box and the widget's
+   own internal surface/outline. The --gmp-mat-* custom properties are the
+   widget's documented theming hooks; unknown ones are harmless no-ops. */
+.hitch-place-ac {
+  display: block;
+  width: 100%;
+  background: transparent;
+  border: 0;
+  --gmp-mat-color-surface: transparent;
+  --gmp-mat-color-surface-container-low: transparent;
+  --gmp-mat-color-on-surface: rgba(255, 255, 255, 0.95);
+  --gmp-mat-color-on-surface-variant: rgba(255, 255, 255, 0.5);
+  --gmp-mat-color-outline: transparent;
+}
+
 /* When field: a transparent native datetime-local input overlays the whole
    field so the friendly "Today · 15:30" label shows through while the native
    picker + keyboard editing stay fully usable. */
