@@ -461,7 +461,7 @@
       "local": "LOCAL",
       "cars": "{count, plural, one {# CAR ON SHIFT} other {# CARS ON SHIFT}}",
       "channel": "CH 02 · ARRIVALS",
-      "phone": "+354 533 5522",
+      "phone": "+354 555 1234",
       "fly": "Fly",
       "fleet": "Fleet",
       "coverage": "Coverage",
