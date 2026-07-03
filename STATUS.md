@@ -5,8 +5,8 @@
 Single source of truth for where Hitch stands, generated from actual git/repo state so a
 fresh session or new device can get oriented without re-auditing the repo.
 
-- **Last updated:** 2026-07-01
-- **Current `main`:** `a4401fd` — _Merge #46 (combo booking-price fix)_ (recent merges: #44 `34dc5b6`, #45 `74c54a5`, #46 `a4401fd`; all branches deleted)
+- **Last updated:** 2026-07-03
+- **Current `main`:** `260e5e2` — _Merge #49 (landing hero)_ (recent merges: #47 `daf9336`, #48 `acdebbe`, #49 `260e5e2`; all branches deleted)
 
 ---
 
@@ -20,6 +20,9 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Pricing: >16 + combo** | >16 pax returns the manual-quote signal (422 `{ manualQuoteRequired: true }`) instead of a 400; Airport→Blue Lagoon→Reykjavík combo wired end-to-end — 1-4 at **42,090 ISK** (41,600 + 490 origin fee), pending tiers/currencies return manual-quote | **#44** |
 | **Combo landing preset** | Combo as a 4th preset trip card (`kef-to-blue-lagoon-to-rvk`); booking draft carries `combo`/`via`, quote prices the combo, route card shows the Blue Lagoon stop; is/en strings | **#45** |
 | **Combo booking-price fix** | The combo quoted 42,090 ISK but the booking dropped the `combo` flag and re-priced as a plain KEF→RVK trip; forwarded `combo` through `createBookingSchema` → payment step → the server re-quote so the Booking + PaymentIntent price the combo. Verified end-to-end (booking persists 42,090; pending EUR/5-8 still 422) | **#46** |
+| **Payment-step StrictMode fix** | Dev "Preparing…" hang — the create-booking call fired from a `useEffect`, so React StrictMode's double-invoke reset the TanStack Query observer and `create.data` never populated (Stripe element never mounted). Reworked to a keyed `useQuery` (single-flight, StrictMode-safe) | **#47** |
+| **Receipts + QR + public view** | Issued fare receipts (kvittun — receipts, _not_ legal invoices): `Receipt` model + migration (SERIAL number `R00001`, immutable trip snapshot); admin list/detail/issue (from a paid booking — idempotent, requires a captured payment — or a manual in-car/cash ride); branded printable `ReceiptDocument` (inline HITCH TAXI logo, **dependency-free inline-SVG QR** via vendored Nayuki — no npm); Receipts log + issue dialog + sidebar nav; **public** `GET /api/receipts/:id` (unguessable id) + `/[locale]/receipt/[id]` print page the QR resolves to. Dispatcher can now advance a trip `ACCEPTED → … → COMPLETED` from the booking page. Seeded samples; `scripts/preview-receipt.ts`. is/en | **#48** |
+| **Landing hero + header** | Hero booking widget: friendly "Today/Tomorrow · HH:mm" label over the native `datetime-local` input (`formatWhenLabel()`); header nav scroll-spy (active section from scroll position + route). is/en | **#49** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -37,8 +40,7 @@ _None — no open PRs or unmerged feature branches._
 - **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
 - **Promo-code checkout** — tables exist; no redemption flow/UI.
 - **Passenger accounts / history** — booking works as guest; no logged-in trip history.
-- **Admin Pricing / Payments / Reports pages** — nav links exist; pages don't.
-- **Payment step hangs on "Preparing…" in dev** — surfaced verifying #46: the create-booking mutation is fired from a `useEffect`, and React StrictMode's dev double-invoke resets the TanStack Query mutation observer, so the booking + PaymentIntent are created (200, valid `clientSecret`) but `create.data` never populates → the Stripe element never mounts. Dev-only (StrictMode doesn't double-invoke in prod builds), affects all bookings, not combo-specific. Fix = don't fire the mutation from an effect (or guard against the observer reset).
+- **Admin Pricing / Payments / Reports pages** — nav links exist; pages don't. (A Receipts page now exists, via #48.)
 
 ## 🔭 Out of scope (Phase 2)
 
