@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { generateBookingCode } from '@/lib/utils';
 import {
   BOOKING_STATUSES,
   PAYMENT_STATUSES,
@@ -110,29 +111,41 @@ export const bookingsRoute = new Hono()
       throw err;
     }
 
-    // 1. Create booking in DRAFT (cheap to clean up if Stripe fails)
-    const booking = await prisma.booking.create({
-      data: {
-        passengerId: passenger.id,
-        pickupLat: body.pickup.lat,
-        pickupLng: body.pickup.lng,
-        pickupAddress: body.pickup.address,
-        dropoffLat: body.dropoff.lat,
-        dropoffLng: body.dropoff.lng,
-        dropoffAddress: body.dropoff.address,
-        pickupAirportCode: body.pickupAirportCode,
-        flightNumber: body.flightNumber,
-        scheduledTime: body.scheduledTime,
-        vehicleTypeRequested: body.vehicleTypeRequested,
-        passengerCount: body.passengerCount,
-        estimatedDistanceKm: quote.distanceKm,
-        basePriceISK: quote.basePriceISK,
-        displayCurrency: quote.displayCurrency,
-        displayPrice: quote.displayPrice,
-        exchangeRate: quote.exchangeRate,
-        status: BOOKING_STATUSES.DRAFT,
-      },
-    });
+    // 1. Create booking in DRAFT (cheap to clean up if Stripe fails). Each
+    // booking gets a unique HTCH-XXXX-XXXX code; retry on the (vanishingly
+    // rare) P2002 unique collision before giving up.
+    let booking;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        booking = await prisma.booking.create({
+          data: {
+            code: generateBookingCode(),
+            passengerId: passenger.id,
+            pickupLat: body.pickup.lat,
+            pickupLng: body.pickup.lng,
+            pickupAddress: body.pickup.address,
+            dropoffLat: body.dropoff.lat,
+            dropoffLng: body.dropoff.lng,
+            dropoffAddress: body.dropoff.address,
+            pickupAirportCode: body.pickupAirportCode,
+            flightNumber: body.flightNumber,
+            scheduledTime: body.scheduledTime,
+            vehicleTypeRequested: body.vehicleTypeRequested,
+            passengerCount: body.passengerCount,
+            estimatedDistanceKm: quote.distanceKm,
+            basePriceISK: quote.basePriceISK,
+            displayCurrency: quote.displayCurrency,
+            displayPrice: quote.displayPrice,
+            exchangeRate: quote.exchangeRate,
+            status: BOOKING_STATUSES.DRAFT,
+          },
+        });
+        break;
+      } catch (err) {
+        if (attempt < 4 && (err as { code?: string }).code === 'P2002') continue;
+        throw err;
+      }
+    }
 
     // 2. Stripe PaymentIntent (manual capture, idempotent by booking id)
     const intent = await createPaymentIntent({
@@ -188,6 +201,7 @@ export const bookingsRoute = new Hono()
 
     return c.json({
       bookingId: booking.id,
+      code: booking.code,
       clientSecret: intent.client_secret,
       displayPrice: quote.displayPrice,
       displayCurrency: quote.displayCurrency,
@@ -211,6 +225,7 @@ export const bookingsRoute = new Hono()
     const b = result.booking;
     return c.json({
       id: b.id,
+      code: b.code,
       status: b.status,
       scheduledTime: b.scheduledTime,
       pickup: { lat: b.pickupLat, lng: b.pickupLng, address: b.pickupAddress },

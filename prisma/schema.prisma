@@ -168,6 +168,11 @@ model Vehicle {
 
 model Booking {
   id           String @id @default(cuid())
+  // Human-friendly booking code shown to the passenger (HTCH-XXXX-XXXX),
+  // generated server-side at creation. Nullable so the additive migration is
+  // safe for pre-existing rows; every new booking sets it. See
+  // generateBookingCode in src/lib/utils/booking.ts.
+  code         String? @unique
   passengerId  String
   driverId     String?
   vehicleId    String?
