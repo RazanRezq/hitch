@@ -434,6 +434,7 @@
       "swap": "Swap pickup and drop-off",
       "date": "Date",
       "today": "Today",
+      "tomorrow": "Tomorrow",
       "time": "Time",
       "scheduledTime": "When",
       "pax": "Pax",
@@ -443,11 +444,11 @@
       "addFlight": "Add flight no.",
       "childSeat": "Child seat",
       "meetGreet": "Meet & greet",
-      "footCarsStrong": "8 cars",
-      "footCarsRest": "at KEF now",
+      "footChargeStrong": "No charge",
+      "footChargeRest": "until a driver accepts",
       "footCancelStrong": "Free cancellation",
-      "footCancelRest": "up to 1h before",
-      "footPay": "Pay on arrival or in advance"
+      "footCancelRest": "before payment is confirmed",
+      "footPay": "Pay in ISK, EUR or USD"
     },
     "wordmark": "HITCH",
     "care": {

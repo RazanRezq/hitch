@@ -434,6 +434,7 @@
       "swap": "Skipta um sækju- og skilastað",
       "date": "Dagsetning",
       "today": "Í dag",
+      "tomorrow": "Á morgun",
       "time": "Tími",
       "scheduledTime": "Hvenær",
       "pax": "Farþegar",
@@ -443,11 +444,11 @@
       "addFlight": "Bæta við flugnúmeri",
       "childSeat": "Barnasæti",
       "meetGreet": "Móttaka með skilti",
-      "footCarsStrong": "8 bílar",
-      "footCarsRest": "við KEF núna",
+      "footChargeStrong": "Engin greiðsla",
+      "footChargeRest": "fyrr en bílstjóri samþykkir",
       "footCancelStrong": "Frí afpöntun",
-      "footCancelRest": "allt að 1 klst. fyrir",
-      "footPay": "Greitt við komu eða fyrirfram"
+      "footCancelRest": "áður en greiðsla er staðfest",
+      "footPay": "Greitt í ISK, EUR eða USD"
     },
     "wordmark": "HITCH",
     "care": {

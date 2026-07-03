@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { ArrowRight, Globe } from 'lucide-react';
 import { CURRENCIES, LOCALES, type Currency, type Locale } from '@/lib/i18n-shared';
@@ -19,6 +20,17 @@ const LOCALE_ENDONYM: Record<Locale, string> = {
 const CURRENCY_SYMBOL: Record<Currency, string> = { ISK: 'kr.', EUR: '€', USD: '$' };
 
 /**
+ * Landing-page section anchors in DOM order (see landing-page.tsx render order:
+ * Hero → Fleet → PulledQuote(#stories) → Coverage). Drives nav scroll-spy: the
+ * active section is the last one whose top has crossed the trigger line. Note
+ * this differs from the nav's display order (Coverage is shown before Stories);
+ * scroll-spy must follow document order, so keep this list in render order.
+ * `top` is the hero (the "Fly" nav item).
+ */
+const SECTION_IDS = ['top', 'fleet', 'stories', 'coverage'] as const;
+type SectionId = (typeof SECTION_IDS)[number];
+
+/**
  * `variant`:
  * - `full` (default) — the landing header: info strip, section nav, language +
  *   currency switchers, sign-in and book CTA.
@@ -33,6 +45,18 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
   const { locale, change: changeLocale } = useChangeLocale();
   const currency = usePreferences((s) => s.currency);
   const setCurrency = usePreferences((s) => s.setCurrency);
+
+  // Active nav state is derived from the route, not hardcoded. "Fly" (landing)
+  // and "Tours" are real pages; Fleet/Coverage/Stories are sections of the
+  // landing page, so they link to `/{locale}#section` and highlight there.
+  const pathname = usePathname();
+  const onHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const onTours =
+    pathname === `/${locale}/tours` || pathname.startsWith(`/${locale}/tours/`);
+
+  // Scroll-spy: on the landing page, highlight the section currently in view.
+  const [activeSection, setActiveSection] = useState<SectionId>('top');
+  const sectionActive = (id: SectionId) => onHome && activeSection === id;
 
   const [scrolled, setScrolled] = useState(false);
   const [overHero, setOverHero] = useState(true);
@@ -61,6 +85,28 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!onHome) return;
+    const onScroll = () => {
+      // Trigger line 35% down the viewport: the active section is the last one
+      // whose top has scrolled above it (SECTION_IDS is in document order).
+      const line = window.innerHeight * 0.35;
+      let current: SectionId = SECTION_IDS[0];
+      for (const id of SECTION_IDS) {
+        const el = document.getElementById(id);
+        if (el && el.getBoundingClientRect().top <= line) current = id;
+      }
+      setActiveSection(current);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [onHome]);
 
   useEffect(() => {
     // Defer the first tick out of the effect body so server and client
@@ -122,21 +168,41 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
 
         {!minimal && (
           <nav className="ed-header-nav" aria-label="Primary">
-            <a href="#top" className="ed-nav-link is-active">
+            <Link
+              href={`/${locale}#top`}
+              className={`ed-nav-link${sectionActive('top') ? ' is-active' : ''}`}
+              aria-current={sectionActive('top') ? 'page' : undefined}
+            >
               <span>{t('fly')}</span>
-            </a>
-            <Link href={`/${locale}/tours`} className="ed-nav-link">
+            </Link>
+            <Link
+              href={`/${locale}/tours`}
+              className={`ed-nav-link${onTours ? ' is-active' : ''}`}
+              aria-current={onTours ? 'page' : undefined}
+            >
               <span>{t('tours')}</span>
             </Link>
-            <a href="#fleet" className="ed-nav-link">
+            <Link
+              href={`/${locale}#fleet`}
+              className={`ed-nav-link${sectionActive('fleet') ? ' is-active' : ''}`}
+              aria-current={sectionActive('fleet') ? 'page' : undefined}
+            >
               <span>{t('fleet')}</span>
-            </a>
-            <a href="#coverage" className="ed-nav-link">
-              <span>{t('coverage')}</span>
-            </a>
-            <a href="#stories" className="ed-nav-link">
+            </Link>
+            <Link
+              href={`/${locale}#stories`}
+              className={`ed-nav-link${sectionActive('stories') ? ' is-active' : ''}`}
+              aria-current={sectionActive('stories') ? 'page' : undefined}
+            >
               <span>{t('stories')}</span>
-            </a>
+            </Link>
+            <Link
+              href={`/${locale}#coverage`}
+              className={`ed-nav-link${sectionActive('coverage') ? ' is-active' : ''}`}
+              aria-current={sectionActive('coverage') ? 'page' : undefined}
+            >
+              <span>{t('coverage')}</span>
+            </Link>
           </nav>
         )}
 

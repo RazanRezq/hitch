@@ -7,6 +7,7 @@ import {
   ArrowRight,
   Baby,
   Calendar,
+  Coins,
   CreditCard,
   Hand,
   Lock,
@@ -21,7 +22,7 @@ import {
   Waves,
 } from 'lucide-react';
 import { LANDMARKS } from '@/lib/types';
-import { toLocalInput } from '@/lib/utils';
+import { formatWhenLabel, toLocalInput } from '@/lib/utils';
 import { PlacesAutocomplete, type PlacePick } from '@/components/book/places-autocomplete';
 import { AuroraSky } from './aurora-sky';
 
@@ -71,6 +72,11 @@ export function Hero() {
   const pickupPlaceholder =
     tab === 'custom' ? t('pickupPlaceholderCustom') : t('pickupPlaceholderFrom');
   const dropoffPlaceholder = t('dropoffPlaceholderCustom');
+
+  const whenLabel = formatWhenLabel(scheduledTime, locale as 'is' | 'en', {
+    today: t('today'),
+    tomorrow: t('tomorrow'),
+  });
 
   function handleSubmit() {
     setError(null);
@@ -186,20 +192,26 @@ export function Hero() {
               />
             )}
 
-            {/* When (datetime-local replaces the old Date + Time chips) */}
-            <div className="ed-field ed-field-compact">
+            {/* When — friendly "Today · 15:30" label over a transparent native
+                datetime-local input (keeps the picker + keyboard editing). */}
+            <div className="ed-field ed-field-compact ed-field-when">
               <div className="ed-field-icon">
                 <Calendar size={16} aria-hidden="true" />
               </div>
               <div className="ed-field-body">
                 <div className="ed-field-label">{t('scheduledTime')}</div>
-                <input
-                  type="datetime-local"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                  className="ed-field-value t-mono w-full border-0 bg-transparent p-0 text-sm outline-none"
-                />
+                <div className="ed-field-value t-mono" suppressHydrationWarning>
+                  {whenLabel}
+                </div>
               </div>
+              <input
+                type="datetime-local"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                aria-label={t('scheduledTime')}
+                className="ed-when-input"
+              />
             </div>
 
             {/* Pax */}
@@ -257,16 +269,16 @@ export function Hero() {
               </button>
             </div>
             <div className="ed-search-foot">
-              <span className="ed-search-foot-live">
-                <span className="ed-livedot" />
-                <strong>{t('footCarsStrong')}</strong> {t('footCarsRest')}
-              </span>
               <span>
                 <ShieldCheck size={13} aria-hidden="true" />
-                <strong>{t('footCancelStrong')}</strong> {t('footCancelRest')}
+                <strong>{t('footChargeStrong')}</strong> {t('footChargeRest')}
               </span>
               <span>
                 <CreditCard size={13} aria-hidden="true" />
+                <strong>{t('footCancelStrong')}</strong> {t('footCancelRest')}
+              </span>
+              <span>
+                <Coins size={13} aria-hidden="true" />
                 {t('footPay')}
               </span>
             </div>
@@ -293,7 +305,7 @@ function LockedSide({ label, value, code, icon: Icon, tinted = false }: LockedSi
       </div>
       <div className="ed-field-body">
         <div className="ed-field-label">{label}</div>
-        <div className="ed-field-value">{value}</div>
+        <div className="ed-field-value ed-field-value-multiline">{value}</div>
       </div>
       <span className="ed-field-pill t-mono">
         <Lock size={11} aria-hidden="true" /> {code}
