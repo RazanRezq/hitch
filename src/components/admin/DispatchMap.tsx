@@ -6,6 +6,10 @@ import { importLibrary, setOptions } from '@googlemaps/js-api-loader';
 import { useAdminDispatch } from '@/stores/admin-dispatch';
 
 const REYKJAVIK = { lat: 64.1466, lng: -21.9426 };
+// AdvancedMarkerElement requires the map to be created with a Map ID (vector
+// map). Use a project Map ID when configured; fall back to Google's DEMO_MAP_ID
+// so local dev works without extra Cloud Console setup.
+const MAP_ID = process.env.NEXT_PUBLIC_GOOGLE_MAPS_MAP_ID || 'DEMO_MAP_ID';
 // Per-frame easing toward the latest target (~exponential smoothing). Higher =
 // snappier; 0.12 reaches a new position in roughly half a second at 60fps, well
 // under the ~3s location cadence, so motion stays smooth without lagging.
@@ -30,7 +34,7 @@ export function DispatchMap() {
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<string, google.maps.Marker>>(new Map());
+  const markersRef = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
   const targetRef = useRef<Map<string, LatLng>>(new Map());
   const currentRef = useRef<Map<string, LatLng>>(new Map());
   const [ready, setReady] = useState(false);
@@ -49,8 +53,10 @@ export function DispatchMap() {
       setOptions({ key: apiKey });
       configured = true;
     }
-    importLibrary('maps')
-      .then((maps) => {
+    // 'marker' is loaded alongside 'maps' so google.maps.marker.AdvancedMarkerElement
+    // is available by the time `ready` flips and the sync effect runs.
+    Promise.all([importLibrary('maps'), importLibrary('marker')])
+      .then(([maps]) => {
         if (cancelled || !containerRef.current) return;
         mapRef.current = new maps.Map(containerRef.current, {
           center: REYKJAVIK,
@@ -58,6 +64,7 @@ export function DispatchMap() {
           disableDefaultUI: true,
           zoomControl: true,
           clickableIcons: false,
+          mapId: MAP_ID,
         });
         setReady(true);
       })
@@ -88,18 +95,22 @@ export function DispatchMap() {
       if (!existing) {
         markers.set(
           loc.driverId,
-          new google.maps.Marker({ position: point, map, title: loc.driverId }),
+          new google.maps.marker.AdvancedMarkerElement({
+            position: point,
+            map,
+            title: loc.driverId,
+          }),
         );
         currentRef.current.set(loc.driverId, { ...point });
       } else if (reducedMotion) {
-        existing.setPosition(point);
+        existing.position = point;
         currentRef.current.set(loc.driverId, { ...point });
       }
     }
 
     for (const [id, marker] of markers) {
       if (!seen.has(id)) {
-        marker.setMap(null);
+        marker.map = null;
         markers.delete(id);
         targetRef.current.delete(id);
         currentRef.current.delete(id);
@@ -118,7 +129,7 @@ export function DispatchMap() {
         if (!target || !cur) continue;
         cur.lat += (target.lat - cur.lat) * EASE;
         cur.lng += (target.lng - cur.lng) * EASE;
-        marker.setPosition(cur);
+        marker.position = { ...cur };
       }
       raf = requestAnimationFrame(tick);
     };
@@ -132,7 +143,7 @@ export function DispatchMap() {
     const targets = targetRef.current;
     const currents = currentRef.current;
     return () => {
-      for (const m of markers.values()) m.setMap(null);
+      for (const m of markers.values()) m.map = null;
       markers.clear();
       targets.clear();
       currents.clear();
