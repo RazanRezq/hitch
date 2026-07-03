@@ -9,6 +9,7 @@ import { CURRENCIES, LOCALES, type Currency, type Locale } from '@/lib/i18n-shar
 import { Logo } from '@/components/brand/logo';
 import { usePreferences } from '@/stores/preferences';
 import { useChangeLocale } from '@/lib/use-change-locale';
+import { useFleetStatus } from '@/lib/api-client/hooks/useFleetStatus';
 import { HeaderDropdown } from './header-dropdown';
 
 const LOCALE_TAG: Record<Locale, string> = { is: 'is-IS', en: 'en-GB' };
@@ -45,6 +46,10 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
   const { locale, change: changeLocale } = useChangeLocale();
   const currency = usePreferences((s) => s.currency);
   const setCurrency = usePreferences((s) => s.setCurrency);
+
+  // Live "cars on shift" count for the info strip (only the full header shows it).
+  const { data: fleet } = useFleetStatus(!minimal);
+  const onlineCars = fleet?.onlineDrivers ?? 0;
 
   // Active nav state is derived from the route, not hardcoded. "Fly" (landing)
   // and "Tours" are real pages; Fleet/Coverage/Stories are sections of the
@@ -148,11 +153,18 @@ export function Header({ variant = 'full' }: { variant?: 'full' | 'minimal' }) {
             <span className="t-mono">
               {timeStr} {t('local')}
             </span>
-            <span className="ed-strip-dot">·</span>
-            <span className="t-mono ed-strip-live">
-              <span className="ed-livedot" />
-              {t('cars')}
-            </span>
+            {/* Real count only — hide the segment entirely when nobody's on
+                shift (or before it loads) rather than boast a fake or a bleak
+                "0 cars on shift". */}
+            {onlineCars > 0 && (
+              <>
+                <span className="ed-strip-dot">·</span>
+                <span className="t-mono ed-strip-live">
+                  <span className="ed-livedot" />
+                  {t('cars', { count: onlineCars })}
+                </span>
+              </>
+            )}
             <span className="ed-strip-spacer" />
             <span className="t-mono ed-strip-channel">{t('channel')}</span>
             <span className="ed-strip-dot">·</span>

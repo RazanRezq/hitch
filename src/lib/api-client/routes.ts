@@ -32,6 +32,9 @@ export const API_ROUTES = {
   feedback: {
     submit: '/api/complaint',
   },
+  fleet: {
+    status: '/api/fleet',
+  },
   admin: {
     bookings: {
       list: '/api/admin/bookings',
