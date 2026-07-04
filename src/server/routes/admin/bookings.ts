@@ -14,7 +14,11 @@ import type { AuthVariables } from '@/lib/auth/middleware';
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
 import { listEnvelope, paginate, parseSort } from '@/server/lib/list';
 import { assertTransition, InvalidTransitionError } from '@/server/services/booking/state-machine';
-import { capturePaymentIntent, voidPaymentIntent } from '@/server/services/payments';
+import {
+  capturePaymentIntent,
+  voidPaymentIntent,
+  retrievePaymentIntent,
+} from '@/server/services/payments';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
 import { publishDispatchEvent } from '@/server/realtime/publish-dispatch';
 
@@ -222,11 +226,68 @@ export const adminBookingsRoute = new Hono<{ Variables: AuthVariables }>()
       );
     }
 
-    // Money path — capture first (idempotent), then commit the assignment.
-    await capturePaymentIntent({
-      intentId: payment.stripeIntentId,
-      idempotencyKey: `assign:${id}:capture`,
-    });
+    // Money path — capture first (idempotent), then commit the assignment. A
+    // capture failure must NOT 500: the most common cause is an expired hold
+    // (Stripe auto-cancels uncaptured manual authorizations after 7 days) while
+    // our Payment row still reads REQUIRES_CAPTURE. Catch it, check the intent's
+    // real state, and reconcile the drift so the booking stops looking assignable.
+    try {
+      await capturePaymentIntent({
+        intentId: payment.stripeIntentId,
+        idempotencyKey: `assign:${id}:capture`,
+      });
+    } catch (captureErr) {
+      console.error('[assign] capture failed', id, payment.stripeIntentId, captureErr);
+
+      let intentStatus: string | undefined;
+      try {
+        intentStatus = (await retrievePaymentIntent(payment.stripeIntentId)).status;
+      } catch {
+        // Couldn't read the intent — fall through to the generic failure below.
+      }
+
+      // Definitive "the hold is gone": mark the payment/booking cancelled so the
+      // dispatcher sees an expired authorization instead of a booking that keeps
+      // failing to assign.
+      if (intentStatus === 'canceled') {
+        await prisma.$transaction([
+          prisma.payment.update({
+            where: { id: payment.id },
+            data: { status: PAYMENT_STATUSES.CANCELED },
+          }),
+          prisma.booking.update({
+            where: { id },
+            data: {
+              status: BOOKING_STATUSES.CANCELLED_BY_SYSTEM,
+              cancellationReason: 'Payment authorization expired',
+            },
+          }),
+          prisma.bookingEvent.create({
+            data: {
+              bookingId: id,
+              type: 'STATUS_CHANGED',
+              actorId: actor.id,
+              payload: {
+                from: booking.status,
+                to: BOOKING_STATUSES.CANCELLED_BY_SYSTEM,
+                reason: 'authorization_expired',
+                intentStatus,
+              },
+            },
+          }),
+        ]);
+        publishBookingUpdate(id, BOOKING_STATUSES.CANCELLED_BY_SYSTEM);
+        return c.json(
+          { error: 'Payment authorization has expired; the booking was cancelled.', code: 'AUTHORIZATION_EXPIRED' },
+          409,
+        );
+      }
+
+      // Anything else (transient Stripe error, unreadable intent) — leave state
+      // untouched so a retry is safe, and surface the reason instead of a 500.
+      const message = captureErr instanceof Error ? captureErr.message : 'Payment capture failed';
+      return c.json({ error: `Payment capture failed: ${message}`, code: 'CAPTURE_FAILED' }, 502);
+    }
 
     const from = booking.status;
     await prisma.$transaction([

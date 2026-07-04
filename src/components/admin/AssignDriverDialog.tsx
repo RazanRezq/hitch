@@ -6,7 +6,7 @@ import { Dialog, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useAdminDrivers, useAssignDriver } from '@/lib/api-client/hooks/admin';
+import { useAdminDrivers, useAssignDriver, apiErrorCode } from '@/lib/api-client/hooks/admin';
 
 interface AssignDriverDialogProps {
   bookingId: string;
@@ -61,7 +61,13 @@ export function AssignDriverDialog({ bookingId, open, onClose, onAssigned }: Ass
         </div>
       )}
 
-      {assign.isError && <p className="mt-3 text-sm text-destructive">{t('assignError')}</p>}
+      {assign.isError && (
+        <p className="mt-3 text-sm text-destructive">
+          {apiErrorCode(assign.error) === 'AUTHORIZATION_EXPIRED'
+            ? t('assignErrorAuthExpired')
+            : t('assignError')}
+        </p>
+      )}
 
       <DialogFooter>
         <Button variant="outline" onClick={onClose}>
