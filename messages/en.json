@@ -106,6 +106,7 @@
       "guest": "Guest",
       "assignSuccess": "Driver assigned",
       "assignError": "Could not assign driver",
+      "assignErrorAuthExpired": "Payment authorization expired — the booking was cancelled. Ask the passenger to rebook.",
       "statusError": "Could not change status",
       "noOnlineDrivers": "No drivers online",
       "issueReceipt": "Issue receipt",

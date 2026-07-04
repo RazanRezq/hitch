@@ -60,3 +60,13 @@ export async function voidPaymentIntent(params: {
     idempotencyKey: params.idempotencyKey,
   });
 }
+
+/**
+ * Retrieve a PaymentIntent's current state from Stripe. Used to reconcile a
+ * stale Payment row when a capture unexpectedly fails — e.g. Stripe auto-cancels
+ * an uncaptured manual-capture hold after 7 days while our row still reads
+ * REQUIRES_CAPTURE.
+ */
+export async function retrievePaymentIntent(intentId: string) {
+  return stripe.paymentIntents.retrieve(intentId);
+}

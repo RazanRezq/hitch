@@ -1,7 +1,7 @@
 'use client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BookingStatus } from '@/lib/types';
-import { apiClient } from '../../client';
+import { apiClient, ApiError } from '../../client';
 import { API_ROUTES } from '../../routes';
 import type { AdminBookingDetail, AdminBookingListItem, ListEnvelope } from './types';
 
@@ -54,6 +54,14 @@ interface AssignResult {
   vehicleId: string;
 }
 
+/** Machine-readable error code from a failed API response, if present. */
+export function apiErrorCode(err: unknown): string | undefined {
+  if (err instanceof ApiError && err.body && typeof err.body === 'object' && 'code' in err.body) {
+    return (err.body as { code?: string }).code;
+  }
+  return undefined;
+}
+
 export function useAssignDriver(bookingId: string) {
   const qc = useQueryClient();
   return useMutation<AssignResult, Error, { driverId: string }>({
@@ -65,6 +73,14 @@ export function useAssignDriver(bookingId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ['admin', 'booking', bookingId] });
       void qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+    },
+    onError: (err) => {
+      // An expired authorization cancels the booking server-side — refresh so the
+      // now-cancelled booking leaves the "awaiting driver" list.
+      if (apiErrorCode(err) === 'AUTHORIZATION_EXPIRED') {
+        void qc.invalidateQueries({ queryKey: ['admin', 'booking', bookingId] });
+        void qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+      }
     },
   });
 }
