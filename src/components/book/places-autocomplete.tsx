@@ -51,7 +51,8 @@ export function PlacesAutocomplete({
   defaultValue?: string;
   onPick: (pick: PlacePick) => void;
   className?: string;
-  /** Applied to the host element so the caller can match its own design (hero search row). */
+  /** Class for the fallback <input> shown only if the widget fails to load. The
+   *  live widget is styled via `.hitch-place-ac` + --gmp-* tokens (editorial.css). */
   inputClassName?: string;
   /** When true, suppresses the loading / error span. Use inside dense layouts. */
   hideStatus?: boolean;
@@ -80,7 +81,10 @@ export function PlacesAutocomplete({
           noInputIcon: true,
           noClearButton: true,
         });
-        element.className = inputClassName ? `hitch-place-ac ${inputClassName}` : 'hitch-place-ac';
+        // Styling lives entirely in `.hitch-place-ac` (+ --gmp-* tokens). We do
+        // NOT forward inputClassName here: the hero's .ed-field-value carries
+        // overflow:hidden / nowrap, which would clip the predictions dropdown.
+        element.className = 'hitch-place-ac';
         if (placeholder) element.placeholder = placeholder;
         if (defaultValue) element.value = defaultValue;
 
