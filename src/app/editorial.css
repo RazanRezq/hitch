@@ -745,21 +745,23 @@ body {
 .ed-field-compact .ed-field-value { font-size: 14px; }
 
 /* Google Places widget (PlaceAutocompleteElement) blended into a hero field.
-   The widget renders its own <input> inside shadow DOM: inherited typography
-   (color / font-*, carried in via the .ed-field-value class on the host) pierces
-   the shadow boundary, so here we only neutralise the host box and the widget's
-   own internal surface/outline. The --gmp-mat-* custom properties are the
-   widget's documented theming hooks; unknown ones are harmless no-ops. */
+   The widget renders its <input> in shadow DOM; the only reliable styling hooks
+   are the --gmp-* theming tokens, which cross the shadow boundary. These names
+   are from google.maps.CSSProperties in @types/google.maps — not guessed. The
+   visible "box" in the unstyled widget is its border + focus ring, so those are
+   the tokens that matter here (an earlier pass used wrong names for them). */
 .hitch-place-ac {
   display: block;
   width: 100%;
+  /* Host frame around the widget. */
   background: transparent;
   border: 0;
-  --gmp-mat-color-surface: transparent;
-  --gmp-mat-color-surface-container-low: transparent;
-  --gmp-mat-color-on-surface: rgba(255, 255, 255, 0.95);
-  --gmp-mat-color-on-surface-variant: rgba(255, 255, 255, 0.5);
-  --gmp-mat-color-outline: transparent;
+  --gmp-mat-color-surface: transparent; /* input fill → the dark field shows through */
+  --gmp-mat-color-on-surface: rgba(255, 255, 255, 0.95); /* typed text (matches .ed-field-value) */
+  --gmp-mat-color-on-surface-variant: rgba(255, 255, 255, 0.45); /* placeholder (matches .ed-field-placeholder) */
+  --gmp-mat-color-outline-decorative: transparent; /* resting border → blended away */
+  --gmp-mat-color-primary: var(--aurora-green); /* focus ring on-brand (keeps an accessible indicator) */
+  --gmp-mat-font-family: inherit; /* app font instead of the widget default */
 }
 
 /* When field: a transparent native datetime-local input overlays the whole
