@@ -115,27 +115,59 @@ describe('webhook worker', () => {
     expect(h.enqueueDispatch).not.toHaveBeenCalled();
   });
 
-  it('cancels the booking on payment_intent.canceled while still pending', async () => {
+  // A Stripe cancel reconciles ANY pre-capture booking — including the
+  // authorized-but-uncaptured ones (CONFIRMED/SEARCHING) that Stripe voids on
+  // its 7-day timeout, which used to be silently skipped and left stale.
+  it.each([
+    BOOKING_STATUSES.PENDING_PAYMENT,
+    BOOKING_STATUSES.CONFIRMED,
+    BOOKING_STATUSES.SEARCHING,
+  ])('cancels a pre-capture booking (%s) on payment_intent.canceled', async (status) => {
     h.prisma.webhookEvent.findUnique.mockResolvedValue({
       id: 'whe_1',
       status: 'pending',
       payload: { type: 'payment_intent.canceled', data: { object: { id: 'pi_1' } } },
     });
     h.prisma.payment.findUnique.mockResolvedValue({ id: 'pay_1', bookingId: 'bk_1' });
-    h.prisma.booking.findUnique.mockResolvedValue({
-      id: 'bk_1',
-      status: BOOKING_STATUSES.PENDING_PAYMENT,
-    });
+    h.prisma.booking.findUnique.mockResolvedValue({ id: 'bk_1', status });
 
     await run();
 
     expect(h.prisma.booking.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { status: BOOKING_STATUSES.CANCELLED_BY_SYSTEM } }),
+      expect.objectContaining({
+        where: { id: 'bk_1' },
+        data: expect.objectContaining({ status: BOOKING_STATUSES.CANCELLED_BY_SYSTEM }),
+      }),
+    );
+    expect(h.prisma.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { status: PAYMENT_STATUSES.CANCELED } }),
     );
     expect(h.publishBookingUpdate).toHaveBeenCalledWith(
       'bk_1',
       BOOKING_STATUSES.CANCELLED_BY_SYSTEM,
     );
+  });
+
+  // Captured (ACCEPTED+) and already-terminal bookings must be left untouched —
+  // never clobber a completed trip or a passenger-initiated cancel.
+  it.each([
+    BOOKING_STATUSES.ACCEPTED,
+    BOOKING_STATUSES.COMPLETED,
+    BOOKING_STATUSES.CANCELLED_BY_PASSENGER,
+  ])('leaves a captured/terminal booking (%s) untouched on payment_intent.canceled', async (status) => {
+    h.prisma.webhookEvent.findUnique.mockResolvedValue({
+      id: 'whe_1',
+      status: 'pending',
+      payload: { type: 'payment_intent.canceled', data: { object: { id: 'pi_1' } } },
+    });
+    h.prisma.payment.findUnique.mockResolvedValue({ id: 'pay_1', bookingId: 'bk_1' });
+    h.prisma.booking.findUnique.mockResolvedValue({ id: 'bk_1', status });
+
+    await run();
+
+    expect(h.prisma.booking.update).not.toHaveBeenCalled();
+    expect(h.prisma.payment.update).not.toHaveBeenCalled();
+    expect(h.publishBookingUpdate).not.toHaveBeenCalled();
   });
 
   it('records a note (no status flip) on payment_intent.payment_failed', async () => {

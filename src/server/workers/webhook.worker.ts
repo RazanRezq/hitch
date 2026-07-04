@@ -1,7 +1,7 @@
 import { Worker } from 'bullmq';
 import type Stripe from 'stripe';
 import { prisma } from '../../lib/db';
-import { BOOKING_STATUSES, PAYMENT_STATUSES } from '../../lib/types';
+import { BOOKING_STATUSES, PAYMENT_STATUSES, type BookingStatus } from '../../lib/types';
 import { redis } from '../lib/redis.js';
 import { publishBookingUpdate } from '../realtime/publish-booking';
 import { enqueueDispatch } from '../queues/dispatch';
@@ -120,9 +120,25 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
 }
 
 /**
- * PaymentIntent canceled (either by us or by Stripe timeout). Flip the
- * booking to CANCELLED_BY_SYSTEM only if it was still pending payment —
- * otherwise the passenger-initiated cancel path already handled it.
+ * A Stripe `payment_intent.canceled` only ever touches bookings whose money is
+ * still an uncaptured authorization (pre-capture). Stripe auto-cancels an
+ * uncaptured manual hold after 7 days — the passenger authorized (so the
+ * booking left PENDING_PAYMENT for CONFIRMED/SEARCHING) but no driver was ever
+ * assigned to capture it. Once ACCEPTED the payment is captured and the intent
+ * can't be canceled; terminal states (a passenger cancel, a completed trip)
+ * must never be overwritten.
+ */
+const CANCELABLE_ON_STRIPE_CANCEL: readonly BookingStatus[] = [
+  BOOKING_STATUSES.PENDING_PAYMENT,
+  BOOKING_STATUSES.CONFIRMED,
+  BOOKING_STATUSES.SEARCHING,
+];
+
+/**
+ * PaymentIntent canceled — by Stripe's 7-day timeout on an uncaptured hold, or a
+ * manual void. Reconcile the booking to CANCELLED_BY_SYSTEM so a stale
+ * REQUIRES_CAPTURE row stops looking assignable. Idempotent: silently no-ops for
+ * captured (ACCEPTED+) or already-terminal bookings.
  */
 async function handleCanceled(intent: Stripe.PaymentIntent) {
   const payment = await prisma.payment.findUnique({
@@ -133,12 +149,15 @@ async function handleCanceled(intent: Stripe.PaymentIntent) {
     where: { id: payment.bookingId },
   });
   if (!booking) return;
-  if (booking.status !== BOOKING_STATUSES.PENDING_PAYMENT) return;
+  if (!CANCELABLE_ON_STRIPE_CANCEL.includes(booking.status)) return;
 
   await prisma.$transaction([
     prisma.booking.update({
       where: { id: booking.id },
-      data: { status: BOOKING_STATUSES.CANCELLED_BY_SYSTEM },
+      data: {
+        status: BOOKING_STATUSES.CANCELLED_BY_SYSTEM,
+        cancellationReason: 'Payment authorization canceled',
+      },
     }),
     prisma.payment.update({
       where: { id: payment.id },
