@@ -5,8 +5,8 @@
 Single source of truth for where Hitch stands, generated from actual git/repo state so a
 fresh session or new device can get oriented without re-auditing the repo.
 
-- **Last updated:** 2026-07-03
-- **Current `main`:** `260e5e2` — _Merge #49 (landing hero)_ (recent merges: #47 `daf9336`, #48 `acdebbe`, #49 `260e5e2`; all branches deleted)
+- **Last updated:** 2026-07-05
+- **Current `main`:** `3a4ca48` — _Merge #57 (hero autocomplete blend)_ (recent merges: #55 `5710810`, #56 `1f3031f`, #57 `3a4ca48`; all branches deleted, no open PRs)
 
 ---
 
@@ -23,14 +23,64 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Payment-step StrictMode fix** | Dev "Preparing…" hang — the create-booking call fired from a `useEffect`, so React StrictMode's double-invoke reset the TanStack Query observer and `create.data` never populated (Stripe element never mounted). Reworked to a keyed `useQuery` (single-flight, StrictMode-safe) | **#47** |
 | **Receipts + QR + public view** | Issued fare receipts (kvittun — receipts, _not_ legal invoices): `Receipt` model + migration (SERIAL number `R00001`, immutable trip snapshot); admin list/detail/issue (from a paid booking — idempotent, requires a captured payment — or a manual in-car/cash ride); branded printable `ReceiptDocument` (inline HITCH TAXI logo, **dependency-free inline-SVG QR** via vendored Nayuki — no npm); Receipts log + issue dialog + sidebar nav; **public** `GET /api/receipts/:id` (unguessable id) + `/[locale]/receipt/[id]` print page the QR resolves to. Dispatcher can now advance a trip `ACCEPTED → … → COMPLETED` from the booking page. Seeded samples; `scripts/preview-receipt.ts`. is/en | **#48** |
 | **Landing hero + header** | Hero booking widget: friendly "Today/Tomorrow · HH:mm" label over the native `datetime-local` input (`formatWhenLabel()`); header nav scroll-spy (active section from scroll position + route). is/en | **#49** |
+| **Booking codes** | Human-friendly `HTCH-XXXX-XXXX` booking codes generated server-side | **#50** |
+| **Places autocomplete migration** | Migrated off deprecated `Autocomplete` to `PlaceAutocompleteElement`; hero widget visually blended into the hero field via the correct `--gmp-*` theming tokens | **#51, #57** |
+| **Live "cars on shift"** | Header strip wired to real fleet data (was static) | **#52** |
+| **Support phone reconcile** | Support phone unified to `+354 555 1234` across is/en strings | **#53** |
+| **Dispatch map markers** | Driver markers migrated to `AdvancedMarkerElement` (legacy `Marker` deprecated) | **#54** |
+| **Money-path hardening** | Driver-assign capture failure now reconciles against the real Stripe intent state instead of flipping the booking blind (#55); `payment_intent.canceled` (e.g. Stripe's 7-day hold expiry) now reconciles ANY pre-capture booking — CONFIRMED/SEARCHING included, previously silently skipped — to `CANCELLED_BY_SYSTEM`, and never touches captured/terminal bookings (#56) | **#55, #56** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
-| **Backend** | Hono API, Clerk auth + user-sync webhook, WS server + Redis pub/sub, DO Spaces presigned uploads, dispatch + webhook workers | — |
+| **Backend** | Hono API, Clerk auth + user-sync webhook, WS server + Redis pub/sub, DO Spaces presigned uploads, webhook workers. Dispatch worker only flips CONFIRMED → SEARCHING and pings the dispatcher channel — assignment itself is manual (see readiness audit below) | — |
 
 ## 🚧 In flight
 
 _None — no open PRs or unmerged feature branches._
+
+## 🎯 Readiness assessment (full-code audit, 2026-07-04)
+
+Four-way audit of the actual code (money path, dispatch/realtime/driver side, passenger/admin
+surfaces, infra/schema) — verified against routes/workers, not docs. Effort scale:
+**S** = hours–1 day, **M** = 2–5 days, **L** = 1–2+ weeks.
+
+### A) Demo-ready — ✅ now (runbook, not code)
+
+Every happy-path step is wired and verified end-to-end: book → quote (real Directions
+distance) → Stripe manual-capture auth (`services/payments`) → webhook outbox → CONFIRMED →
+SEARCHING (`dispatch.worker`) → manual assign captures-then-flips, reconciling expired holds
+(`admin/bookings.ts` assign) → dispatcher advances to COMPLETED (state-machine-validated,
+BookingEvents logged) → issue receipt → public QR page. Live map runs off `npm run simulate`;
+confirmation page gets live WS status. Needs only an ops runbook: 4 processes
+(`dev`/`ws`/`workers`/`simulate`), Stripe webhook forwarding (or the deployed env), seeded DB,
+one rehearsal.
+
+### B) Pilot-ready — ≈3–4 weeks (real drivers + real passengers, money moves)
+
+| Gap | Reality in code | Effort | Client-dependent? |
+|---|---|---|---|
+| **Driver surface** | No driver auth or UI; `driver:{id}:jobs` channel is authorized but **never published to**; GPS exists only via the simulate script. Minimum: mobile-web `/driver` page — Clerk sign-in, job card, accept/advance buttons, GPS push into `publishDriverLocation()` | **L** (long pole) | No |
+| **Payouts** | `payout.worker.ts` is a `console.log` stub; zero Stripe Connect code; `DriverPayout` model has no producer. Pilot interim: per-driver earnings report + manual transfer | **S–M** interim / **L** real | **Yes** — payout mechanism decision |
+| **Booking-confirmation email** | None — the guest token lives only in the confirmation URL; close the tab and the booking is unrecoverable. Resend plumbing already proven by feedback emails | **S–M** | No |
+| **Refunds / cancel-after-confirm** | No `stripe.refunds.create()` anywhere; `REFUNDED` status + `refundedAt` are dead schema; passenger cancel 409s after PENDING_PAYMENT; no admin refund button | **M** | Policy input (window/fee) |
+| **Scheduled-dispatch delay + no-driver timeout** | Dispatch enqueues immediately on CONFIRMED ignoring `scheduledTime` (tomorrow's pickup lands in today's queue); "no driver in X min → void" not implemented — only Stripe's 7-day auto-cancel (#56) backstops | **M** combined | No |
+| **Rate limiting + Sentry** | Only `/api/complaint` is rate-limited; `POST /api/quotes` (Google quota) and `POST /api/bookings` (Stripe intents) are wide open; logging is console-only | **S** | No |
+
+Build order: email → rate-limit/Sentry → scheduled/timeout → refunds → driver page (start
+day 1, it's the long pole) → payout interim report.
+
+### C) Production — additionally
+
+Auto-dispatch loop (score/offer/30s-timeout/escalate — explicitly deferred in
+`services/dispatch/index.ts`) **L** · passenger accounts + trip history **M–L** · tour booking
+flow (catalog CTA is a `tel:` link) **M** · promo codes or drop the dead
+`PromoCode`/`PromoRedemption` models **M/S** · missing webhook handlers (`charge.refunded`,
+`payment_intent.succeeded`) **S–M** · legal pages + cookie consent + GDPR export/delete
+(**client legal text**) **M** · admin role-management UI + Pricing/Payments/Reports pages **M**
+· robots.txt/sitemap/JSON-LD **S** · Railway healthchecks for ws/workers + CI deploy step
+**S** · test coverage for dispatch, admin endpoints, WS auth, guest tokens **M** ·
+client-blocked fare data (see below). `TripLocationHistory` is written but never queried
+(trip playback = Phase 2).
 
 ## ⏳ Pending / not started
 
@@ -38,9 +88,17 @@ _None — no open PRs or unmerged feature branches._
 - **Driver payout worker** — still a stub; no Stripe Connect transfers.
 - **Auto-dispatch loop** — offer → 30s timeout → next driver; currently manual/dispatcher-only.
 - **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
+- **Refunds** — completely unimplemented (no Stripe refund call, no `charge.refunded` handler; `REFUNDED` status is dead schema). Passenger cancel only works while PENDING_PAYMENT.
+- **Booking lifecycle emails** — no confirmation/driver-assigned/receipt emails; guest link is lost if the tab closes. (Feedback emails DO work.)
+- **Scheduled-booking dispatch delay** — future bookings enter the SEARCHING queue immediately; no BullMQ delayed job.
+- **No-driver timeout** — promised "void after X min" doesn't exist; Stripe's 7-day auto-cancel is the only backstop.
+- **Rate limiting** — only `/api/complaint`; quotes/bookings/uploads unprotected.
+- **Observability** — console-only; no Sentry/structured logging/alerts.
 - **Promo-code checkout** — tables exist; no redemption flow/UI.
 - **Passenger accounts / history** — booking works as guest; no logged-in trip history.
 - **Admin Pricing / Payments / Reports pages** — nav links exist; pages don't. (A Receipts page now exists, via #48.)
+- **Admin role management** — promotion to SUPER_ADMIN/DISPATCHER is manual in the DB (known process); no UI.
+- **Driver document upload** — admin can verify docs but not upload them.
 
 ## 🔭 Out of scope (Phase 2)
 
@@ -55,11 +113,20 @@ _None — no open PRs or unmerged feature branches._
 
 _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (trips FROM KEF only); **>100 km surcharge** = 375 kr/km ISK-native (= 2.5 €/km at the locked 150)._
 
+### Decisions owed (surfaced by the 2026-07-04 readiness audit)
+
+- **Driver payout mechanism** — Stripe Connect (contractors) vs payroll/manual transfer; blocks anything beyond the interim earnings report.
+- **Kvittun vs legal invoice** — receipts (#48) are explicitly fare receipts, _not_ legal invoices; does Icelandic law require more for the pilot?
+- **Cancellation/refund policy** — window + fee, needed to build the refund path with correct defaults.
+
 ## 🧪 Test status
 
-- `npm test` (`vitest run`): **112 tests passing, 14 files, 0 failures** (~2.6s).
+- `npm test` (`vitest run`): **117 tests passing, 14 files, 0 failures** (~5s, verified 2026-07-05).
 - Pricing and tours tests **assert real fare amounts** (not just shape) — money path is covered:
-  fares (25), tours pricing (12), quote interface (12), quote display (11), payments (6),
-  Stripe webhook outbox (4), idempotency (4), booking state machine (8), plus
-  currency/geocoding/routing/RTL smoke. New coverage: >16-pax manual-quote (fixed + metered)
-  and the combo quote (ISK price, pending-currency, pending-tier).
+  fares, tours pricing, quote interface/display, payments, Stripe webhook outbox, idempotency,
+  booking state machine, plus currency/geocoding/routing/RTL smoke. New since #49:
+  parameterized `payment_intent.canceled` reconciliation cases (#56) — pre-capture statuses
+  (PENDING_PAYMENT/CONFIRMED/SEARCHING) cancel + payment flips CANCELED; captured/terminal
+  bookings are left untouched.
+- **Not covered** (per the readiness audit): dispatch service, admin endpoints, WS auth/channel
+  subscriptions, guest-token HMAC, receipt issuance, uploads, Clerk user-sync.
