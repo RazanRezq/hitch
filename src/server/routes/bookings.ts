@@ -6,6 +6,7 @@ import { generateBookingCode } from '@/lib/utils';
 import {
   BOOKING_STATUSES,
   PAYMENT_STATUSES,
+  PASSENGER_CANCELLABLE_STATUSES,
   createBookingSchema,
 } from '@/lib/types';
 import { stripe } from '@/server/lib/stripe';
@@ -13,10 +14,15 @@ import { signGuestToken } from '@/server/lib/guestToken';
 import { getSessionUserId, authorizeBookingAccess } from '@/server/lib/booking-access';
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
 import { rateLimit } from '@/server/middleware/rate-limit';
-import { createPaymentIntent } from '@/server/services/payments';
+import {
+  createPaymentIntent,
+  voidPaymentIntent,
+  retrievePaymentIntent,
+} from '@/server/services/payments';
 import { getQuote } from '@/server/services/pricing/quote';
 import { ManualQuoteRequiredError } from '@/server/services/pricing';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
+import { publishDispatchEvent } from '@/server/realtime/publish-dispatch';
 
 const cancelInputSchema = z
   .object({ reason: z.string().max(500).optional() })
@@ -252,8 +258,10 @@ export const bookingsRoute = new Hono()
   })
 
   /**
-   * POST /api/bookings/:id/cancel — passenger cancellation. Only valid while
-   * status is PENDING_PAYMENT. Voids the PaymentIntent on Stripe.
+   * POST /api/bookings/:id/cancel — passenger cancellation. Valid for any
+   * pre-capture status (PENDING_PAYMENT / CONFIRMED / SEARCHING) — cancelling
+   * voids the authorization, no money has moved. Post-capture (a driver was
+   * assigned) cancellation and refunds go through staff.
    */
   .post(
     '/:id/cancel',
@@ -269,9 +277,11 @@ export const bookingsRoute = new Hono()
       if (!access.ok) return c.json({ error: access.error }, access.status);
 
       const booking = access.booking;
-      if (booking.status !== BOOKING_STATUSES.PENDING_PAYMENT) {
+      if (
+        !(PASSENGER_CANCELLABLE_STATUSES as readonly string[]).includes(booking.status)
+      ) {
         return c.json(
-          { error: `Cannot cancel booking in status ${booking.status}` },
+          { error: `Cannot cancel booking in status ${booking.status}`, code: 'NOT_CANCELLABLE' },
           409,
         );
       }
@@ -282,11 +292,27 @@ export const bookingsRoute = new Hono()
       });
       if (payment) {
         try {
-          await stripe.paymentIntents.cancel(payment.stripeIntentId);
+          await voidPaymentIntent({
+            intentId: payment.stripeIntentId,
+            idempotencyKey: `cancel:${booking.id}:void`,
+          });
         } catch (err) {
-          // Already canceled or otherwise unrecoverable — log and continue so
-          // we still record the cancellation in our DB. Webhook will reconcile.
-          console.warn('[cancel] Stripe cancel failed', payment.stripeIntentId, err);
+          // Reconcile against the live intent: a dispatcher may have captured
+          // in the same instant (assign wins — don't cancel under them), or the
+          // intent may already be canceled (proceed). Anything else is transient:
+          // surface it so the passenger can retry rather than cancelling the
+          // booking while the hold silently survives.
+          const intent = await retrievePaymentIntent(payment.stripeIntentId);
+          if (intent.status === 'succeeded') {
+            return c.json(
+              { error: 'A driver was just assigned to this booking', code: 'ALREADY_ASSIGNED' },
+              409,
+            );
+          }
+          if (intent.status !== 'canceled') {
+            console.error('[cancel] Stripe void failed', payment.stripeIntentId, err);
+            return c.json({ error: 'Could not cancel payment. Please try again.' }, 502);
+          }
         }
       }
 
@@ -321,6 +347,10 @@ export const bookingsRoute = new Hono()
       ]);
 
       publishBookingUpdate(booking.id, BOOKING_STATUSES.CANCELLED_BY_PASSENGER);
+      if (booking.status === BOOKING_STATUSES.SEARCHING) {
+        // Clear it from the dispatcher's awaiting-driver queue.
+        publishDispatchEvent({ type: 'dispatch', action: 'removed', bookingId: booking.id });
+      }
 
       return c.json({
         id: booking.id,

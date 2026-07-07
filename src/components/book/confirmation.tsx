@@ -2,12 +2,13 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { ArrowLeft, CheckCircle2, Copy, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Copy, Loader2, XCircle } from 'lucide-react';
 import { useState } from 'react';
 import { formatCurrencyMinor, formatDateTime, type Locale } from '@/lib/i18n-shared';
 import { useBooking } from '@/lib/api-client/hooks/useBooking';
 import { useBookingChannel, type WsStatus } from '@/lib/api-client/hooks/useBookingChannel';
-import { BOOKING_STATUSES } from '@/lib/types';
+import { useCancelBooking } from '@/lib/api-client/hooks/useCancelBooking';
+import { BOOKING_STATUSES, PASSENGER_CANCELLABLE_STATUSES } from '@/lib/types';
 import { cn } from '@/lib/ui';
 
 export function Confirmation({
@@ -26,6 +27,9 @@ export function Confirmation({
 
   const isConfirmed = data?.status === BOOKING_STATUSES.CONFIRMED;
   const isPending = !data || data.status === BOOKING_STATUSES.PENDING_PAYMENT;
+  const isCancelled = !!data && data.status.startsWith('CANCELLED');
+  const canCancel =
+    !!data && (PASSENGER_CANCELLABLE_STATUSES as readonly string[]).includes(data.status);
 
   if (isError) {
     return (
@@ -56,13 +60,18 @@ export function Confirmation({
         >
           {isConfirmed ? (
             <CheckCircle2 size={28} aria-hidden="true" />
+          ) : isCancelled ? (
+            <XCircle size={28} aria-hidden="true" />
           ) : (
             <Loader2 size={28} className="animate-spin" aria-hidden="true" />
           )}
         </div>
         <h1 className="text-3xl font-semibold tracking-tight">
-          {isConfirmed ? t('title') : t('pending')}
+          {isConfirmed ? t('title') : isCancelled ? t('cancelled') : t('pending')}
         </h1>
+        {isCancelled && (
+          <p className="text-muted-foreground text-sm">{t('cancelledBody')}</p>
+        )}
         {/* Prefer the human-friendly HTCH-XXXX-XXXX code; fall back to the raw
             id only for legacy bookings created before codes existed. */}
         <BookingIdChip
@@ -113,6 +122,10 @@ export function Confirmation({
         </p>
       )}
 
+      {canCancel && (
+        <CancelSection bookingId={bookingId} guestToken={guestToken} />
+      )}
+
       <Link
         href={`/${locale}`}
         className="text-muted-foreground hover:text-foreground mt-4 inline-flex items-center justify-center gap-2 text-sm"
@@ -121,6 +134,64 @@ export function Confirmation({
         {tCommon('backHome')}
       </Link>
     </main>
+  );
+}
+
+/**
+ * Passenger self-cancel — pre-capture only (the server enforces it), so this
+ * is always "release the hold, nothing charged". Two-step inline confirm; the
+ * cancelled state then arrives via the booking refetch + WS update.
+ */
+function CancelSection({
+  bookingId,
+  guestToken,
+}: {
+  bookingId: string;
+  guestToken?: string;
+}) {
+  const t = useTranslations('book.confirmation');
+  const cancel = useCancelBooking(bookingId, guestToken);
+  const [confirming, setConfirming] = useState(false);
+
+  if (!confirming) {
+    return (
+      <div className="text-center">
+        <button
+          type="button"
+          onClick={() => setConfirming(true)}
+          className="text-muted-foreground hover:text-destructive text-sm underline underline-offset-4"
+        >
+          {t('cancelCta')}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <section className="border-destructive/30 rounded-2xl border p-5 text-center">
+      <p className="text-sm">{t('cancelConfirmBody')}</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-3">
+        <button
+          type="button"
+          onClick={() => setConfirming(false)}
+          disabled={cancel.isPending}
+          className="bg-card inline-flex items-center rounded-xl border px-4 py-2 text-sm font-semibold"
+        >
+          {t('cancelKeep')}
+        </button>
+        <button
+          type="button"
+          onClick={() => cancel.mutate()}
+          disabled={cancel.isPending}
+          className="bg-destructive text-destructive-foreground inline-flex items-center rounded-xl px-4 py-2 text-sm font-semibold disabled:opacity-60"
+        >
+          {t('cancelConfirm')}
+        </button>
+      </div>
+      {cancel.isError && (
+        <p className="text-destructive mt-3 text-sm">{t('cancelError')}</p>
+      )}
+    </section>
   );
 }
 

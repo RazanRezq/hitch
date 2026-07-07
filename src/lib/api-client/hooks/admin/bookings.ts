@@ -90,6 +90,28 @@ interface StatusResult {
   status: BookingStatus;
 }
 
+interface RefundResult {
+  id: string;
+  refundId: string;
+  paymentStatus: string;
+}
+
+/** Full refund by default; pass amountMinor for a partial refund. */
+export function useRefundBooking(bookingId: string) {
+  const qc = useQueryClient();
+  return useMutation<RefundResult, Error, { amountMinor?: number; reason?: string }>({
+    mutationFn: (input) =>
+      apiClient.post<RefundResult>(API_ROUTES.admin.bookings.refund(bookingId), input, {
+        idempotencyKey: crypto.randomUUID(),
+      }),
+    retry: false,
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ['admin', 'booking', bookingId] });
+      void qc.invalidateQueries({ queryKey: ['admin', 'bookings'] });
+    },
+  });
+}
+
 export function useUpdateBookingStatus(bookingId: string) {
   const qc = useQueryClient();
   return useMutation<StatusResult, Error, { to: BookingStatus; reason?: string }>({

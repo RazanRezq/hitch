@@ -7,7 +7,13 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Plane } from 'lucide-react';
 import type { BookingStatus, Locale } from '@/lib/types';
-import { ACTIVE_BOOKING_STATUSES, BOOKING_STATUSES, RECEIPT_SOURCES, WS_CHANNELS } from '@/lib/types';
+import {
+  ACTIVE_BOOKING_STATUSES,
+  BOOKING_STATUSES,
+  PAYMENT_STATUSES,
+  RECEIPT_SOURCES,
+  WS_CHANNELS,
+} from '@/lib/types';
 import { HitchWsClient } from '@/lib/api-client';
 import { useAdminBooking, useIssueReceipt, useUpdateBookingStatus } from '@/lib/api-client/hooks/admin';
 import { formatCurrencyMinor, formatDateTime } from '@/lib/i18n-shared';
@@ -17,6 +23,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StatusBadge } from '@/components/admin/StatusBadge';
 import { AssignDriverDialog } from '@/components/admin/AssignDriverDialog';
+import { RefundDialog } from '@/components/admin/RefundDialog';
 
 /**
  * The single legal "advance" step a dispatcher can drive from each active status.
@@ -55,6 +62,7 @@ export default function BookingDetailPage() {
   const updateStatus = useUpdateBookingStatus(id);
   const issueReceipt = useIssueReceipt();
   const [assignOpen, setAssignOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
 
   async function onIssueReceipt() {
     try {
@@ -119,6 +127,9 @@ export default function BookingDetailPage() {
     | undefined;
   const canReceipt = b.status === BOOKING_STATUSES.COMPLETED;
   const latestPayment = b.payments[0];
+  const canRefund =
+    latestPayment?.status === PAYMENT_STATUSES.SUCCEEDED ||
+    latestPayment?.status === PAYMENT_STATUSES.PARTIALLY_REFUNDED;
 
   return (
     <div className="flex flex-col gap-6">
@@ -241,6 +252,21 @@ export default function BookingDetailPage() {
                   <InfoRow label="ISK">
                     {formatCurrencyMinor(latestPayment.amountISK, 'ISK', locale)}
                   </InfoRow>
+                  {latestPayment.refundedAt && (
+                    <InfoRow label={t('refundedAt')}>
+                      {formatDateTime(latestPayment.refundedAt, locale)}
+                    </InfoRow>
+                  )}
+                  {canRefund && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2 self-start"
+                      onClick={() => setRefundOpen(true)}
+                    >
+                      {t('refund')}
+                    </Button>
+                  )}
                 </div>
               ) : (
                 <p className="text-sm text-muted-foreground">{tAdmin('empty')}</p>
@@ -275,6 +301,15 @@ export default function BookingDetailPage() {
         open={assignOpen}
         onClose={() => setAssignOpen(false)}
       />
+      {latestPayment && (
+        <RefundDialog
+          bookingId={b.id}
+          amountMinor={latestPayment.amount}
+          currency={latestPayment.currency}
+          open={refundOpen}
+          onClose={() => setRefundOpen(false)}
+        />
+      )}
     </div>
   );
 }

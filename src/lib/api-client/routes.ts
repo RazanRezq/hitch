@@ -41,6 +41,7 @@ export const API_ROUTES = {
       byId: (id: string) => `/api/admin/bookings/${id}`,
       assign: (id: string) => `/api/admin/bookings/${id}/assign`,
       status: (id: string) => `/api/admin/bookings/${id}/status`,
+      refund: (id: string) => `/api/admin/bookings/${id}/refund`,
     },
     drivers: {
       list: '/api/admin/drivers',

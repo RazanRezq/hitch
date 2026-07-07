@@ -110,7 +110,14 @@
       "statusError": "Gat ekki breytt stöðu",
       "noOnlineDrivers": "Engir ökumenn á vakt",
       "issueReceipt": "Gefa út kvittun",
-      "receiptError": "Ekki tókst að gefa út kvittun"
+      "receiptError": "Ekki tókst að gefa út kvittun",
+      "refund": "Endurgreiða",
+      "refundTitle": "Endurgreiða greiðslu",
+      "refundBody": "Full endurgreiðsla að upphæð {amount}. Þetta er ekki hægt að afturkalla.",
+      "refundReasonLabel": "Ástæða (valfrjálst)",
+      "refundConfirm": "Endurgreiða",
+      "refundError": "Endurgreiðsla mistókst. Reyndu aftur.",
+      "refundedAt": "Endurgreitt"
     },
     "receipts": {
       "title": "Kvittanir",
@@ -441,7 +448,14 @@
       "saveAccountCta": "Stofna reikning",
       "notFound": "Bókun fannst ekki.",
       "live": "Í beinni",
-      "reconnecting": "Tengist aftur…"
+      "reconnecting": "Tengist aftur…",
+      "cancelled": "Bókun afturkölluð",
+      "cancelledBody": "Greiðsluheimildin var felld niður — ekkert var gjaldfært.",
+      "cancelCta": "Hætta við bókun",
+      "cancelConfirmBody": "Viltu örugglega hætta við? Greiðsluheimildin verður felld niður og ekkert gjaldfært.",
+      "cancelKeep": "Nei, halda bókuninni",
+      "cancelConfirm": "Já, hætta við",
+      "cancelError": "Ekki tókst að hætta við. Reyndu aftur."
     },
     "errors": {
       "quoteFailed": "Gat ekki sótt verð.",

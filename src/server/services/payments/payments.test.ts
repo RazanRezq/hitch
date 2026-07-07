@@ -7,19 +7,29 @@ const h = vi.hoisted(() => ({
   create: vi.fn(),
   capture: vi.fn(),
   cancel: vi.fn(),
+  refundCreate: vi.fn(),
 }));
 
 vi.mock('@/server/lib/stripe', () => ({
-  stripe: { paymentIntents: { create: h.create, capture: h.capture, cancel: h.cancel } },
+  stripe: {
+    paymentIntents: { create: h.create, capture: h.capture, cancel: h.cancel },
+    refunds: { create: h.refundCreate },
+  },
 }));
 
-import { createPaymentIntent, capturePaymentIntent, voidPaymentIntent } from './index';
+import {
+  createPaymentIntent,
+  capturePaymentIntent,
+  voidPaymentIntent,
+  refundPaymentIntent,
+} from './index';
 
 beforeEach(() => {
   vi.clearAllMocks();
   h.create.mockResolvedValue({ id: 'pi_test', client_secret: 'cs_test' });
   h.capture.mockResolvedValue({ id: 'pi_test', status: 'succeeded' });
   h.cancel.mockResolvedValue({ id: 'pi_test', status: 'canceled' });
+  h.refundCreate.mockResolvedValue({ id: 're_test', status: 'succeeded' });
 });
 
 describe('createPaymentIntent', () => {
@@ -84,6 +94,24 @@ describe('voidPaymentIntent', () => {
       'pi_1',
       undefined,
       { idempotencyKey: 'status:bk_1:void' },
+    );
+  });
+});
+
+describe('refundPaymentIntent', () => {
+  it('refunds the full intent with an idempotency key', async () => {
+    await refundPaymentIntent({ intentId: 'pi_1', idempotencyKey: 'refund:bk_1:full' });
+    expect(h.refundCreate).toHaveBeenCalledWith(
+      { payment_intent: 'pi_1' },
+      { idempotencyKey: 'refund:bk_1:full' },
+    );
+  });
+
+  it('supports a partial refund amount in minor units', async () => {
+    await refundPaymentIntent({ intentId: 'pi_1', idempotencyKey: 'k', amount: 5000 });
+    expect(h.refundCreate).toHaveBeenCalledWith(
+      { payment_intent: 'pi_1', amount: 5000 },
+      { idempotencyKey: 'k' },
     );
   });
 });
