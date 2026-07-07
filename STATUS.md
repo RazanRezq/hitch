@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-07-07
-- **Current `main`:** `dcff8cb` — _Merge #61 (no-driver timeout)_ (recent merges: #59 `91d0040`, #60 `a451193`, #61 `dcff8cb`; no open PRs)
+- **Current `main`:** `b9b0fbe` — _Merge #63 (refunds)_ (recent merges: #61 `dcff8cb`, #62 `06b8a88`, #63 `b9b0fbe`; no open PRs)
 
 ---
 
@@ -33,6 +33,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Rate limiting + Sentry** | Shared fixed-window Redis limiter (`middleware/rate-limit.ts`, per-IP, **fail-open**): quotes 30/min, bookings 5/min, uploads 20/min, feedback refactored onto it (honeypot-before-limit preserved). `@sentry/node` in all 3 processes (Next via `src/instrumentation.ts` + Hono `onError`; workers with `worker.on('failed')` hooks so jobs that exhaust retries stop dying silently; ws runner) — no-op until `SENTRY_DSN` is set on Railway. Lockfile updated under Node 20, Linux optionals verified | **#59** |
 | **Scheduled-dispatch delay** | Future-scheduled bookings no longer flood today's SEARCHING queue: the webhook worker enqueues dispatch with a BullMQ delay so the booking surfaces at `scheduledTime − DISPATCH_LEAD_MINUTES` (default 60, env-tunable). ASAP trips unchanged (delay 0). `dispatch_deferred` BookingEvent records `dispatchAt` in the CONFIRMED transaction; cancellations while parked no-op on the existing CONFIRMED guard; early manual assign still works | **#60** |
 | **No-driver timeout** | A booking still SEARCHING after `NO_DRIVER_TIMEOUT_MINUTES` (default 30, `0` disables) gets its **auth voided** and goes `CANCELLED_BY_SYSTEM` — no more 7-day holds on unassigned bookings. Armed by `dispatchBooking` via a delayed job on the same queue (`job.name 'timeout'`, deduped); void-first race safety settled by Stripe (capture-vs-void: loser's failure path reconciles against the live intent); atomic claim prevents double audit-trail with our own `payment_intent.canceled` webhook. Composes with #60: scheduled trips learn "no driver" ~30min before pickup. Dispatch service got its first tests | **#61** |
+| **Driver surface (MVP)** | Mobile-web `/[locale]/driver` (is/en): Clerk-gated (role DRIVER) one-screen app — job list + current-job card, one-button forward-path advance (`DRIVER_NEXT_STATUS` policy over the state machine, CAS-guarded tx so double-taps/concurrent staff actions 409, stamps `actualPickupAt`/`actualDropoffAt`, two-tap confirm on Complete), live GPS over the existing WS (`location` frames → dispatcher map + Redis hot cache 60s + throttled `DriverLocation` ~15s / `TripLocationHistory` ~10s IN_TRANSIT-only, ownership-verified + passenger booking-channel relay during live trips; offline-on-close sheds ghost cars), `driver:{id}:jobs` published on assign + staff changes, driver-scoped `/api/driver` (me/jobs/advance — no passenger email/payment internals), sign-in honors same-site `redirect_url`, seed DRIVER promotion (`SEED_DRIVER_EMAIL` + dev vehicle). Deferred: offer/accept loop, driver NO_SHOW/cancel (policy owed), payouts/earnings | **#62** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -40,8 +41,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-- **Driver surface (MVP)** — **PR #62** (`feat/driver-mobile-web`), the pilot long pole: mobile-web `/[locale]/driver` — Clerk-gated (role DRIVER), job list + current-job card, forward-path advance (`DRIVER_NEXT_STATUS` policy over the state machine, CAS-guarded, stamps actual pickup/dropoff), live GPS over the existing WS (`location` frames → dispatcher map + Redis hot cache + throttled `DriverLocation`/`TripLocationHistory` writes + passenger booking-channel relay, offline-on-close), `driver:{id}:jobs` finally published to (assign + staff status changes), driver-scoped `/api/driver` API, seed `DRIVER` promotion (`SEED_DRIVER_EMAIL`). Deliberately deferred: offer/accept loop, driver NO_SHOW/cancel (policy owed), payouts/earnings.
-- **Refunds / cancel-after-confirm** — `feat/refunds` (worktree `.claude/worktrees/timeout-work`, no PR yet).
+_None — no open PRs. (#63 refunds merged; its detailed shipped-table entry is owed by the session that built it.)_
 
 ## 🎯 Readiness assessment (full-code audit, 2026-07-04)
 
@@ -64,15 +64,15 @@ one rehearsal.
 
 | Gap | Reality in code | Effort | Client-dependent? |
 |---|---|---|---|
-| **Driver surface** | 🚧 **MVP in PR #62** — `/driver` page (Clerk sign-in, job card, advance buttons, real GPS → `publishDriverLocation()`), `driver:{id}:jobs` published on assign/staff changes. Still open after #62: offer/accept dispatch loop, driver-initiated NO_SHOW/cancel (policy owed), driver-assigned email | ~~L~~ → **S–M** remaining | No |
+| ~~Driver surface~~ | ✅ **MVP shipped in #62** — `/driver` page (Clerk sign-in, job card, advance buttons, real GPS → dispatcher map + trip breadcrumbs), `driver:{id}:jobs` published on assign/staff changes. Still open: offer/accept dispatch loop, driver-initiated NO_SHOW/cancel (policy owed), driver-assigned email | ~~L~~ → **S–M** remaining | Policy input (no-show/cancel) |
 | **Payouts** | `payout.worker.ts` is a `console.log` stub; zero Stripe Connect code; `DriverPayout` model has no producer. Pilot interim: per-driver earnings report + manual transfer | **S–M** interim / **L** real | **Yes** — payout mechanism decision |
 | ~~Booking-confirmation email~~ | ✅ **Shipped in #58** — confirmation email with guest-token recovery link sends on CONFIRMED | — | — |
-| **Refunds / cancel-after-confirm** | No `stripe.refunds.create()` anywhere; `REFUNDED` status + `refundedAt` are dead schema; passenger cancel 409s after PENDING_PAYMENT; no admin refund button | **M** | Policy input (window/fee) |
+| ~~Refunds / cancel-after-confirm~~ | ✅ **Shipped in #63** — passenger cancel-after-confirm, admin refund, `charge.refunded` webhook reconcile (was: no `stripe.refunds.create()` anywhere, dead `REFUNDED` schema, cancel 409s after PENDING_PAYMENT). Policy defaults (window/fee) still owed by client | — | Policy input (window/fee) |
 | ~~Scheduled-dispatch + no-driver timeout~~ | ✅ **Shipped in #60 + #61** — dispatch waits for the lead window; unassigned SEARCHING bookings void + cancel after 30 min (env-tunable) | — | — |
 | ~~Rate limiting + Sentry~~ | ✅ **Shipped in #59** — quotes/bookings/uploads limited, Sentry wired in all 3 processes. Remaining: set `SENTRY_DSN` on the Railway services (config, minutes) | — | — |
 
 Build order: ~~email~~ (✅ #58) → ~~rate-limit/Sentry~~ (✅ #59) → ~~scheduled/timeout~~
-(✅ #60/#61) → ~~driver page~~ (🚧 #62) → refunds (in flight) → payout interim report.
+(✅ #60/#61) → ~~driver page~~ (✅ #62) → ~~refunds~~ (✅ #63) → payout interim report.
 
 ### C) Production — additionally
 
@@ -92,7 +92,7 @@ client-blocked fare data (see below). `TripLocationHistory` is written but never
 - **Tour booking flow** — catalog UI (#43) is display-only; selecting + paying for a tour is a separate slice, not built.
 - **Driver payout worker** — still a stub; no Stripe Connect transfers.
 - **Auto-dispatch loop** — offer → 30s timeout → next driver; currently manual/dispatcher-only.
-- **Real driver GPS** — 🚧 PR #62 adds the real feed (browser geolocation → WS `location` frames → ingest with CLAUDE.md write cadences); the `simulate` script remains for demos.
+- ~~Real driver GPS~~ — ✅ shipped in #62 (browser geolocation → WS `location` frames → ingest with CLAUDE.md write cadences); the `simulate` script remains for demos.
 - **Refunds** — completely unimplemented (no Stripe refund call, no `charge.refunded` handler; `REFUNDED` status is dead schema). Passenger cancel only works while PENDING_PAYMENT.
 - **Booking lifecycle emails (beyond confirmation)** — confirmation email shipped in #58 (with guest-link recovery); driver-assigned and receipt emails still don't exist.
 - **Observability beyond error capture** — Sentry errors wired (#59, needs `SENTRY_DSN` on Railway to go live); structured logs and alerting still don't exist.
@@ -104,7 +104,7 @@ client-blocked fare data (see below). `TripLocationHistory` is written but never
 
 ## 🔭 Out of scope (Phase 2)
 
-- **Driver mobile app** (React Native + Expo) — biggest real-world gap; driver-side is dispatcher-simulated today.
+- **Driver mobile app** (React Native + Expo) — the mobile-web `/driver` surface (#62) covers the pilot; a native app (push notifications, background GPS) stays Phase 2.
 - **Passenger mobile app** (React Native + Expo).
 - **RTL / Arabic locale** — removed June 2026; plumbing retained dormant, no RTL locale ships.
 
