@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { logger } from 'hono/logger';
+import { Sentry } from './lib/sentry';
 
 import { bookingsRoute } from './routes/bookings';
 import { receiptsRoute } from './routes/receipts';
@@ -27,6 +28,10 @@ app.use('*', logger());
 
 app.onError((err, c) => {
   console.error('[hono.onError]', err);
+  // Safe no-op when Sentry isn't initialized (no SENTRY_DSN).
+  Sentry.captureException(err, {
+    extra: { path: c.req.path, method: c.req.method },
+  });
   const message = err instanceof Error ? err.message : 'Internal error';
   return c.json({ error: message, name: err instanceof Error ? err.name : 'Error' }, 500);
 });

@@ -12,6 +12,7 @@ import { stripe } from '@/server/lib/stripe';
 import { signGuestToken } from '@/server/lib/guestToken';
 import { getSessionUserId, authorizeBookingAccess } from '@/server/lib/booking-access';
 import { idempotencyMiddleware } from '@/server/middleware/idempotency';
+import { rateLimit } from '@/server/middleware/rate-limit';
 import { createPaymentIntent } from '@/server/services/payments';
 import { getQuote } from '@/server/services/pricing/quote';
 import { ManualQuoteRequiredError } from '@/server/services/pricing';
@@ -35,7 +36,13 @@ export const bookingsRoute = new Hono()
    *  5. Create Stripe PaymentIntent (manual capture).
    *  6. Tx: flip Booking → PENDING_PAYMENT, insert Payment + BookingEvent CREATED.
    */
-  .post('/', idempotencyMiddleware, zValidator('json', createBookingSchema), async (c) => {
+  .post(
+    '/',
+    // Each create spawns a Stripe intent (and possibly a guest User row).
+    rateLimit({ prefix: 'bookings', limit: 5 }),
+    idempotencyMiddleware,
+    zValidator('json', createBookingSchema),
+    async (c) => {
     const body = c.req.valid('json');
     const idempotencyKey = c.req.header('idempotency-key');
     if (!idempotencyKey) {

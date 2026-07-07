@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { presignUploadSchema, type EvidenceContentType } from '@/lib/types';
 import { getUploadUrl } from '@/server/services/storage';
+import { rateLimit } from '@/server/middleware/rate-limit';
 
 /** File extension per allowed content type, for a tidy object key. */
 const EXTENSION: Record<EvidenceContentType, string> = {
@@ -28,6 +29,8 @@ function safeName(name: string): string {
  */
 export const uploadsRoute = new Hono().post(
   '/presigned',
+  // Complaint evidence uploads several files in a burst — allow that, not floods.
+  rateLimit({ prefix: 'uploads', limit: 20 }),
   zValidator('json', presignUploadSchema),
   async (c) => {
     const { filename, contentType } = c.req.valid('json');

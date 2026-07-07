@@ -7,8 +7,9 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
   },
-  // Server-only deps — keep out of edge / client bundles.
-  serverExternalPackages: ['@prisma/client', 'prisma', 'bullmq', 'ioredis', 'stripe'],
+  // Server-only deps — keep out of edge / client bundles. @sentry/node ships
+  // OpenTelemetry require()s that must stay unbundled.
+  serverExternalPackages: ['@prisma/client', 'prisma', 'bullmq', 'ioredis', 'stripe', '@sentry/node'],
   // Vanity URL printed on the in-vehicle QR stickers. As of June 2026 the QR
   // points passengers at the site root (the landing page now carries the
   // "Because we care" / Report a driver section) rather than straight to the

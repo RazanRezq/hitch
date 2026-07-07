@@ -1,27 +1,18 @@
 import { Hono } from 'hono';
-import type { Context } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { feedbackSubmitSchema } from '@/lib/types';
 import { generateFeedbackReference } from '@/lib/utils';
 import { prisma } from '@/lib/db';
-import { redis } from '@/server/lib/redis';
+import { consumeRateLimit } from '@/server/middleware/rate-limit';
 import { notifyFeedback } from '@/server/services/feedback/notify';
 
 /**
  * POST /api/complaint — public, no auth. Accessed from the in-vehicle QR form.
  *
- * Order matters: validate → rate-limit → save to DB FIRST → fire-and-forget the
- * dual email. Email failures never affect the response (graceful degradation).
+ * Order matters: validate → honeypot → rate-limit → save to DB FIRST →
+ * fire-and-forget the dual email. Email failures never affect the response
+ * (graceful degradation).
  */
-
-const RATE_LIMIT = 5;
-const RATE_WINDOW_SECONDS = 60;
-
-function clientIp(c: Context): string {
-  const forwarded = c.req.header('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0]!.trim();
-  return c.req.header('x-real-ip') ?? 'unknown';
-}
 
 export const feedbackRoute = new Hono().post(
   '/',
@@ -29,16 +20,14 @@ export const feedbackRoute = new Hono().post(
   async (c) => {
     const body = c.req.valid('json');
 
-    // Honeypot: pretend success so bots don't learn they were caught.
+    // Honeypot: pretend success so bots don't learn they were caught. Checked
+    // BEFORE the rate limit so bots don't learn that exists either.
     if (body.website) {
       return c.json({ ok: true });
     }
 
-    // Redis rate-limit: 5 submissions / minute / IP.
-    const key = `feedback:rl:${clientIp(c)}`;
-    const count = await redis.incr(key);
-    if (count === 1) await redis.expire(key, RATE_WINDOW_SECONDS);
-    if (count > RATE_LIMIT) {
+    // 5 submissions / minute / IP.
+    if (!(await consumeRateLimit(c, { prefix: 'feedback', limit: 5 }))) {
       return c.json({ error: 'Too many submissions. Please try again later.' }, 429);
     }
 

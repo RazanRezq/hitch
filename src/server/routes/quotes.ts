@@ -3,6 +3,7 @@ import { zValidator } from '@hono/zod-validator';
 import { quoteRequestSchema } from '@/lib/types';
 import { getQuote } from '@/server/services/pricing/quote';
 import { ManualQuoteRequiredError } from '@/server/services/pricing';
+import { rateLimit } from '@/server/middleware/rate-limit';
 
 /**
  * POST /api/quotes — public, no auth. Returns price preview in caller's chosen
@@ -11,6 +12,8 @@ import { ManualQuoteRequiredError } from '@/server/services/pricing';
  */
 export const quotesRoute = new Hono().post(
   '/',
+  // Each quote can hit Google Directions — keep the quota abuse-proof.
+  rateLimit({ prefix: 'quotes', limit: 30 }),
   zValidator('json', quoteRequestSchema),
   async (c) => {
     const body = c.req.valid('json');

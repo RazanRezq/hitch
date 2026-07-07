@@ -6,6 +6,9 @@
  * this process exists because Next route handlers cannot host long-lived WS
  * connections. Same Hono app, different transport.
  */
+import { initSentry } from './lib/sentry';
+initSentry('ws'); // before anything else can throw
+
 import { serve } from '@hono/node-server';
 import { createNodeWebSocket } from '@hono/node-ws';
 import { cors } from 'hono/cors';
