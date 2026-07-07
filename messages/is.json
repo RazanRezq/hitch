@@ -447,6 +447,17 @@
       "quoteFailed": "Gat ekki sótt verð.",
       "bookingFailed": "Gat ekki búið til bókun.",
       "paymentFailed": "Greiðsla mistókst. Reyndu aftur."
+    },
+    "email": {
+      "subject": "Bókun staðfest — {code}",
+      "heading": "Bókunin þín er staðfest",
+      "body": "Greiðslan þín hefur verið heimiluð og ferðin er staðfest.\nVið pörum þig við bílstjóra — þú getur fylgst með stöðunni á bókunarsíðunni þinni.\nGreiðslan er ekki innheimt fyrr en bílstjóri hefur verið staðfestur.",
+      "viewCta": "Skoða bókunina",
+      "linkHint": "Geymdu þennan tölvupóst — hlekkurinn hér að ofan veitir aðgang að bókuninni þinni.",
+      "detailsHeading": "Ferðaupplýsingar",
+      "flightLabel": "Flugnúmer",
+      "help": "Þarftu aðstoð? Hringdu",
+      "reassure": "Þú færð þennan póst því netfangið var notað við bókun á hitch.is."
     }
   },
   "landing": {

@@ -5,6 +5,7 @@ import { BOOKING_STATUSES, PAYMENT_STATUSES, type BookingStatus } from '../../li
 import { redis } from '../lib/redis.js';
 import { publishBookingUpdate } from '../realtime/publish-booking';
 import { enqueueDispatch } from '../queues/dispatch';
+import { notifyBookingConfirmed } from '../services/booking/notify';
 
 /**
  * Consumes the `webhooks` queue. Each job points at a WebhookEvent row that
@@ -116,6 +117,12 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
   // Hand off to the dispatch queue (never dispatch inline). Fire-and-forget.
   void enqueueDispatch(booking.id).catch((err) =>
     console.error('[webhook] enqueueDispatch failed', booking.id, err),
+  );
+  // Confirmation email (carries the guest link) — best-effort, never blocks or
+  // retries the webhook job. Fires exactly once: only this PENDING_PAYMENT →
+  // CONFIRMED transition reaches here (re-runs no-op on the status guard above).
+  void notifyBookingConfirmed(booking.id).catch((err) =>
+    console.error('[webhook] notifyBookingConfirmed failed', booking.id, err),
   );
 }
 
