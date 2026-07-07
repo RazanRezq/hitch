@@ -40,7 +40,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-- **Driver mobile-web surface** — `feat/driver-mobile-web` (local branch, no PR yet); the pilot long pole, being built in a parallel session.
+- **Driver surface (MVP)** — **PR #62** (`feat/driver-mobile-web`), the pilot long pole: mobile-web `/[locale]/driver` — Clerk-gated (role DRIVER), job list + current-job card, forward-path advance (`DRIVER_NEXT_STATUS` policy over the state machine, CAS-guarded, stamps actual pickup/dropoff), live GPS over the existing WS (`location` frames → dispatcher map + Redis hot cache + throttled `DriverLocation`/`TripLocationHistory` writes + passenger booking-channel relay, offline-on-close), `driver:{id}:jobs` finally published to (assign + staff status changes), driver-scoped `/api/driver` API, seed `DRIVER` promotion (`SEED_DRIVER_EMAIL`). Deliberately deferred: offer/accept loop, driver NO_SHOW/cancel (policy owed), payouts/earnings.
 - **Refunds / cancel-after-confirm** — `feat/refunds` (worktree `.claude/worktrees/timeout-work`, no PR yet).
 
 ## 🎯 Readiness assessment (full-code audit, 2026-07-04)
@@ -64,7 +64,7 @@ one rehearsal.
 
 | Gap | Reality in code | Effort | Client-dependent? |
 |---|---|---|---|
-| **Driver surface** | No driver auth or UI; `driver:{id}:jobs` channel is authorized but **never published to**; GPS exists only via the simulate script. Minimum: mobile-web `/driver` page — Clerk sign-in, job card, accept/advance buttons, GPS push into `publishDriverLocation()` | **L** (long pole) | No |
+| **Driver surface** | 🚧 **MVP in PR #62** — `/driver` page (Clerk sign-in, job card, advance buttons, real GPS → `publishDriverLocation()`), `driver:{id}:jobs` published on assign/staff changes. Still open after #62: offer/accept dispatch loop, driver-initiated NO_SHOW/cancel (policy owed), driver-assigned email | ~~L~~ → **S–M** remaining | No |
 | **Payouts** | `payout.worker.ts` is a `console.log` stub; zero Stripe Connect code; `DriverPayout` model has no producer. Pilot interim: per-driver earnings report + manual transfer | **S–M** interim / **L** real | **Yes** — payout mechanism decision |
 | ~~Booking-confirmation email~~ | ✅ **Shipped in #58** — confirmation email with guest-token recovery link sends on CONFIRMED | — | — |
 | **Refunds / cancel-after-confirm** | No `stripe.refunds.create()` anywhere; `REFUNDED` status + `refundedAt` are dead schema; passenger cancel 409s after PENDING_PAYMENT; no admin refund button | **M** | Policy input (window/fee) |
@@ -72,8 +72,7 @@ one rehearsal.
 | ~~Rate limiting + Sentry~~ | ✅ **Shipped in #59** — quotes/bookings/uploads limited, Sentry wired in all 3 processes. Remaining: set `SENTRY_DSN` on the Railway services (config, minutes) | — | — |
 
 Build order: ~~email~~ (✅ #58) → ~~rate-limit/Sentry~~ (✅ #59) → ~~scheduled/timeout~~
-(✅ #60/#61) → refunds (in flight) → driver page (in flight, parallel session) → payout
-interim report.
+(✅ #60/#61) → ~~driver page~~ (🚧 #62) → refunds (in flight) → payout interim report.
 
 ### C) Production — additionally
 
@@ -93,7 +92,7 @@ client-blocked fare data (see below). `TripLocationHistory` is written but never
 - **Tour booking flow** — catalog UI (#43) is display-only; selecting + paying for a tour is a separate slice, not built.
 - **Driver payout worker** — still a stub; no Stripe Connect transfers.
 - **Auto-dispatch loop** — offer → 30s timeout → next driver; currently manual/dispatcher-only.
-- **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
+- **Real driver GPS** — 🚧 PR #62 adds the real feed (browser geolocation → WS `location` frames → ingest with CLAUDE.md write cadences); the `simulate` script remains for demos.
 - **Refunds** — completely unimplemented (no Stripe refund call, no `charge.refunded` handler; `REFUNDED` status is dead schema). Passenger cancel only works while PENDING_PAYMENT.
 - **Booking lifecycle emails (beyond confirmation)** — confirmation email shipped in #58 (with guest-link recovery); driver-assigned and receipt emails still don't exist.
 - **Observability beyond error capture** — Sentry errors wired (#59, needs `SENTRY_DSN` on Railway to go live); structured logs and alerting still don't exist.
@@ -125,7 +124,7 @@ _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (tr
 
 ## 🧪 Test status
 
-- `npm test` (`vitest run`): **153 tests passing, 19 files, 0 failures** (~4s, verified 2026-07-07). New in #60: dispatch-delay math, queue delay passthrough, worker deferral + audit event. New in #61: dispatch service's **first tests** (timeout happy path, void-race outcomes, claim race, terminal no-ops) + worker job-name routing.
+- `npm test` (`vitest run`): **179 tests passing, 21 files, 0 failures** (~5s, verified 2026-07-07). New in #60: dispatch-delay math, queue delay passthrough, worker deferral + audit event. New in #61: dispatch service's **first tests** (timeout happy path, void-race outcomes, claim race, terminal no-ops) + worker job-name routing. New in #62: driver routes (RBAC, ownership 404, forward-path policy + terminal 409s, CAS conflict, pickup/dropoff stamps, `DRIVER_NEXT_STATUS` ⊆ state machine) and WS location ingest (non-driver/malformed frames dropped, 15s/10s write throttles, foreign-booking relay refusal, offline + close handling).
 - Pricing and tours tests **assert real fare amounts** (not just shape) — money path is covered:
   fares, tours pricing, quote interface/display, payments, Stripe webhook outbox, idempotency,
   booking state machine, plus currency/geocoding/routing/RTL smoke. New since #49:
@@ -134,6 +133,7 @@ _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (tr
   bookings are left untouched. New in #58: booking confirmation email — builder content /
   escaping / ISK NBSP formatting, guest-token URL round-trip, unconfigured-skip and
   never-throws contracts, and worker fires-once-on-authorization assertions.
-- **Not covered** (per the readiness audit): dispatch service, admin endpoints, WS auth/channel
-  subscriptions, receipt issuance, uploads, Clerk user-sync. (Guest-token HMAC round-trip is
-  now covered via the #58 email tests.)
+- **Not covered** (per the readiness audit): admin endpoints, WS channel
+  subscriptions (`authorizeChannel`), receipt issuance, uploads, Clerk user-sync. (Guest-token
+  HMAC round-trip is covered via the #58 email tests; the dispatch service gained its first
+  tests in #61; the WS location-ingest RBAC/throttles are covered via #62.)
