@@ -40,7 +40,11 @@ vi.mock('@/lib/db', () => ({ prisma: h.prisma }));
 vi.mock('@/server/realtime/publish-booking', () => ({
   publishBookingUpdate: h.publishBookingUpdate,
 }));
-vi.mock('@/server/queues/dispatch', () => ({ enqueueDispatch: h.enqueueDispatch }));
+vi.mock('@/server/queues/dispatch', async (importOriginal) => {
+  // Keep the real delay helpers (pure) — only the queue producer is faked.
+  const actual = await importOriginal<typeof import('@/server/queues/dispatch')>();
+  return { ...actual, enqueueDispatch: h.enqueueDispatch };
+});
 vi.mock('@/server/services/booking/notify', () => ({
   notifyBookingConfirmed: h.notifyBookingConfirmed,
 }));
@@ -96,11 +100,42 @@ describe('webhook worker', () => {
       expect.objectContaining({ data: { status: PAYMENT_STATUSES.REQUIRES_CAPTURE } }),
     );
     expect(h.publishBookingUpdate).toHaveBeenCalledWith('bk_1', BOOKING_STATUSES.CONFIRMED);
-    expect(h.enqueueDispatch).toHaveBeenCalledWith('bk_1');
+    expect(h.enqueueDispatch).toHaveBeenCalledWith('bk_1', 0);
     expect(h.notifyBookingConfirmed).toHaveBeenCalledWith('bk_1');
 
     const lastUpdate = h.prisma.webhookEvent.update.mock.calls.at(-1)?.[0];
     expect(lastUpdate.data.status).toBe('processed');
+  });
+
+  it('defers dispatch for future-scheduled bookings and records the deferral', async () => {
+    h.prisma.webhookEvent.findUnique.mockResolvedValue({
+      id: 'whe_1',
+      status: 'pending',
+      payload: authorizedEvent(),
+    });
+    h.prisma.payment.findUnique.mockResolvedValue({ id: 'pay_1', bookingId: 'bk_1' });
+    // Pickup 3h out with the default 60-min lead → held for ~2h.
+    const scheduledTime = new Date(Date.now() + 3 * 60 * 60_000);
+    h.prisma.booking.findUnique.mockResolvedValue({
+      id: 'bk_1',
+      status: BOOKING_STATUSES.PENDING_PAYMENT,
+      scheduledTime,
+    });
+
+    await run();
+
+    const [bookingId, delayMs] = h.enqueueDispatch.mock.calls[0] as [string, number];
+    expect(bookingId).toBe('bk_1');
+    expect(delayMs).toBeGreaterThan(2 * 60 * 60_000 - 5_000);
+    expect(delayMs).toBeLessThanOrEqual(2 * 60 * 60_000);
+    expect(h.prisma.bookingEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          type: 'NOTE_ADDED',
+          payload: expect.objectContaining({ kind: 'dispatch_deferred', leadMinutes: 60 }),
+        }),
+      }),
+    );
   });
 
   it('is idempotent: no-op if the booking already advanced past PENDING_PAYMENT', async () => {
