@@ -447,6 +447,17 @@
       "quoteFailed": "Couldn't fetch a price.",
       "bookingFailed": "Couldn't create your booking.",
       "paymentFailed": "Payment failed. Please try again."
+    },
+    "email": {
+      "subject": "Booking confirmed — {code}",
+      "heading": "Your booking is confirmed",
+      "body": "Your payment is authorized and your trip is confirmed.\nWe're matching you with a driver — you can follow the status on your booking page.\nYou won't be charged until a driver is confirmed.",
+      "viewCta": "View your booking",
+      "linkHint": "Keep this email — the link above is your access to this booking.",
+      "detailsHeading": "Trip details",
+      "flightLabel": "Flight number",
+      "help": "Need help? Call",
+      "reassure": "You're receiving this email because this address was used for a booking on hitch.is."
     }
   },
   "landing": {

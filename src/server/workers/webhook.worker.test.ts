@@ -14,6 +14,7 @@ const h = vi.hoisted(() => ({
   },
   publishBookingUpdate: vi.fn(),
   enqueueDispatch: vi.fn(),
+  notifyBookingConfirmed: vi.fn(),
 }));
 
 // Capture the BullMQ processor instead of starting a real Worker/Redis.
@@ -40,6 +41,9 @@ vi.mock('@/server/realtime/publish-booking', () => ({
   publishBookingUpdate: h.publishBookingUpdate,
 }));
 vi.mock('@/server/queues/dispatch', () => ({ enqueueDispatch: h.enqueueDispatch }));
+vi.mock('@/server/services/booking/notify', () => ({
+  notifyBookingConfirmed: h.notifyBookingConfirmed,
+}));
 
 // Side-effect import: runs `new Worker(...)`, which captures the processor.
 import './webhook.worker';
@@ -64,6 +68,7 @@ beforeEach(() => {
   h.prisma.payment.update.mockResolvedValue({});
   h.prisma.bookingEvent.create.mockResolvedValue({});
   h.enqueueDispatch.mockResolvedValue(undefined);
+  h.notifyBookingConfirmed.mockResolvedValue(undefined);
 });
 
 describe('webhook worker', () => {
@@ -92,6 +97,7 @@ describe('webhook worker', () => {
     );
     expect(h.publishBookingUpdate).toHaveBeenCalledWith('bk_1', BOOKING_STATUSES.CONFIRMED);
     expect(h.enqueueDispatch).toHaveBeenCalledWith('bk_1');
+    expect(h.notifyBookingConfirmed).toHaveBeenCalledWith('bk_1');
 
     const lastUpdate = h.prisma.webhookEvent.update.mock.calls.at(-1)?.[0];
     expect(lastUpdate.data.status).toBe('processed');
@@ -113,6 +119,7 @@ describe('webhook worker', () => {
 
     expect(h.prisma.booking.update).not.toHaveBeenCalled();
     expect(h.enqueueDispatch).not.toHaveBeenCalled();
+    expect(h.notifyBookingConfirmed).not.toHaveBeenCalled();
   });
 
   // A Stripe cancel reconciles ANY pre-capture booking — including the
