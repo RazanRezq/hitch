@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-07-07
-- **Current `main`:** `91d0040` — _Merge #59 (rate limiting + Sentry)_ (recent merges: #57 `3a4ca48`, #58 `c6e3b6e`, #59 `91d0040`; all branches deleted, no open PRs)
+- **Current `main`:** `a451193` — _Merge #60 (scheduled-dispatch delay)_ (recent merges: #58 `c6e3b6e`, #59 `91d0040`, #60 `a451193`; all branches deleted, no open PRs)
 
 ---
 
@@ -31,6 +31,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Money-path hardening** | Driver-assign capture failure now reconciles against the real Stripe intent state instead of flipping the booking blind (#55); `payment_intent.canceled` (e.g. Stripe's 7-day hold expiry) now reconciles ANY pre-capture booking — CONFIRMED/SEARCHING included, previously silently skipped — to `CANCELLED_BY_SYSTEM`, and never touches captured/terminal bookings (#56) | **#55, #56** |
 | **Booking confirmation email** | On PENDING_PAYMENT → CONFIRMED the webhook worker sends a branded is/en email (booking-code pill, trip details, locked price) with a **guest-token recovery link** (re-derived HMAC, same `?t=` param) — the durable way back into a guest booking if the tab closes. Shared transactional-email shell extracted to `services/email/shell.ts` (feedback emails now consume it); `book.email` strings (is first); preview script; best-effort send (skips when `RESEND_API_KEY` unset, never throws, exactly-once via the status guard) | **#58** |
 | **Rate limiting + Sentry** | Shared fixed-window Redis limiter (`middleware/rate-limit.ts`, per-IP, **fail-open**): quotes 30/min, bookings 5/min, uploads 20/min, feedback refactored onto it (honeypot-before-limit preserved). `@sentry/node` in all 3 processes (Next via `src/instrumentation.ts` + Hono `onError`; workers with `worker.on('failed')` hooks so jobs that exhaust retries stop dying silently; ws runner) — no-op until `SENTRY_DSN` is set on Railway. Lockfile updated under Node 20, Linux optionals verified | **#59** |
+| **Scheduled-dispatch delay** | Future-scheduled bookings no longer flood today's SEARCHING queue: the webhook worker enqueues dispatch with a BullMQ delay so the booking surfaces at `scheduledTime − DISPATCH_LEAD_MINUTES` (default 60, env-tunable). ASAP trips unchanged (delay 0). `dispatch_deferred` BookingEvent records `dispatchAt` in the CONFIRMED transaction; cancellations while parked no-op on the existing CONFIRMED guard; early manual assign still works | **#60** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -38,7 +39,8 @@ fresh session or new device can get oriented without re-auditing the repo.
 
 ## 🚧 In flight
 
-_None — no open PRs or unmerged feature branches._
+- **Driver mobile-web surface** — `feat/driver-mobile-web` (local branch, no PR yet); the pilot long pole, being built in a parallel session.
+- **No-driver timeout** — `feat/no-driver-timeout` (worktree `.claude/worktrees/timeout-work`, no PR yet).
 
 ## 🎯 Readiness assessment (full-code audit, 2026-07-04)
 
@@ -65,11 +67,11 @@ one rehearsal.
 | **Payouts** | `payout.worker.ts` is a `console.log` stub; zero Stripe Connect code; `DriverPayout` model has no producer. Pilot interim: per-driver earnings report + manual transfer | **S–M** interim / **L** real | **Yes** — payout mechanism decision |
 | ~~Booking-confirmation email~~ | ✅ **Shipped in #58** — confirmation email with guest-token recovery link sends on CONFIRMED | — | — |
 | **Refunds / cancel-after-confirm** | No `stripe.refunds.create()` anywhere; `REFUNDED` status + `refundedAt` are dead schema; passenger cancel 409s after PENDING_PAYMENT; no admin refund button | **M** | Policy input (window/fee) |
-| **Scheduled-dispatch delay + no-driver timeout** | Dispatch enqueues immediately on CONFIRMED ignoring `scheduledTime` (tomorrow's pickup lands in today's queue); "no driver in X min → void" not implemented — only Stripe's 7-day auto-cancel (#56) backstops | **M** combined | No |
+| **No-driver timeout** | ~~Scheduled-dispatch delay~~ ✅ shipped in #60. Remaining: "no driver in X min after SEARCHING → void auth + cancel" not implemented — only Stripe's 7-day auto-cancel (#56) backstops. The #60 delayed-job machinery is directly reusable | **S–M** | Timeout duration is a product choice (sane default fine) |
 | ~~Rate limiting + Sentry~~ | ✅ **Shipped in #59** — quotes/bookings/uploads limited, Sentry wired in all 3 processes. Remaining: set `SENTRY_DSN` on the Railway services (config, minutes) | — | — |
 
-Build order: ~~email~~ (✅ #58) → ~~rate-limit/Sentry~~ (✅ #59) → scheduled/timeout →
-refunds → driver page (start day 1, it's the long pole) → payout interim report.
+Build order: ~~email~~ (✅ #58) → ~~rate-limit/Sentry~~ (✅ #59) → ~~scheduled~~ (✅ #60) /
+timeout → refunds → driver page (start day 1, it's the long pole) → payout interim report.
 
 ### C) Production — additionally
 
@@ -92,8 +94,7 @@ client-blocked fare data (see below). `TripLocationHistory` is written but never
 - **Real driver GPS** — `publishDriverLocation()` is only driven by the `simulate` script; no real driver feed.
 - **Refunds** — completely unimplemented (no Stripe refund call, no `charge.refunded` handler; `REFUNDED` status is dead schema). Passenger cancel only works while PENDING_PAYMENT.
 - **Booking lifecycle emails (beyond confirmation)** — confirmation email shipped in #58 (with guest-link recovery); driver-assigned and receipt emails still don't exist.
-- **Scheduled-booking dispatch delay** — future bookings enter the SEARCHING queue immediately; no BullMQ delayed job.
-- **No-driver timeout** — promised "void after X min" doesn't exist; Stripe's 7-day auto-cancel is the only backstop.
+- **No-driver timeout** — promised "void after X min" doesn't exist; Stripe's 7-day auto-cancel is the only backstop. (Scheduled-dispatch delay shipped in #60; its delayed-job machinery is reusable here.)
 - **Observability beyond error capture** — Sentry errors wired (#59, needs `SENTRY_DSN` on Railway to go live); structured logs and alerting still don't exist.
 - **Promo-code checkout** — tables exist; no redemption flow/UI.
 - **Passenger accounts / history** — booking works as guest; no logged-in trip history.
@@ -119,10 +120,11 @@ _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (tr
 - **Driver payout mechanism** — Stripe Connect (contractors) vs payroll/manual transfer; blocks anything beyond the interim earnings report.
 - **Kvittun vs legal invoice** — receipts (#48) are explicitly fare receipts, _not_ legal invoices; does Icelandic law require more for the pilot?
 - **Cancellation/refund policy** — window + fee, needed to build the refund path with correct defaults.
+- **Far-future booking charge policy** — surfaced by #60: bookings scheduled >~7 days out cannot work under manual capture at all (Stripe voids the uncaptured auth on day 7 → #56 cancels the booking before dispatch fires). Needs a decision: capture upfront, or re-authorize near the pickup date.
 
 ## 🧪 Test status
 
-- `npm test` (`vitest run`): **129 tests passing, 16 files, 0 failures** (~4s, verified 2026-07-07). New in #59: rate-limit middleware (429 shape, per-IP keying + single TTL, fail-open on Redis error).
+- `npm test` (`vitest run`): **136 tests passing, 17 files, 0 failures** (~4s, verified 2026-07-07). New in #59: rate-limit middleware (429 shape, per-IP keying + single TTL, fail-open on Redis error). New in #60: dispatch-delay math (window edges, invalid dates, env override), queue delay passthrough, worker deferral + audit event.
 - Pricing and tours tests **assert real fare amounts** (not just shape) — money path is covered:
   fares, tours pricing, quote interface/display, payments, Stripe webhook outbox, idempotency,
   booking state machine, plus currency/geocoding/routing/RTL smoke. New since #49:
