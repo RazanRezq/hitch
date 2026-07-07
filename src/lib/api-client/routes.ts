@@ -35,6 +35,11 @@ export const API_ROUTES = {
   fleet: {
     status: '/api/fleet',
   },
+  driver: {
+    me: '/api/driver/me',
+    jobs: '/api/driver/jobs',
+    advance: (id: string) => `/api/driver/jobs/${id}/advance`,
+  },
   admin: {
     bookings: {
       list: '/api/admin/bookings',

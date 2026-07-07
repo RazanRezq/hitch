@@ -47,6 +47,38 @@ export const TERMINAL_BOOKING_STATUSES = [
   BOOKING_STATUSES.DISPUTED,
 ] as const;
 
+/**
+ * Statuses that appear on a driver's own job list: assigned and not yet
+ * finished. A strict subset of ACTIVE_BOOKING_STATUSES — a driver never sees
+ * CONFIRMED/SEARCHING, those are pre-assignment.
+ */
+export const DRIVER_ACTIVE_STATUSES = [
+  BOOKING_STATUSES.ACCEPTED,
+  BOOKING_STATUSES.DRIVER_ARRIVING,
+  BOOKING_STATUSES.DRIVER_ARRIVED,
+  BOOKING_STATUSES.IN_TRANSIT,
+] as const;
+
+/**
+ * The driver's forward path — for each in-progress status, the single next
+ * status the driver's advance action moves the job into. Policy layered on top
+ * of the state machine (server/services/booking/state-machine.ts): NO_SHOW and
+ * cancellations stay dispatcher-only so a mis-tap in the car can never kill a
+ * booking. Shared FE/BE — the driver page renders its one big button from this
+ * map and the driver API rejects anything else.
+ */
+export const DRIVER_NEXT_STATUS = {
+  [BOOKING_STATUSES.ACCEPTED]: BOOKING_STATUSES.DRIVER_ARRIVING,
+  [BOOKING_STATUSES.DRIVER_ARRIVING]: BOOKING_STATUSES.DRIVER_ARRIVED,
+  [BOOKING_STATUSES.DRIVER_ARRIVED]: BOOKING_STATUSES.IN_TRANSIT,
+  [BOOKING_STATUSES.IN_TRANSIT]: BOOKING_STATUSES.COMPLETED,
+} as const satisfies Partial<Record<BookingStatus, BookingStatus>>;
+
+/** The driver's next forward step for a status, or null when they have none. */
+export function driverNextStatus(status: BookingStatus): BookingStatus | null {
+  return (DRIVER_NEXT_STATUS as Partial<Record<BookingStatus, BookingStatus>>)[status] ?? null;
+}
+
 export const VEHICLE_TYPES = {
   SEDAN: 'SEDAN',
   SUV: 'SUV',

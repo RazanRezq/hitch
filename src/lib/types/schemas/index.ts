@@ -6,4 +6,5 @@ export * from './searchParamsSchema';
 export * from './feedbackSchema';
 export * from './uploadSchema';
 export * from './adminSchema';
+export * from './driverSchema';
 export * from './receiptSchema';
