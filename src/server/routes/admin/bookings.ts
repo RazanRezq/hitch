@@ -9,6 +9,7 @@ import {
   adminBookingListQuerySchema,
   assignDriverSchema,
   adminUpdateBookingStatusSchema,
+  adminRefundSchema,
   type BookingStatus,
 } from '@/lib/types';
 import type { AuthVariables } from '@/lib/auth/middleware';
@@ -19,6 +20,7 @@ import {
   capturePaymentIntent,
   voidPaymentIntent,
   retrievePaymentIntent,
+  refundPaymentIntent,
 } from '@/server/services/payments';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
 import { publishDispatchEvent } from '@/server/realtime/publish-dispatch';
@@ -409,5 +411,91 @@ export const adminBookingsRoute = new Hono<{ Variables: AuthVariables }>()
       }
 
       return c.json({ id, status: to });
+    },
+  )
+
+  /**
+   * POST /api/admin/bookings/:id/refund — refund a CAPTURED payment, full by
+   * default or partial via `amountMinor`. A refund is a payment action, not a
+   * status transition: the dispatcher cancels/no-shows the booking separately
+   * when appropriate. The payment row is updated optimistically from Stripe's
+   * synchronous response; the charge.refunded webhook reconciles it as well
+   * (covers refunds issued from the Stripe dashboard too).
+   */
+  .post(
+    '/:id/refund',
+    idempotencyMiddleware,
+    zValidator('json', adminRefundSchema),
+    async (c) => {
+      const id = c.req.param('id');
+      const { amountMinor, reason } = c.req.valid('json');
+      const actor = c.get('user');
+
+      const booking = await prisma.booking.findUnique({ where: { id } });
+      if (!booking) return c.json({ error: 'Booking not found' }, 404);
+
+      const payment = await prisma.payment.findFirst({
+        where: { bookingId: id },
+        orderBy: { createdAt: 'desc' },
+      });
+      const refundable =
+        payment &&
+        (payment.status === PAYMENT_STATUSES.SUCCEEDED ||
+          payment.status === PAYMENT_STATUSES.PARTIALLY_REFUNDED);
+      if (!payment || !refundable) {
+        return c.json(
+          { error: 'No captured payment to refund', code: 'NOT_REFUNDABLE' },
+          409,
+        );
+      }
+      if (amountMinor !== undefined && amountMinor > payment.amount) {
+        return c.json({ error: 'Refund exceeds the captured amount' }, 400);
+      }
+
+      let refund;
+      try {
+        // Key includes the amount so an identical retry replays (no double
+        // refund) while a different partial amount is a distinct refund.
+        refund = await refundPaymentIntent({
+          intentId: payment.stripeIntentId,
+          idempotencyKey: `refund:${id}:${amountMinor ?? 'full'}`,
+          amount: amountMinor,
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Refund failed';
+        console.error('[admin.refund] Stripe refund failed', payment.stripeIntentId, err);
+        return c.json({ error: message, code: 'REFUND_FAILED' }, 502);
+      }
+
+      const full = amountMinor === undefined || amountMinor >= payment.amount;
+      await prisma.$transaction([
+        prisma.payment.update({
+          where: { id: payment.id },
+          data: {
+            status: full ? PAYMENT_STATUSES.REFUNDED : PAYMENT_STATUSES.PARTIALLY_REFUNDED,
+            ...(full ? { refundedAt: new Date() } : {}),
+          },
+        }),
+        prisma.bookingEvent.create({
+          data: {
+            bookingId: id,
+            type: 'PAYMENT_REFUNDED',
+            actorId: actor.id,
+            payload: {
+              refundId: refund.id,
+              amountMinor: amountMinor ?? payment.amount,
+              currency: payment.currency,
+              full,
+              reason,
+            },
+          },
+        }),
+      ]);
+
+      return c.json({
+        id,
+        refundId: refund.id,
+        paymentStatus: full ? PAYMENT_STATUSES.REFUNDED : PAYMENT_STATUSES.PARTIALLY_REFUNDED,
+      });
     },
   );

@@ -38,6 +38,18 @@ export const ACTIVE_BOOKING_STATUSES = [
   BOOKING_STATUSES.IN_TRANSIT,
 ] as const;
 
+/**
+ * Statuses a passenger may self-cancel from — all pre-capture, so cancelling
+ * only voids the authorization (no money has moved). Once a driver is assigned
+ * (ACCEPTED+, payment captured) cancellation/refunds go through staff.
+ * Shared by the cancel endpoint and the confirmation-page cancel button.
+ */
+export const PASSENGER_CANCELLABLE_STATUSES = [
+  BOOKING_STATUSES.PENDING_PAYMENT,
+  BOOKING_STATUSES.CONFIRMED,
+  BOOKING_STATUSES.SEARCHING,
+] as const;
+
 export const TERMINAL_BOOKING_STATUSES = [
   BOOKING_STATUSES.COMPLETED,
   BOOKING_STATUSES.CANCELLED_BY_PASSENGER,

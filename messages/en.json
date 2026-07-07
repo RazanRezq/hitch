@@ -110,7 +110,14 @@
       "statusError": "Could not change status",
       "noOnlineDrivers": "No drivers online",
       "issueReceipt": "Issue receipt",
-      "receiptError": "Could not issue the receipt"
+      "receiptError": "Could not issue the receipt",
+      "refund": "Refund",
+      "refundTitle": "Refund payment",
+      "refundBody": "Full refund of {amount}. This cannot be undone.",
+      "refundReasonLabel": "Reason (optional)",
+      "refundConfirm": "Refund",
+      "refundError": "Refund failed. Please try again.",
+      "refundedAt": "Refunded"
     },
     "receipts": {
       "title": "Receipts",
@@ -479,7 +486,14 @@
       "saveAccountCta": "Create account",
       "notFound": "Booking not found.",
       "live": "Live",
-      "reconnecting": "Reconnecting…"
+      "reconnecting": "Reconnecting…",
+      "cancelled": "Booking cancelled",
+      "cancelledBody": "The payment hold was released — nothing was charged.",
+      "cancelCta": "Cancel booking",
+      "cancelConfirmBody": "Are you sure you want to cancel? The payment hold will be released and nothing charged.",
+      "cancelKeep": "No, keep my booking",
+      "cancelConfirm": "Yes, cancel it",
+      "cancelError": "Couldn't cancel. Please try again."
     },
     "errors": {
       "quoteFailed": "Couldn't fetch a price.",

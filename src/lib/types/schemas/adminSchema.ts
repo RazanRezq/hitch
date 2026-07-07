@@ -44,6 +44,16 @@ export const adminUpdateBookingStatusSchema = z.object({
 });
 export type AdminUpdateBookingStatusInput = z.infer<typeof adminUpdateBookingStatusSchema>;
 
+/**
+ * POST /api/admin/bookings/:id/refund body. `amountMinor` (in the payment's
+ * display currency minor units) refunds partially; omitted = full refund.
+ */
+export const adminRefundSchema = z.object({
+  amountMinor: z.number().int().positive().optional(),
+  reason: z.string().max(500).optional(),
+});
+export type AdminRefundInput = z.infer<typeof adminRefundSchema>;
+
 /** GET /api/admin/drivers query. */
 export const adminDriverListQuerySchema = listQuerySchema.extend({
   online: z

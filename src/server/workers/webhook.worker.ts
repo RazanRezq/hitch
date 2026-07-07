@@ -41,6 +41,9 @@ export const webhookWorker = new Worker(
         case 'payment_intent.payment_failed':
           await handlePaymentFailed(event.data.object as Stripe.PaymentIntent);
           break;
+        case 'charge.refunded':
+          await handleChargeRefunded(event.data.object as Stripe.Charge);
+          break;
         default:
           // Unhandled types are recorded but not fatal — mark processed.
           break;
@@ -203,6 +206,47 @@ async function handleCanceled(intent: Stripe.PaymentIntent) {
   ]);
 
   publishBookingUpdate(booking.id, BOOKING_STATUSES.CANCELLED_BY_SYSTEM);
+}
+
+/**
+ * Charge refunded — from our admin refund endpoint or directly in the Stripe
+ * dashboard. Reconciles the Payment row (full → REFUNDED + refundedAt,
+ * partial → PARTIALLY_REFUNDED) and leaves an audit note. Idempotent: no-ops
+ * when the row already reflects the charge's refund state.
+ */
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  const intentId =
+    typeof charge.payment_intent === 'string' ? charge.payment_intent : charge.payment_intent?.id;
+  if (!intentId) return;
+
+  const payment = await prisma.payment.findUnique({ where: { stripeIntentId: intentId } });
+  if (!payment) {
+    console.warn('[webhook] handleChargeRefunded: no payment for intent', intentId);
+    return;
+  }
+
+  const full = charge.refunded === true || charge.amount_refunded >= charge.amount;
+  const target = full ? PAYMENT_STATUSES.REFUNDED : PAYMENT_STATUSES.PARTIALLY_REFUNDED;
+  if (payment.status === target) return; // already reconciled (e.g. by the admin endpoint)
+
+  await prisma.$transaction([
+    prisma.payment.update({
+      where: { id: payment.id },
+      data: { status: target, ...(full ? { refundedAt: new Date() } : {}) },
+    }),
+    prisma.bookingEvent.create({
+      data: {
+        bookingId: payment.bookingId,
+        type: 'PAYMENT_REFUNDED',
+        payload: {
+          source: 'stripe_webhook',
+          stripeIntentId: intentId,
+          amountRefunded: charge.amount_refunded,
+          full,
+        },
+      },
+    }),
+  ]);
 }
 
 /**

@@ -70,3 +70,23 @@ export async function voidPaymentIntent(params: {
 export async function retrievePaymentIntent(intentId: string) {
   return stripe.paymentIntents.retrieve(intentId);
 }
+
+/**
+ * Refund a CAPTURED PaymentIntent — full when `amount` is omitted, else that
+ * many minor units of the intent's currency. Pre-capture cancellations must use
+ * voidPaymentIntent instead (no money moved, nothing to refund). Idempotent via
+ * the caller's key; Stripe rejects over-refunds of the remaining balance.
+ */
+export async function refundPaymentIntent(params: {
+  intentId: string;
+  idempotencyKey: string;
+  amount?: number;
+}) {
+  return stripe.refunds.create(
+    {
+      payment_intent: params.intentId,
+      ...(params.amount !== undefined ? { amount: params.amount } : {}),
+    },
+    { idempotencyKey: params.idempotencyKey },
+  );
+}

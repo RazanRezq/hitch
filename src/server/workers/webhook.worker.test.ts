@@ -239,4 +239,78 @@ describe('webhook worker', () => {
     expect(h.prisma.payment.findUnique).not.toHaveBeenCalled();
     expect(h.prisma.webhookEvent.update).not.toHaveBeenCalled();
   });
+
+  function refundedEvent(charge: Record<string, unknown>) {
+    return {
+      type: 'charge.refunded',
+      data: { object: { payment_intent: 'pi_1', amount: 25900, ...charge } },
+    };
+  }
+
+  it('marks the payment REFUNDED (+refundedAt) on a full charge.refunded', async () => {
+    h.prisma.webhookEvent.findUnique.mockResolvedValue({
+      id: 'whe_1',
+      status: 'pending',
+      payload: refundedEvent({ refunded: true, amount_refunded: 25900 }),
+    });
+    h.prisma.payment.findUnique.mockResolvedValue({
+      id: 'pay_1',
+      bookingId: 'bk_1',
+      status: PAYMENT_STATUSES.SUCCEEDED,
+    });
+
+    await run();
+
+    expect(h.prisma.payment.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: 'pay_1' },
+        data: expect.objectContaining({
+          status: PAYMENT_STATUSES.REFUNDED,
+          refundedAt: expect.any(Date),
+        }),
+      }),
+    );
+    expect(h.prisma.bookingEvent.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ type: 'PAYMENT_REFUNDED' }),
+      }),
+    );
+  });
+
+  it('marks PARTIALLY_REFUNDED (no refundedAt) on a partial refund', async () => {
+    h.prisma.webhookEvent.findUnique.mockResolvedValue({
+      id: 'whe_1',
+      status: 'pending',
+      payload: refundedEvent({ refunded: false, amount_refunded: 10000 }),
+    });
+    h.prisma.payment.findUnique.mockResolvedValue({
+      id: 'pay_1',
+      bookingId: 'bk_1',
+      status: PAYMENT_STATUSES.SUCCEEDED,
+    });
+
+    await run();
+
+    const update = h.prisma.payment.update.mock.calls[0][0];
+    expect(update.data.status).toBe(PAYMENT_STATUSES.PARTIALLY_REFUNDED);
+    expect(update.data.refundedAt).toBeUndefined();
+  });
+
+  it('is idempotent: no-op when the row already reflects the refund', async () => {
+    h.prisma.webhookEvent.findUnique.mockResolvedValue({
+      id: 'whe_1',
+      status: 'pending',
+      payload: refundedEvent({ refunded: true, amount_refunded: 25900 }),
+    });
+    h.prisma.payment.findUnique.mockResolvedValue({
+      id: 'pay_1',
+      bookingId: 'bk_1',
+      status: PAYMENT_STATUSES.REFUNDED,
+    });
+
+    await run();
+
+    expect(h.prisma.payment.update).not.toHaveBeenCalled();
+    expect(h.prisma.bookingEvent.create).not.toHaveBeenCalled();
+  });
 });
