@@ -1,4 +1,5 @@
 import { PartySocket } from 'partysocket';
+import type { DriverLocationFrame } from '@/lib/types';
 
 /** WebSocket.OPEN readyState — local const so module eval never touches the global (SSR-safe). */
 const WS_OPEN = 1;
@@ -6,6 +7,9 @@ const WS_OPEN = 1;
 export type WsMessage =
   | { action: 'subscribe'; channel: string; token?: string }
   | { action: 'unsubscribe'; channel: string }
+  // Driver GPS frames (see server/realtime/location-ingest.ts).
+  | DriverLocationFrame
+  | { action: 'offline' }
   | { type: string; channel: string; payload: unknown };
 
 export interface WsClientOptions {
@@ -74,6 +78,19 @@ export class HitchWsClient {
         this.send({ action: 'unsubscribe', channel });
       }
     };
+  }
+
+  /**
+   * Push a client→server frame outside the subscribe protocol (driver GPS).
+   * Best-effort: a frame sent while the socket is down is simply dropped — the
+   * next interval frame makes it, and the server treats gaps as harmless.
+   */
+  push(msg: WsMessage): void {
+    try {
+      this.send(msg);
+    } catch {
+      /* socket closed mid-send — ignore */
+    }
   }
 
   private sendSubscribe(channel: string): void {

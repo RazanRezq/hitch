@@ -286,6 +286,44 @@
       "error": "Wrong email or password"
     }
   },
+  "driver": {
+    "title": "Driver",
+    "connecting": "Connecting…",
+    "error": "An error occurred",
+    "retry": "Try again",
+    "shift": {
+      "on": "On shift",
+      "off": "Off shift",
+      "start": "Start shift",
+      "end": "End shift",
+      "sharing": "Dispatch can see your position",
+      "acquiring": "Getting your position…",
+      "denied": "Location is blocked — allow location access in your browser to go on shift.",
+      "unavailable": "This browser doesn't support location."
+    },
+    "jobs": {
+      "current": "Current trip",
+      "upcoming": "Up next",
+      "doneToday": "Completed today ({count})",
+      "empty": "No jobs waiting",
+      "emptyHint": "New jobs appear here the moment dispatch assigns you a trip.",
+      "offShiftHint": "Go on shift to share your position with dispatch.",
+      "pickup": "Pickup",
+      "dropoff": "Drop-off",
+      "call": "Call",
+      "navigate": "Navigate",
+      "passengerFallback": "Passenger",
+      "noVehicle": "No active vehicle is registered to you — contact dispatch."
+    },
+    "advance": {
+      "DRIVER_ARRIVING": "Head out",
+      "DRIVER_ARRIVED": "Confirm arrival",
+      "IN_TRANSIT": "Start trip",
+      "COMPLETED": "Complete trip",
+      "confirm": "Tap again to confirm",
+      "conflict": "The job changed — refreshing…"
+    }
+  },
   "currency": {
     "toggle": "Select currency",
     "isk": "Icelandic króna",

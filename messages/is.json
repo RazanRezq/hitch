@@ -286,6 +286,44 @@
       "error": "Rangt netfang eða lykilorð"
     }
   },
+  "driver": {
+    "title": "Ökumaður",
+    "connecting": "Tengist…",
+    "error": "Villa kom upp",
+    "retry": "Reyna aftur",
+    "shift": {
+      "on": "Á vakt",
+      "off": "Ekki á vakt",
+      "start": "Hefja vakt",
+      "end": "Ljúka vakt",
+      "sharing": "Staðsetningin þín sést í sendistjórn",
+      "acquiring": "Sæki staðsetningu…",
+      "denied": "Staðsetning er læst — leyfðu staðsetningu í vafranum til að vera á vakt.",
+      "unavailable": "Vafrinn styður ekki staðsetningu."
+    },
+    "jobs": {
+      "current": "Ferðin núna",
+      "upcoming": "Næstu ferðir",
+      "doneToday": "Lokið í dag ({count})",
+      "empty": "Engin verkefni í bið",
+      "emptyHint": "Ný verkefni birtast hér um leið og þér er úthlutað ferð.",
+      "offShiftHint": "Farðu á vakt til að deila staðsetningu með sendistjórn.",
+      "pickup": "Sækja",
+      "dropoff": "Skila",
+      "call": "Hringja",
+      "navigate": "Leiðsögn",
+      "passengerFallback": "Farþegi",
+      "noVehicle": "Enginn virkur bíll er skráður á þig — hafðu samband við sendistjórn."
+    },
+    "advance": {
+      "DRIVER_ARRIVING": "Leggja af stað",
+      "DRIVER_ARRIVED": "Staðfesta komu",
+      "IN_TRANSIT": "Hefja ferð",
+      "COMPLETED": "Ljúka ferð",
+      "confirm": "Ýttu aftur til að staðfesta",
+      "conflict": "Verkefnið breyttist — uppfæri…"
+    }
+  },
   "currency": {
     "toggle": "Velja gjaldmiðil",
     "isk": "Íslensk króna",

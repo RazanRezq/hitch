@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db';
 import {
   BOOKING_STATUSES,
   PAYMENT_STATUSES,
+  TERMINAL_BOOKING_STATUSES,
   adminBookingListQuerySchema,
   assignDriverSchema,
   adminUpdateBookingStatusSchema,
@@ -21,6 +22,7 @@ import {
 } from '@/server/services/payments';
 import { publishBookingUpdate } from '@/server/realtime/publish-booking';
 import { publishDispatchEvent } from '@/server/realtime/publish-dispatch';
+import { publishDriverJobsEvent } from '@/server/realtime/publish-driver-jobs';
 
 const LIST_SORT_FIELDS = ['createdAt', 'scheduledTime', 'status'] as const;
 
@@ -322,6 +324,7 @@ export const adminBookingsRoute = new Hono<{ Variables: AuthVariables }>()
 
     publishBookingUpdate(id, BOOKING_STATUSES.ACCEPTED);
     publishDispatchEvent({ type: 'dispatch', action: 'assigned', bookingId: id, driverId });
+    publishDriverJobsEvent(driverId, { type: 'jobs', action: 'assigned', bookingId: id });
 
     return c.json({ id, status: BOOKING_STATUSES.ACCEPTED, driverId, vehicleId });
   })
@@ -392,6 +395,17 @@ export const adminBookingsRoute = new Hono<{ Variables: AuthVariables }>()
         publishDispatchEvent({ type: 'dispatch', action: 'enqueue', bookingId: id });
       } else if (isCancel || to === BOOKING_STATUSES.COMPLETED) {
         publishDispatchEvent({ type: 'dispatch', action: 'removed', bookingId: id });
+      }
+      // Nudge the assigned driver's job list too — their job may have been
+      // cancelled, completed on their behalf, or otherwise touched by staff.
+      if (booking.driverId) {
+        publishDriverJobsEvent(booking.driverId, {
+          type: 'jobs',
+          action: (TERMINAL_BOOKING_STATUSES as readonly BookingStatus[]).includes(to)
+            ? 'removed'
+            : 'updated',
+          bookingId: id,
+        });
       }
 
       return c.json({ id, status: to });

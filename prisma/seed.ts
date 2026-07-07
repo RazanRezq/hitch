@@ -31,7 +31,10 @@ const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
  * signed up yet it prints instructions (re-run after signing up). See the
  * prod-railway-topology-and-clerk note: admin = manual SUPER_ADMIN promote.
  */
-async function promoteByEmail(email: string, role: 'SUPER_ADMIN' | 'DISPATCHER'): Promise<void> {
+async function promoteByEmail(
+  email: string,
+  role: 'SUPER_ADMIN' | 'DISPATCHER' | 'DRIVER',
+): Promise<void> {
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
     console.warn(
@@ -42,7 +45,34 @@ async function promoteByEmail(email: string, role: 'SUPER_ADMIN' | 'DISPATCHER')
   if (user.role !== role) {
     await prisma.user.update({ where: { id: user.id }, data: { role } });
   }
+  // A promoted driver must be assignable: the assign endpoint refuses drivers
+  // without an active vehicle, and /driver needs a DriverLocation row.
+  if (role === 'DRIVER') await ensureDriverEquipment(user.id);
   console.log(`[seed] ${email} → ${role}`);
+}
+
+/** Give a promoted dev driver an active vehicle + location row. Idempotent. */
+async function ensureDriverEquipment(driverId: string): Promise<void> {
+  const vehicle = await prisma.vehicle.findFirst({ where: { driverId, isActive: true } });
+  if (!vehicle) {
+    await prisma.vehicle.create({
+      data: {
+        driverId,
+        vehicleType: 'SEDAN',
+        capacity: 4,
+        licensePlate: `DEV-${driverId.slice(-4).toUpperCase()}`,
+        make: 'Toyota',
+        model: 'Corolla',
+        year: 2023,
+        color: 'Grár',
+      },
+    });
+  }
+  await prisma.driverLocation.upsert({
+    where: { driverId },
+    update: {},
+    create: { driverId, lat: RVK.lat, lng: RVK.lng, isOnline: false },
+  });
 }
 
 /** Create a manual-capture test intent already at requires_capture, or null. */
@@ -135,6 +165,9 @@ async function main() {
   // --- Staff: promote Clerk-synced users by email --------------------------
   await promoteByEmail(process.env.SEED_ADMIN_EMAIL ?? 'admin@hitch.is', 'SUPER_ADMIN');
   await promoteByEmail('dispatch@hitch.is', 'DISPATCHER');
+  // The /driver surface needs a real Clerk login with role DRIVER — the mock
+  // drivers above have no clerkId. Sign up via Clerk, then re-run db:seed.
+  await promoteByEmail(process.env.SEED_DRIVER_EMAIL ?? 'driver@hitch.is', 'DRIVER');
 
   // --- Pricing zones -------------------------------------------------------
   const zones = [
