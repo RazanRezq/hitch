@@ -4,7 +4,7 @@ import { prisma } from '../../lib/db';
 import { BOOKING_STATUSES, PAYMENT_STATUSES, type BookingStatus } from '../../lib/types';
 import { redis } from '../lib/redis.js';
 import { publishBookingUpdate } from '../realtime/publish-booking';
-import { enqueueDispatch } from '../queues/dispatch';
+import { computeDispatchDelayMs, dispatchLeadMinutes, enqueueDispatch } from '../queues/dispatch';
 import { notifyBookingConfirmed } from '../services/booking/notify';
 
 /**
@@ -81,6 +81,10 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
   if (!booking) return;
   if (booking.status !== BOOKING_STATUSES.PENDING_PAYMENT) return;
 
+  // Future-scheduled trips wait until scheduledTime − lead before surfacing on
+  // the dispatcher queue; ASAP trips (the common case) dispatch immediately.
+  const dispatchDelayMs = computeDispatchDelayMs(booking.scheduledTime);
+
   await prisma.$transaction([
     prisma.booking.update({
       where: { id: booking.id },
@@ -111,11 +115,26 @@ async function handleAuthorized(intent: Stripe.PaymentIntent) {
         },
       },
     }),
+    ...(dispatchDelayMs > 0
+      ? [
+          prisma.bookingEvent.create({
+            data: {
+              bookingId: booking.id,
+              type: 'NOTE_ADDED',
+              payload: {
+                kind: 'dispatch_deferred',
+                dispatchAt: new Date(Date.now() + dispatchDelayMs).toISOString(),
+                leadMinutes: dispatchLeadMinutes(),
+              },
+            },
+          }),
+        ]
+      : []),
   ]);
 
   publishBookingUpdate(booking.id, BOOKING_STATUSES.CONFIRMED);
   // Hand off to the dispatch queue (never dispatch inline). Fire-and-forget.
-  void enqueueDispatch(booking.id).catch((err) =>
+  void enqueueDispatch(booking.id, dispatchDelayMs).catch((err) =>
     console.error('[webhook] enqueueDispatch failed', booking.id, err),
   );
   // Confirmation email (carries the guest link) — best-effort, never blocks or
