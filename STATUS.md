@@ -6,7 +6,7 @@ Single source of truth for where Hitch stands, generated from actual git/repo st
 fresh session or new device can get oriented without re-auditing the repo.
 
 - **Last updated:** 2026-07-07
-- **Current `main`:** `c6e3b6e` — _Merge #58 (booking confirmation email)_ (recent merges: #56 `1f3031f`, #57 `3a4ca48`, #58 `c6e3b6e`; all branches deleted, no open PRs)
+- **Current `main`:** `91d0040` — _Merge #59 (rate limiting + Sentry)_ (recent merges: #57 `3a4ca48`, #58 `c6e3b6e`, #59 `91d0040`; all branches deleted, no open PRs)
 
 ---
 
@@ -30,6 +30,7 @@ fresh session or new device can get oriented without re-auditing the repo.
 | **Dispatch map markers** | Driver markers migrated to `AdvancedMarkerElement` (legacy `Marker` deprecated) | **#54** |
 | **Money-path hardening** | Driver-assign capture failure now reconciles against the real Stripe intent state instead of flipping the booking blind (#55); `payment_intent.canceled` (e.g. Stripe's 7-day hold expiry) now reconciles ANY pre-capture booking — CONFIRMED/SEARCHING included, previously silently skipped — to `CANCELLED_BY_SYSTEM`, and never touches captured/terminal bookings (#56) | **#55, #56** |
 | **Booking confirmation email** | On PENDING_PAYMENT → CONFIRMED the webhook worker sends a branded is/en email (booking-code pill, trip details, locked price) with a **guest-token recovery link** (re-derived HMAC, same `?t=` param) — the durable way back into a guest booking if the tab closes. Shared transactional-email shell extracted to `services/email/shell.ts` (feedback emails now consume it); `book.email` strings (is first); preview script; best-effort send (skips when `RESEND_API_KEY` unset, never throws, exactly-once via the status guard) | **#58** |
+| **Rate limiting + Sentry** | Shared fixed-window Redis limiter (`middleware/rate-limit.ts`, per-IP, **fail-open**): quotes 30/min, bookings 5/min, uploads 20/min, feedback refactored onto it (honeypot-before-limit preserved). `@sentry/node` in all 3 processes (Next via `src/instrumentation.ts` + Hono `onError`; workers with `worker.on('failed')` hooks so jobs that exhaust retries stop dying silently; ws runner) — no-op until `SENTRY_DSN` is set on Railway. Lockfile updated under Node 20, Linux optionals verified | **#59** |
 | **Foundation hardening** | Exchange-rate worker + daily cron, Vitest + money-path tests, GitHub Actions CI, dropped legacy Better-Auth tables, removed dead 501 stubs, completed `.env.example` | **#37** |
 | **Passenger web** | Landing (WebGL aurora hero), 3-step booking wizard, Stripe manual-capture payments, guest checkout, live WebSocket status, complaint/feedback flow with evidence uploads | — |
 | **Dispatcher dashboard** | RBAC-gated; overview KPIs, bookings/drivers/fleet, live Google map dispatch | — |
@@ -65,10 +66,10 @@ one rehearsal.
 | ~~Booking-confirmation email~~ | ✅ **Shipped in #58** — confirmation email with guest-token recovery link sends on CONFIRMED | — | — |
 | **Refunds / cancel-after-confirm** | No `stripe.refunds.create()` anywhere; `REFUNDED` status + `refundedAt` are dead schema; passenger cancel 409s after PENDING_PAYMENT; no admin refund button | **M** | Policy input (window/fee) |
 | **Scheduled-dispatch delay + no-driver timeout** | Dispatch enqueues immediately on CONFIRMED ignoring `scheduledTime` (tomorrow's pickup lands in today's queue); "no driver in X min → void" not implemented — only Stripe's 7-day auto-cancel (#56) backstops | **M** combined | No |
-| **Rate limiting + Sentry** | Only `/api/complaint` is rate-limited; `POST /api/quotes` (Google quota) and `POST /api/bookings` (Stripe intents) are wide open; logging is console-only | **S** | No |
+| ~~Rate limiting + Sentry~~ | ✅ **Shipped in #59** — quotes/bookings/uploads limited, Sentry wired in all 3 processes. Remaining: set `SENTRY_DSN` on the Railway services (config, minutes) | — | — |
 
-Build order: ~~email~~ (✅ #58) → rate-limit/Sentry → scheduled/timeout → refunds → driver
-page (start day 1, it's the long pole) → payout interim report.
+Build order: ~~email~~ (✅ #58) → ~~rate-limit/Sentry~~ (✅ #59) → scheduled/timeout →
+refunds → driver page (start day 1, it's the long pole) → payout interim report.
 
 ### C) Production — additionally
 
@@ -93,8 +94,7 @@ client-blocked fare data (see below). `TripLocationHistory` is written but never
 - **Booking lifecycle emails (beyond confirmation)** — confirmation email shipped in #58 (with guest-link recovery); driver-assigned and receipt emails still don't exist.
 - **Scheduled-booking dispatch delay** — future bookings enter the SEARCHING queue immediately; no BullMQ delayed job.
 - **No-driver timeout** — promised "void after X min" doesn't exist; Stripe's 7-day auto-cancel is the only backstop.
-- **Rate limiting** — only `/api/complaint`; quotes/bookings/uploads unprotected.
-- **Observability** — console-only; no Sentry/structured logging/alerts.
+- **Observability beyond error capture** — Sentry errors wired (#59, needs `SENTRY_DSN` on Railway to go live); structured logs and alerting still don't exist.
 - **Promo-code checkout** — tables exist; no redemption flow/UI.
 - **Passenger accounts / history** — booking works as guest; no logged-in trip history.
 - **Admin Pricing / Payments / Reports pages** — nav links exist; pages don't. (A Receipts page now exists, via #48.)
@@ -122,7 +122,7 @@ _Confirmed 2026-06-26, no longer blocking: **490 airport fee** = origin-only (tr
 
 ## 🧪 Test status
 
-- `npm test` (`vitest run`): **126 tests passing, 15 files, 0 failures** (~4s, verified 2026-07-07).
+- `npm test` (`vitest run`): **129 tests passing, 16 files, 0 failures** (~4s, verified 2026-07-07). New in #59: rate-limit middleware (429 shape, per-IP keying + single TTL, fail-open on Redis error).
 - Pricing and tours tests **assert real fare amounts** (not just shape) — money path is covered:
   fares, tours pricing, quote interface/display, payments, Stripe webhook outbox, idempotency,
   booking state machine, plus currency/geocoding/routing/RTL smoke. New since #49:
