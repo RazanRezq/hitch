@@ -61,3 +61,37 @@ export function enqueueDispatch(bookingId: string, delayMs = 0) {
     },
   );
 }
+
+/** How long a booking may sit in SEARCHING before the auth is voided. */
+const DEFAULT_NO_DRIVER_TIMEOUT_MINUTES = 30;
+
+/** 0 (or negative) disables the timeout entirely. */
+export function noDriverTimeoutMinutes(): number {
+  const raw = process.env.NO_DRIVER_TIMEOUT_MINUTES;
+  if (!raw) return DEFAULT_NO_DRIVER_TIMEOUT_MINUTES;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : DEFAULT_NO_DRIVER_TIMEOUT_MINUTES;
+}
+
+/**
+ * Schedule the no-driver timeout when a booking enters SEARCHING: if no driver
+ * has been assigned when it fires, the worker voids the Stripe auth and cancels
+ * the booking (CLAUDE.md "No driver in X min → VOID auth → CANCELLED_BY_SYSTEM").
+ * Same queue, distinct job name — the worker routes on job.name.
+ */
+export function enqueueDispatchTimeout(bookingId: string) {
+  const minutes = noDriverTimeoutMinutes();
+  if (minutes <= 0) return Promise.resolve(null);
+  return dispatchQueue.add(
+    'timeout',
+    { bookingId } satisfies DispatchJobData,
+    {
+      jobId: `dispatch-timeout:${bookingId}`,
+      delay: minutes * 60_000,
+      attempts: 5,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: true,
+      removeOnFail: 100,
+    },
+  );
+}

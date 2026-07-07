@@ -16,7 +16,13 @@ vi.mock('ioredis', () => {
   return { default: FakeRedis, Redis: FakeRedis };
 });
 
-import { computeDispatchDelayMs, dispatchLeadMinutes, enqueueDispatch } from './dispatch';
+import {
+  computeDispatchDelayMs,
+  dispatchLeadMinutes,
+  enqueueDispatch,
+  enqueueDispatchTimeout,
+  noDriverTimeoutMinutes,
+} from './dispatch';
 
 const NOW = new Date('2026-07-15T12:00:00Z');
 const HOUR = 60 * 60_000;
@@ -77,5 +83,38 @@ describe('enqueueDispatch', () => {
       { bookingId: 'bk_2' },
       expect.objectContaining({ delay: 0 }),
     );
+  });
+});
+
+describe('enqueueDispatchTimeout', () => {
+  it('schedules the timeout job 30 minutes out by default, with its own jobId', async () => {
+    await enqueueDispatchTimeout('bk_1');
+    expect(h.add).toHaveBeenCalledWith(
+      'timeout',
+      { bookingId: 'bk_1' },
+      expect.objectContaining({ jobId: 'dispatch-timeout:bk_1', delay: 30 * 60_000 }),
+    );
+  });
+
+  it('respects NO_DRIVER_TIMEOUT_MINUTES', async () => {
+    vi.stubEnv('NO_DRIVER_TIMEOUT_MINUTES', '15');
+    expect(noDriverTimeoutMinutes()).toBe(15);
+    await enqueueDispatchTimeout('bk_1');
+    expect(h.add).toHaveBeenCalledWith(
+      'timeout',
+      { bookingId: 'bk_1' },
+      expect.objectContaining({ delay: 15 * 60_000 }),
+    );
+  });
+
+  it('is disabled entirely at 0 (Stripe 7-day cancel remains the backstop)', async () => {
+    vi.stubEnv('NO_DRIVER_TIMEOUT_MINUTES', '0');
+    await enqueueDispatchTimeout('bk_1');
+    expect(h.add).not.toHaveBeenCalled();
+  });
+
+  it('falls back to 30 on an invalid value', () => {
+    vi.stubEnv('NO_DRIVER_TIMEOUT_MINUTES', 'soon');
+    expect(noDriverTimeoutMinutes()).toBe(30);
   });
 });
