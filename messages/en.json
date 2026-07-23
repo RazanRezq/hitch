@@ -29,6 +29,7 @@
     "overview": "Overview",
     "bookings": "Bookings",
     "receipts": "Receipts",
+    "earnings": "Earnings",
     "drivers": "Drivers",
     "fleet": "Fleet",
     "pricing": "Pricing",
@@ -118,6 +119,25 @@
       "refundConfirm": "Refund",
       "refundError": "Refund failed. Please try again.",
       "refundedAt": "Refunded"
+    },
+    "earnings": {
+      "title": "Driver earnings",
+      "fromLabel": "From",
+      "toLabel": "To",
+      "exportCsv": "Export CSV",
+      "colDriver": "Driver",
+      "colEmail": "Email",
+      "colTrips": "Trips",
+      "colGross": "Gross",
+      "colDate": "Date",
+      "colCode": "Booking ID",
+      "colPickup": "Pickup",
+      "colDropoff": "Drop-off",
+      "totalsLabel": "Total",
+      "showTrips": "Show trips",
+      "basisNote": "Gross captured fares (ISK) for completed trips in the period, before the agreed split. Refunded trips are excluded.",
+      "excludedNote": "Excluded: {refunded} refunded · {unpaid} unpaid · {unassigned} without a driver",
+      "empty": "No completed trips in this period"
     },
     "receipts": {
       "title": "Receipts",

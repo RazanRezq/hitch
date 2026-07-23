@@ -54,6 +54,16 @@ export const adminRefundSchema = z.object({
 });
 export type AdminRefundInput = z.infer<typeof adminRefundSchema>;
 
+/**
+ * GET /api/admin/earnings query — the payroll window over `scheduledTime`.
+ * Defaults (month-to-date UTC) are applied server-side.
+ */
+export const adminEarningsQuerySchema = z.object({
+  from: z.string().datetime().optional(),
+  to: z.string().datetime().optional(),
+});
+export type AdminEarningsQuery = z.infer<typeof adminEarningsQuerySchema>;
+
 /** GET /api/admin/drivers query. */
 export const adminDriverListQuerySchema = listQuerySchema.extend({
   online: z

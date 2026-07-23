@@ -29,6 +29,7 @@
     "overview": "Yfirlit",
     "bookings": "Pantanir",
     "receipts": "Kvittanir",
+    "earnings": "Uppgjör",
     "drivers": "Ökumenn",
     "fleet": "Bílafloti",
     "pricing": "Verðlagning",
@@ -118,6 +119,25 @@
       "refundConfirm": "Endurgreiða",
       "refundError": "Endurgreiðsla mistókst. Reyndu aftur.",
       "refundedAt": "Endurgreitt"
+    },
+    "earnings": {
+      "title": "Uppgjör ökumanna",
+      "fromLabel": "Frá",
+      "toLabel": "Til",
+      "exportCsv": "Sækja CSV",
+      "colDriver": "Ökumaður",
+      "colEmail": "Netfang",
+      "colTrips": "Ferðir",
+      "colGross": "Brúttó",
+      "colDate": "Dagsetning",
+      "colCode": "Bókunarnúmer",
+      "colPickup": "Sótt",
+      "colDropoff": "Skilað",
+      "totalsLabel": "Samtals",
+      "showTrips": "Sýna ferðir",
+      "basisNote": "Brúttó innheimt fargjöld (ISK) fyrir loknar ferðir á tímabilinu, fyrir umsamda skiptingu. Endurgreiddar ferðir eru undanskildar.",
+      "excludedNote": "Undanskilið: {refunded} endurgreiddar · {unpaid} ógreiddar · {unassigned} án ökumanns",
+      "empty": "Engar loknar ferðir á tímabilinu"
     },
     "receipts": {
       "title": "Kvittanir",
