@@ -72,6 +72,9 @@ export const API_ROUTES = {
       create: '/api/admin/receipts',
       byId: (id: string) => `/api/admin/receipts/${id}`,
     },
+    earnings: {
+      report: '/api/admin/earnings',
+    },
   },
   health: '/api/health',
 } as const;

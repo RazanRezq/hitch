@@ -5,6 +5,7 @@ import { adminDriversRoute } from './drivers';
 import { adminVehiclesRoute } from './vehicles';
 import { adminStatsRoute } from './stats';
 import { adminReceiptsRoute } from './receipts';
+import { adminEarningsRoute } from './earnings';
 
 /**
  * Admin / dispatcher API surface. Guarded at the group level by
@@ -21,3 +22,4 @@ adminRoute.route('/drivers', adminDriversRoute);
 adminRoute.route('/vehicles', adminVehiclesRoute);
 adminRoute.route('/stats', adminStatsRoute);
 adminRoute.route('/receipts', adminReceiptsRoute);
+adminRoute.route('/earnings', adminEarningsRoute);
